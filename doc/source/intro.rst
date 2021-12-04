@@ -96,7 +96,7 @@ License
     :target: https://www.apache.org/licenses/
 
 
-This work is licensed under a `Apache 2.0 <https://www.apache.org/licenses/>`_
+This work is licensed under `Apache 2.0 <https://www.apache.org/licenses/>`_
 
 References
 =========================================
