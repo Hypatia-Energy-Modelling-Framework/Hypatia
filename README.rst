@@ -77,7 +77,7 @@ If you want to see the structure of inputs and how the examples are built, you c
 
     from hypatia import download_example
 
-    # Donloading the Planning example
+    # Downloading the Planning example
     download_example(example='Planning', destination_path='Where/To/Save')
 
 
@@ -96,7 +96,7 @@ Hypatia supports different **Open Source** and **Commercial** solvers like:
 * `GLPK <https://www.gnu.org/software/glpk/>`_
 * `OSQP <https://osqp.org/>`_
 * `ECOS <https://www.embotech.com/ECOS>`_
-* `cvxopt <http://cvxopt.org/>`_
+* `CVXOPT <http://cvxopt.org/>`_
 * `SCS <https://github.com/cvxgrp/scs>`_
 * `CPLEX <https://www.ibm.com/products/category/business/commerce>`_
 * `GUROBI <https://www.gurobi.com/>`_
