@@ -90,14 +90,13 @@ The development of Hypatia was not possible without the kind attention and help 
 We are fully grateful for having the chance to work under supervison and would like to express our gratitude for her unwavering support.
     
 License
-=========================================
+========
 
-.. image:: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
-    :target: https://creativecommons.org/licenses/by-nc-sa/4.0/
+.. image:: https://img.shields.io/badge/License-Apache_2.0-blue.svg
+    :target: https://www.apache.org/licenses/
 
 
-This work is licensed under a `Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) <https://creativecommons.org/licenses/by-nc-sa/4.0/>`
-
+This work is licensed under a `Apache 2.0 <https://www.apache.org/licenses/>`_
 References
 =========================================
 .. [Diamond2016] Diamond, S., & Boyd, S. (2016). CVXPY: A Python-embedded modeling language for convex optimization. The Journal of Machine Learning Research, 17(1), 2909-2913.
