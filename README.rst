@@ -109,9 +109,9 @@ Hypatia supports different **Open Source** and **Commercial** solvers like:
 License
 -------
 
-.. image:: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
-    :target: https://creativecommons.org/licenses/by-nc-sa/4.0/
+.. image:: https://img.shields.io/badge/License-Apache_2.0-blue.svg
+    :target: https://www.apache.org/licenses/
 
 
-This work is licensed under a `Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) <https://creativecommons.org/licenses/by-nc-sa/4.0/>`_
+This work is licensed under a `Apache 2.0 <https://www.apache.org/licenses/>`_
 
