@@ -97,6 +97,7 @@ License
 
 
 This work is licensed under a `Apache 2.0 <https://www.apache.org/licenses/>`_
+
 References
 =========================================
 .. [Diamond2016] Diamond, S., & Boyd, S. (2016). CVXPY: A Python-embedded modeling language for convex optimization. The Journal of Machine Learning Research, 17(1), 2909-2913.
