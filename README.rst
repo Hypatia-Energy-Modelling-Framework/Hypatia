@@ -30,7 +30,7 @@ To create a new environment, you should use *Anaconda Prompt*:
 
     conda create -n hypatia python=3.8
 
-If you create a new environment for hypatia, to use it, you need to activate the mario environment each time by writing
+If you create a new environment for hypatia, you need to activate the environment each time you want to use it, by writing
 the following line in *Anaconda Prompt*:
 
 .. code-block:: bash
