@@ -85,7 +85,7 @@ class Model:
             if not force_rewrite:
                 raise ResultOverWrite(
                     f"Folder {path} already exists. To over write"
-                    f" the results, use force_rewrite=True."
+                    f" the parameter files, use force_rewrite=True."
                 )
             else:
                 os.rmdir(path)
