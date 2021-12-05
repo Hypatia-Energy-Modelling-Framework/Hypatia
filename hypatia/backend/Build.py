@@ -970,11 +970,8 @@ class BuildModel:
                         >= 0
                     )
 
-
-
     def _constr_totalcapacity_regional(self):
-        
-        
+
         """
         Defines the annual upper and lower limit on the total capacity 
         of each technology within each region
@@ -992,7 +989,7 @@ class BuildModel:
                 )
 
     def _constr_totalcapacity_overall(self):
-        
+
         """
         Defines the annual upper and lower limit on the aggregated total capacity
         of each technology over all the regions
@@ -1018,7 +1015,7 @@ class BuildModel:
             )
 
     def _constr_totalcapacity_line(self):
-        
+
         """
         Defines the upper and lower limit on the annual total capacity of the
         inter-regional links
@@ -1034,7 +1031,7 @@ class BuildModel:
             )
 
     def _constr_newcapacity_regional(self):
-        
+
         """
         Defines the upper and lower limit on the annual new installed capacity
         of each technology within each region
@@ -1052,7 +1049,7 @@ class BuildModel:
                 )
 
     def _constr_newcapacity_overall(self):
-        
+
         """
         Defines the upper and lower limit on the aggregated new installed capacity
         of each technology over all the regions
@@ -1086,10 +1083,8 @@ class BuildModel:
             self.constr.append(value <= self.sets.trade_data["line_max_newcap"][key])
             self.constr.append(value >= self.sets.trade_data["line_min_newcap"][key])
 
-
-
     def _constr_tech_efficiency(self):
-        
+
         """
         Defines the relationship between the input and output activity of 
         conversion, transmission and conversion-plus technologies
@@ -1116,7 +1111,7 @@ class BuildModel:
                     )
 
     def _constr_prod_annual(self):
-        
+
         """
         Defines the upper and lower limit for the annual production of the technologies
         within each region
@@ -1147,7 +1142,7 @@ class BuildModel:
                     )
 
     def _constr_prod(self):
-        
+
         """
         Defines the upper and lower limit for the hourly production of the technologies
         within each region
@@ -1175,7 +1170,7 @@ class BuildModel:
                     )
 
     def _constr_prod_annual_overall(self):
-        
+
         """
         Defines the upper and lower limit for the aggregated annual production 
         of the technologies over all the regions
@@ -1197,7 +1192,6 @@ class BuildModel:
             self.constr.append(
                 value - self.sets.global_data["global_max_production"].loc[:, tech] <= 0
             )
-
 
     def _constr_emission_cap(self):
 
@@ -1235,11 +1229,8 @@ class BuildModel:
 
             self.constr.append(global_emission_cap - self.global_emission >= 0)
 
-            
-
-    
     def _constr_storage_max_min_charge(self):
-        
+
         """
         Defines the maximum and minumum alllowed storage state of charge in each
         timestep of the year based on the total nominal capacity and the minimum
@@ -1329,7 +1320,7 @@ class BuildModel:
                 )
 
     def _set_regional_objective_planning(self):
-        
+
         """
         Calculates the regional objective function in the planning mode
         """
@@ -1376,10 +1367,10 @@ class BuildModel:
             self.totalcost_allregions += totalcost_regional_discounted
 
     def _set_regional_objective_operation(self):
-        
+
         """
         Calculates the regional objective function in the operation mode
-        """      
+        """
         self.totalcost_allregions = 0
         for reg in self.sets.regions:
 
@@ -1405,7 +1396,7 @@ class BuildModel:
             self.totalcost_allregions += totalcost_regional
 
     def _set_lines_objective_planning(self):
-        
+
         """
         Calculates the objective function of the inter-regional links in the 
         planning mode
@@ -1441,7 +1432,7 @@ class BuildModel:
         )
 
     def _set_lines_objective_operation(self):
-        
+
         """
         Calculates the objective function of the inter-regional links in the 
         operation mode
@@ -1460,7 +1451,7 @@ class BuildModel:
                 self.totalcost_lines += cp.sum(value, axis=1)
 
     def _set_final_objective_singlenode(self):
-        
+
         """
         Calculates the overall objective function in a single-node model
         """
@@ -1476,7 +1467,7 @@ class BuildModel:
             self.global_objective = self.totalcost_allregions
 
     def _set_final_objective_multinode(self):
-        
+
         """
         Calculates the overall objective function as the summation of all the
         regional and inter-regional links objective functions in a multi-node
@@ -1493,4 +1484,3 @@ class BuildModel:
         elif self.sets.mode == "Operation":
 
             self.global_objective = self.totalcost_allregions + self.totalcost_lines
-

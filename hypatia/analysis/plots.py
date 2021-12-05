@@ -1110,4 +1110,3 @@ class Plotter:
         if not aggregate:
             fig = set_steps(fig, counter, mode)
         _plotter(fig=fig, layout=layout, path=path)
-

@@ -59,7 +59,7 @@ def check_nan(table_name, table_value, file_name):
 def check_table_name(
     file_name, allowed_names, table_name,
 ):
-    
+
     """Checks if the tables in the set files have valid names
     """
 
@@ -72,7 +72,7 @@ def check_table_name(
 
 
 def check_sheet_name(path, file_name, ids):
-    
+
     """Checks if the sheets in the parameter files have valid names when 
     reading the data
     """
@@ -96,7 +96,7 @@ def check_sheet_name(path, file_name, ids):
 
 
 def check_tech_category(tech_table, allowed_categories, file_name):
-    
+
     """Checks if the given technology categories are within the acceptable
     tech categories of the model
     """
@@ -113,7 +113,7 @@ def check_tech_category(tech_table, allowed_categories, file_name):
 
 
 def check_carrier_type(carr_table, allowed_types, file_name):
-    
+
     """Checks if the given carrier types are within the acceptable
     carrier types of the model
     """
@@ -136,7 +136,7 @@ def check_mapping_values(
     reference_col,
     file_name,
 ):
-    
+
     """Checks if the specified carriers and technologies in the carrier input
     and carrier output tables have valid names
     """
@@ -174,7 +174,7 @@ def check_mapping_ctgry(
 
 
 def check_years_mode_consistency(mode, main_years):
-    
+
     """Checks if the number of years is valid based on the given optimization
     mode
     """
@@ -187,4 +187,3 @@ def check_years_mode_consistency(mode, main_years):
                 f"The number of years is invalid.The '{mode}' optimization mode of the energy system\
                                      can be analyzed only with 'one year' time horizon"
             )
-

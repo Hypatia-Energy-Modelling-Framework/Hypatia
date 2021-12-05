@@ -58,7 +58,6 @@ class WrongMappingTech(Exception):
     """Raises when the supply technologies are included in carrier input table
     or demand technologies are included in the carrier output table
     """
-    
 
     pass
 

@@ -36,7 +36,7 @@ MODES = ["Planning", "Operation"]
 
 
 class ReadSets:
-    
+
     """ Class that reads the sets of the model, creates the parameter files with
     default values and reads the filled parameter files
     
@@ -108,7 +108,6 @@ class ReadSets:
         check_years_mode_consistency(
             mode=self.mode, main_years=list(self.glob_mapping["Years"]["Year"])
         )
-
 
         for key, value in self.glob_mapping.items():
             check_table_name(
@@ -286,9 +285,9 @@ class ReadSets:
         """
 
         if len(self.regions) > 1:
-            
-            # Create the columns of inter-regional links as a multi-index of the 
-            #pairs of regions and the transmitted carriers
+
+            # Create the columns of inter-regional links as a multi-index of the
+            # pairs of regions and the transmitted carriers
             indexer = pd.MultiIndex.from_product(
                 [self.lines_list, self.glob_mapping["Carriers_glob"]["Carrier"]],
                 names=["Line", "Transmitted Carrier"],
@@ -472,9 +471,9 @@ class ReadSets:
         add_indexer = {}
         conversion_plus_indexin = {}
         conversion_plus_indexout = {}
-        
+
         # Creates the columns of the carrier_ratio_in and carrier_ratio_out sheets
-        #by finding the conversion plus technologies and their input and output carriers
+        # by finding the conversion plus technologies and their input and output carriers
         for reg in self.regions:
 
             if "Conversion_plus" in self.Technologies[reg].keys():
@@ -547,10 +546,10 @@ class ReadSets:
                     [take_technologyout_, take_carrierout_],
                     names=["Tech_category", "Technology"],
                 )
-            
+
             # Creates the columns of the technology-specific parameter files
-            #based on the technology categories and the technologies within each
-            #caregory
+            # based on the technology categories and the technologies within each
+            # caregory
             dict_ = self.Technologies[reg]
             level1 = []
             level2 = []
@@ -947,7 +946,7 @@ class ReadSets:
                     regional_data.to_excel(writer, sheet_name=key)
 
     def _read_data(self, path):
-        
+
         """
         Reads the parameters with the given values by the user
         """
@@ -1074,4 +1073,3 @@ class ReadSets:
         else:
 
             self._mode = var
-
