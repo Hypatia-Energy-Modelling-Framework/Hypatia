@@ -45,7 +45,7 @@ After activating the environment, you can use *pip* to install hypatia as follow
 
 Most of the open source solvers that are supported by CVXPY (the optimization library used in Hypatia), will be installed
 automatically with the software. For the commercial solvers, you should follow the specific installation methods. 
-When Hypatia is installed, you can strat to use the embedded examples as quick start:
+When Hypatia is installed, you can strat to use the embedded examples as a quick start:
 
 .. code-block:: python
 
