@@ -169,7 +169,6 @@ class Model:
         model = BuildModel(sets=self._StrData)
 
         results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
-        self.an = results
         if results is not None:
 
             results = set_DataFrame(
