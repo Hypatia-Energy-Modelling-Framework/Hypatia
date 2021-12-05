@@ -572,7 +572,7 @@ class ReadSets:
 
                 indexer_reg_drop1[reg] = indexer_reg[reg]
 
-            if "Tranmission" in self.Technologies[reg].keys():
+            if "Transmission" in self.Technologies[reg].keys():
 
                 indexer_reg_drop2[reg] = indexer_reg_drop1[reg].drop(
                     "Transmission", level=0
