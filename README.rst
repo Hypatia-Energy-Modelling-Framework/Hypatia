@@ -37,15 +37,15 @@ the following line in *Anaconda Prompt*:
 
     conda activate hypatia
 
-After activateing the environment, you can use *pip* to install hypatia as follow:
+After activating the environment, you can use *pip* to install hypatia as follow:
 
 .. code-block:: bash
 
     pip install hypatia
 
-Most of the open source solvers that are supported by CVXPY as the optimization library used in Hypatia, will be installed
-automatically with the software. For the commercial solvers, you should follow the specific installation methods. When Hypatia is
-installed, you can use the embedded examples:
+Most of the open source solvers that are supported by CVXPY (the optimization library used in Hypatia), will be installed
+automatically with the software. For the commercial solvers, you should follow the specific installation methods. 
+When Hypatia is installed, you can strat to use the embedded examples as quick start:
 
 .. code-block:: python
 
