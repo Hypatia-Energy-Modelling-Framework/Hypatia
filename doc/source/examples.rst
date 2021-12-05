@@ -1,12 +1,13 @@
-#######################################
+*******************************
 Example Gallery
-#######################################
+*******************************
 
 Operational Mode Example
----------------------------
+=========================
 
+.. raw:: html
+    :file: tutorial1.html   
 
 Planning Mode Example
------------------------
+=========================
 
-here is a pdf file :download:`pdf <https://github.com/SESAM-Polimi/MARIO/blob/main/mario/test/IOT.xlsx>`

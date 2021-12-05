@@ -967,7 +967,6 @@ class Plotter:
                     name = self.configs["techs"].loc[t, "tech_name"]
                     color = self.configs["techs"].loc[t, "tech_color"]
 
-                    print(values)
                     fig.add_trace(
                         plot(
                             kind=kind,
