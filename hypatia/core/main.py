@@ -239,9 +239,14 @@ class Model:
             index=self._StrData.glob_mapping["Regions"]["Region"],
             columns=["region_name", "region_color",],
         )
+        
+        emissions_sheet = pd.DataFrame(
+            index=["CO2-equivalent"],
+            columns=["emission_unit",],
+        )
 
         with pd.ExcelWriter(path) as file:
-            for sheet in ["techs_sheet", "fuels_sheet", "regions_sheet"]:
+            for sheet in ["techs_sheet", "fuels_sheet", "regions_sheet","emissions_sheet"]:
                 eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
 
     def __str__(self):

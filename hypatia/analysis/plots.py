@@ -206,7 +206,7 @@ class Plotter:
     def _read_config_file(self, config):
         """Reads the config file and checks the consistency"""
         configs = {}
-        for sheet in ["Techs", "Fuels", "Regions"]:
+        for sheet in ["Techs", "Fuels", "Regions","Emissions"]:
             data = pd.read_excel(io=config, sheet_name=sheet, index_col=0, header=0,)
 
             if data.isnull().values.any():
@@ -949,6 +949,7 @@ class Plotter:
         """
         techs = self.configs["techs"]
         techs = techs[techs["tech_group"] == tech_group].index
+        unit = self.config['emissions'].loc['CO2-equivalent',"emission_unit"]
 
         if not len(techs):
             raise ValueError(f"No tech found for category {tech_group}.")
@@ -985,6 +986,7 @@ class Plotter:
         layout = {
             "title": "CO2 Equivalent",
             "xaxis": dict(tickmode="array", tickvals=values.index, dtick=1),
+            'yaxis_title' : unit
         }
 
         if not aggregate:
