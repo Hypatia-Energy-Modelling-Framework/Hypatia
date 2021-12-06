@@ -2,12 +2,9 @@
 Example Gallery
 *******************************
 
-Operational Mode Example
-=========================
 
-.. raw:: html
-    :file: tutorial1.html   
+.. toctree::
+    :maxdepth: 2
 
-Planning Mode Example
-=========================
-
+    example1
+    example2
