@@ -949,7 +949,7 @@ class Plotter:
         """
         techs = self.configs["techs"]
         techs = techs[techs["tech_group"] == tech_group].index
-        unit = self.config['emissions'].loc['CO2-equivalent',"emission_unit"]
+        unit = self.configs['emissions'].loc['CO2-equivalent',"emission_unit"]
 
         if not len(techs):
             raise ValueError(f"No tech found for category {tech_group}.")
