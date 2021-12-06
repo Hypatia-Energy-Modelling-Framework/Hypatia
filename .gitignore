@@ -9,6 +9,10 @@ __pycache__/
 # OS-specific
 .DS_Store
 
+# exmaples results
+exmaples/Utopia1_operation_multi_node/results/
+exmaples/Utopia2_planning_single_node_DN/results/
+
 # Editors
 *~
 \#*\#
