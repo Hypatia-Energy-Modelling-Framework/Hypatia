@@ -169,13 +169,14 @@ class Model:
         model = BuildModel(sets=self._StrData)
 
         results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
+        self.check = results
         if results is not None:
 
             results = set_DataFrame(
                 results=results,
                 regions=self._StrData.regions,
                 years=self._StrData.main_years,
-                time_fraction=self._StrData.timeslice_fraction,
+                time_fraction=self._StrData.time_steps,
                 glob_mapping=self._StrData.glob_mapping,
                 technologies=self._StrData.Technologies,
                 mode=self._StrData.mode,
@@ -239,14 +240,18 @@ class Model:
             index=self._StrData.glob_mapping["Regions"]["Region"],
             columns=["region_name", "region_color",],
         )
-        
+
         emissions_sheet = pd.DataFrame(
-            index=["CO2-equivalent"],
-            columns=["emission_unit",],
+            index=["CO2-equivalent"], columns=["emission_unit",],
         )
 
         with pd.ExcelWriter(path) as file:
-            for sheet in ["techs_sheet", "fuels_sheet", "regions_sheet","emissions_sheet"]:
+            for sheet in [
+                "techs_sheet",
+                "fuels_sheet",
+                "regions_sheet",
+                "emissions_sheet",
+            ]:
                 eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
 
     def __str__(self):

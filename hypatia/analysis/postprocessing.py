@@ -20,19 +20,25 @@ RESULT_MAP = {
         "index": "years",
         "var": "results.decommissioned_capacity",
     },
-    "decomisioning_cost": {"index": "years", "var": "results.cost_decom",},
     "total_capacity": {"index": "years", "var": "results.totalcapacity",},
     "fix_cost": {"index": "years", "var": "results.cost_fix",},
     "imports": {"index": "year_slice", "var": 'results.variables["line_import"]',},
     "exports": {"index": "year_slice", "var": 'results.variables["line_export"]',},
     "investment_cost": {"index": "years", "var": "results.cost_inv",},
     "fix_tax_cost": {"index": "years", "var": "results.cost_fix_tax"},
-    "fix_tax_subsidies": {"index": "years", "var": "results.cost_fix_sub"},
+    "fix_subsidies": {"index": "years", "var": "results.cost_fix_sub"},
     "emission_cost": {"index": "years", "var": "results.emission_cost"},
     "CO2_equivalent": {"index": "years", "var": "results.CO2_equivalent"},
+    "lines_total_capacity": {"index": "years", "var": "results.line_totalcapacity"},
+    "lines_decommissioned_capacity": {
+        "index": "years",
+        "var": "results.line_decommissioned_capacity",
+    },
+    "lines_investment_cost": {"index": "years", "var": "results.cost_inv_line"},
+    "lines_fix_cost": {"index": "years", "var": "results.cost_fix_line"},
+    "lines_variable_cost": {"index": "years", "var": "results.cost_variable_line"},
+    "lines_decomisioning_cost": {"index": "years", "var": "results.cost_decom_line"},
 }
-
-# --TODO-- Add the line vars
 
 
 import pandas as pd
@@ -57,9 +63,7 @@ def year_slice_index(
 ):
 
     try:
-        return pd.MultiIndex.from_product(
-            [years, list(range(1, len(time_fraction) + 1))],
-        )
+        return pd.MultiIndex.from_product([years, time_fraction],)
     except TypeError:
         return pd.MultiIndex.from_product([years, [1]])
 
@@ -83,29 +87,45 @@ def set_DataFrame(
             continue
         vars_frames[item] = {}
 
-        for region in regions:
-            vars_frames[item][region] = {}
+        if ("line" in item) and (item != "lines_variable_cost"):
+            for pair_reg, values in var.items():
 
-            for _type, values in var[region].items():
-                if (item == "use_by_tech") and (_type == "supply"):
-                    continue
-                if item in ["imports", "exports"]:
-                    columns = glob_mapping
-                if item in ["imports", "exports"]:
-                    columns = glob_mapping["Carriers_glob"]["Carrier"]
-                else:
-                    columns = technologies[region][_type]
                 if isinstance(values, np.ndarray):
                     values = values
                 elif isinstance(values, (pd.DataFrame, pd.Series)):
                     values = values.values
                 else:
                     values = values.value
-                frame = pd.DataFrame(
+
+                columns = glob_mapping["Carriers_glob"]["Carrier"]
+
+                vars_frames[item][pair_reg] = pd.DataFrame(
                     data=values, index=eval(info["index"]), columns=columns,
                 )
 
-                vars_frames[item][region][_type] = frame
+        else:
+            for region in regions:
+                vars_frames[item][region] = {}
+
+                for _type, values in var[region].items():
+                    if (item == "use_by_tech") and (_type == "supply"):
+                        continue
+                    if item in ["imports", "exports", "lines_variable_cost"]:
+                        columns = glob_mapping["Carriers_glob"]["Carrier"]
+                    else:
+                        columns = technologies[region][_type]
+                    if isinstance(values, np.ndarray):
+                        values = values
+                    elif isinstance(values, (pd.DataFrame, pd.Series)):
+                        values = values.values
+                    else:
+                        values = values.value
+                    frame = pd.DataFrame(
+                        data=values, index=eval(info["index"]), columns=columns,
+                    )
+
+                    vars_frames[item][region][_type] = frame
+
     vars_frames["demand"] = {
         rr: pd.DataFrame(
             data=results.demand[rr].values,

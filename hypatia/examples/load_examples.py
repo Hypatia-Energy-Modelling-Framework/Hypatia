@@ -4,6 +4,7 @@ and example download.
 """
 
 from hypatia.core.main import Model
+from hypatia.analysis.plots import Plotter
 import os
 import shutil
 
@@ -44,6 +45,9 @@ def load_example(example):
 
         # you can run the model and see the results
         model.run(solver='gurobi',verbose=True)
+
+        # To load the plots object
+        plots = model.load_plots()
     """
     example = example.title()
     examples = ["Planning", "Operation"]
@@ -53,6 +57,10 @@ def load_example(example):
     model = Model(path=f"{path}/{example}/sets", mode=example)
     model.read_input_data(path=f"{path}/{example}/parameters")
     model.description = DESCRIPTION[example]
+
+    config_path = f"{path}/{example}/config.xlsx"
+    hourly = True if example == "Operation" else False
+    model.load_plots = lambda: Plotter(model, config_path, hourly)
 
     return model
 
