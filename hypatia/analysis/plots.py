@@ -4,9 +4,9 @@ This module contains the functions and the class for
 result visualization of hypatia model
 """
 
-from hypatia.core.main import Model
 from copy import deepcopy
 import pandas as pd
+import numpy as np
 from plotly import graph_objs as go
 from plotly.subplots import make_subplots
 import plotly.offline as pltly
@@ -62,9 +62,25 @@ def plot(kind, **properties):
     if kind == "bar":
         return go.Bar(**properties)
     elif kind == "area":
+        properties["line"] = dict(width=0)
         properties["mode"] = "lines"
         properties["stackgroup"] = "one"
-        properties["line"] = dict(width=0)
+
+        y = properties["y"]
+
+        if np.any(y < 0):
+            y_pos = y.copy()
+            y_pos[y_pos < 0] = 0
+            properties["y"] = y_pos
+            fig = go.Scatter(**properties)
+
+            y_neg = y.copy()
+            y_neg[y_neg > 0] = 0
+            properties["stackgroup"] = "two"
+            properties["y"] = y_neg
+            fig = go.Scatter(**properties)
+
+            return fig
 
         fig = go.Scatter(**properties)
 
@@ -112,6 +128,12 @@ def visible(step_index, aggregate):
     return False
 
 
+def str2ls(inp):
+    if isinstance(inp, str):
+        return [inp]
+    return inp
+
+
 class Plotter:
 
     """A Plotting tool for hypatia"""
@@ -133,10 +155,11 @@ class Plotter:
 
         """
 
-        if isinstance(results, Model):
-            self._init_from_object(results)
-        elif isinstance(results, str):
+        if isinstance(results, str):
             self._init_from_csv(results)
+        else:
+            self._init_from_object(results)
+
         self._read_config_file(config)
         self._hourly = hourly_resolution
 
@@ -177,7 +200,7 @@ class Plotter:
         years = results._StrData.main_years
         _years = results._StrData.glob_mapping["Years"]
         years = _years[_years["Year"].isin(years)]["Year_name"]
-        time_fraction = results._StrData.timeslice_fraction
+        time_fraction = results._StrData.time_steps
         year_slice = year_slice_index(years, time_fraction)
 
         for item in ["tech_residual_cap", "carrier_ratio_in", "carrier_ratio_out"]:
@@ -206,7 +229,7 @@ class Plotter:
     def _read_config_file(self, config):
         """Reads the config file and checks the consistency"""
         configs = {}
-        for sheet in ["Techs", "Fuels", "Regions","Emissions"]:
+        for sheet in ["Techs", "Fuels", "Regions", "Emissions"]:
             data = pd.read_excel(io=config, sheet_name=sheet, index_col=0, header=0,)
 
             if data.isnull().values.any():
@@ -224,7 +247,7 @@ class Plotter:
             units = [self.configs[_set].loc[item, level]]
         if len(units) != 1:
             raise Exception(
-                "items with different units cant be plotted."
+                "items with different units cant be plotted. "
                 f"items {item} have multiple units {units}."
             )
         return units[0]
@@ -232,8 +255,8 @@ class Plotter:
     def plot_use_by_technology(
         self,
         fuel_group,
-        regions,
         path,
+        regions="all",
         kind="bar",
         mode="updatemenus",
         aggregate=False,
@@ -246,7 +269,7 @@ class Plotter:
         fuel_group : str
             the name of the fuel group to be plotted based on value given in config file
 
-        regions : str
+        regions : str, Optional
             the regions to plot.
 
         path : str
@@ -259,9 +282,11 @@ class Plotter:
             the mode of plot when more than one region exists in
 
         """
+        if regions == "all":
+            regions = self.regions
 
         fuels = self.configs["fuels"]
-        fuels = fuels[fuels["fuel_group"] == fuel_group].index
+        fuels = fuels[fuels["fuel_group"].isin(str2ls(fuel_group))].index
 
         if not len(fuels):
             raise ValueError("No fuel found for given category .")
@@ -334,8 +359,39 @@ class Plotter:
                         )
 
                         legends.add(tt)
-                if category in "Cnversion_plus":
-                    print("specific attention needed.")
+                if category == "Conversion_plus":
+
+                    for tt, values in df.iteritems():
+
+                        if tt not in carrier_tech:
+                            continue
+
+                        ratio = self.data["carrier_ratio_in"][region].loc[
+                            :, (tt, slice(None))
+                        ]
+
+                        for cols, ratios in ratio.iteritems():
+                            if cols[1] in fuels:
+
+                                name = self.configs["techs"].loc[tt, "tech_name"]
+                                color = self.configs["techs"].loc[tt, "tech_color"]
+
+                                to_plot = (
+                                    (values * ratios).groupby(level=0, sort=False).sum()
+                                )
+                                fig.add_trace(
+                                    plot(
+                                        kind=kind,
+                                        x=to_plot.index,
+                                        y=to_plot.values,
+                                        name=name,
+                                        marker_color=color,
+                                        visible=visible(step_index, aggregate),
+                                        showlegend=False if tt in legends else True,
+                                    )
+                                )
+                                legends.add(tt)
+
             counter.append(
                 (self.configs["regions"].loc[region, "region_name"], len(fig.data))
             )
@@ -355,7 +411,7 @@ class Plotter:
         self,
         path,
         tech_group,
-        regions,
+        regions="all",
         kind="bar",
         cummulative=False,
         mode="updatemenus",
@@ -386,8 +442,10 @@ class Plotter:
 
         self._is_allowed("new_capacity")
 
+        if regions == "all":
+            regions = self.regions
         techs = self.configs["techs"]
-        techs = techs[techs["tech_group"] == tech_group].index
+        techs = techs[techs["tech_group"].isin(str2ls(tech_group))].index
 
         if not len(techs):
             raise ValueError(f"No tech found for category {tech_group}.")
@@ -445,7 +503,7 @@ class Plotter:
         self,
         path,
         tech_group,
-        regions,
+        regions="all",
         kind="bar",
         decom_cap=True,
         mode="updatemenus",
@@ -478,7 +536,10 @@ class Plotter:
         except ValueError:
             decom_cap = False
         techs = self.configs["techs"]
-        techs = techs[techs["tech_group"] == tech_group].index
+        techs = techs[techs["tech_group"].isin(str2ls(tech_group))].index
+
+        if regions == "all":
+            regions = self.regions
 
         if not len(techs):
             raise ValueError(f"No tech found for category {tech_group}.")
@@ -606,8 +667,8 @@ class Plotter:
     def plot_prod_by_tech(
         self,
         tech_group,
-        regions,
         path,
+        regions="all",
         kind="bar",
         mode="updatemenus",
         aggregate=False,
@@ -629,8 +690,11 @@ class Plotter:
             Defines the path to save the file with the extension of the file
         """
 
+        if regions == "all":
+            regions = self.regions
+
         techs = self.configs["techs"]
-        techs = techs[techs["tech_group"] == tech_group].index
+        techs = techs[techs["tech_group"].isin(str2ls(tech_group))].index
 
         if not len(techs):
             raise ValueError(f"No tech found for category {tech_group}.")
@@ -692,7 +756,7 @@ class Plotter:
         path,
         years,
         fuel_group,
-        regions,
+        regions="all",
         trade=True,
         mode="updatemenus",
         aggregate=False,
@@ -716,7 +780,10 @@ class Plotter:
         """
         aggregate = False
         fuels = self.configs["fuels"]
-        fuels = fuels[fuels["fuel_group"] == fuel_group].index
+        fuels = fuels[fuels["fuel_group"].isin(str2ls(fuel_group))].index
+
+        if regions == "all":
+            regions = self.regions
 
         if not len(fuels):
             raise ValueError(f"No fuel found for category {fuel_group}.")
@@ -760,7 +827,7 @@ class Plotter:
 
             for category, df in self.data["production_by_tech"][region].items():
 
-                if category == "Transmission":
+                if category in ["Transmission", "Storage"]:
                     continue
                 sliced_techs = get_data(
                     self.sets[region]["Technologies"].loc[category, "Technology"]
@@ -881,7 +948,7 @@ class Plotter:
                         labels.append(self.configs["techs"].loc[tt, "tech_name"])
                         colors.append(self.configs["techs"].loc[tt, "tech_color"])
                         consumption.loc[tt] = values
-                elif category in "Conversion_plus":
+                elif category == "Conversion_plus":
 
                     for tt, values in df.loc[years, :].iteritems():
 
@@ -924,8 +991,8 @@ class Plotter:
     def plot_emissions(
         self,
         path,
-        regions,
         tech_group,
+        regions="all",
         kind="bar",
         mode="updatemenus",
         aggregate=False,
@@ -948,8 +1015,11 @@ class Plotter:
             If True will aggregated the regions into one singel region. The default is False.
         """
         techs = self.configs["techs"]
-        techs = techs[techs["tech_group"] == tech_group].index
-        unit = self.configs['emissions'].loc['CO2-equivalent',"emission_unit"]
+        techs = techs[techs["tech_group"].isin(str2ls(tech_group))].index
+        unit = self.configs["emissions"].loc["CO2-equivalent", "emission_unit"]
+
+        if regions == "all":
+            regions = self.regions
 
         if not len(techs):
             raise ValueError(f"No tech found for category {tech_group}.")
@@ -986,7 +1056,7 @@ class Plotter:
         layout = {
             "title": "CO2 Equivalent",
             "xaxis": dict(tickmode="array", tickvals=values.index, dtick=1),
-            'yaxis_title' : unit
+            "yaxis_title": unit,
         }
 
         if not aggregate:
@@ -997,8 +1067,8 @@ class Plotter:
         self,
         path,
         tech_group,
-        regions,
         year,
+        regions="all",
         kind="area",
         freq="h",
         function="sum",
@@ -1039,12 +1109,17 @@ class Plotter:
 
         if not self._hourly:
             raise Exception("Is only applicapable with hourly resolution")
-        techs = self.configs["techs"]
-        techs = techs[techs["tech_group"] == tech_group].index
-        unit = self._take_units("techs", techs, "tech_production_unit")
 
+        techs = self.configs["techs"]
+        techs = techs[techs["tech_group"].isin(str2ls(tech_group))].index
         if not len(techs):
             raise ValueError(f"No tech found for category {tech_group}.")
+
+        unit = self._take_units("techs", techs, "tech_production_unit")
+
+        if regions == "all":
+            regions = self.regions
+
         tech_type = self.glob_mapping["techs"].loc[techs]["Tech_category"]
 
         fig = go.Figure()
@@ -1056,10 +1131,24 @@ class Plotter:
         for step_index, region in enumerate(regions):
             if not aggregate:
                 legends = set()
+
+            # add if there are some storages consumption
+            to_plots = []
             for tt in tech_type.unique():
+
                 if tt not in self.data["production_by_tech"][region]:
                     continue
-                to_plot = self.data["production_by_tech"][region][tt].loc[year].copy()
+
+                to_plots.append(
+                    self.data["production_by_tech"][region][tt].loc[year].copy()
+                )
+
+                if tt == "Storage":
+                    to_plots.append(
+                        -self.data["use_by_tech"][region][tt].loc[year].copy()
+                    )
+
+            for to_plot in to_plots:
 
                 # To avoid leap years,
                 time_index = pd.date_range(
@@ -1108,6 +1197,131 @@ class Plotter:
             "title": "Hourly production by technologies",
             "yaxis": {"title": unit},
         }
+        if not aggregate:
+            fig = set_steps(fig, counter, mode)
+        _plotter(fig=fig, layout=layout, path=path)
+
+    def plot_regional_costs(
+        self,
+        path,
+        regions="all",
+        stacked_by="techs",
+        aggregate=False,
+        mode="updatemenus",
+        exclude_tech_groups=[],
+        exclude_cost_items=[],
+    ):
+        """
+        
+
+        Parameters
+        ----------
+        path : str
+            The path to save the plot.
+        regions :  list[str], optional
+            regions to plot,. The default is "all".
+        stacked_by : str, optional
+            defines the stacking opttion. if techs, will stack techs. if items will stack to cost items. The default is "techs".
+        aggregate : boolean, optional
+            if True will aggregate the regions. The default is False.
+        mode : str, optional
+            defines the mode if multiple regions exists. The default is "updatemenus".
+        exclude_tech_groups : list[str], optional
+            the tech groupes to not plot. The default is [].
+        exclude_cost_items : list[str], optional
+            the cost items not to plot. The default is [].
+        """
+
+        cost_items = {
+            "fix_cost": {"name": "Fix Cost", "color": "red"},
+            "variable_cost": {"name": "Variable Cost", "color": "blue"},
+            "investment_cost": {"name": "Investment Cost", "color": "green"},
+            "decommissioning_cost": {"name": "Decommissioning Cost", "color": "yellow"},
+            "fix_tax_cost": {"name": "Fix Tax Cost", "color": "brown"},
+            "fix_subsidies": {"name": "Fix subsidies", "color": "khaki"},
+        }
+
+        techs = self.configs["techs"]
+        exclude_techs = techs[
+            techs["tech_group"].isin(str2ls(exclude_tech_groups))
+        ].index
+
+        if regions == "all":
+            regions = self.regions
+
+        fig = go.Figure()
+        counter = []
+        if aggregate:
+            legends = set()
+
+        for step_index, region in enumerate(regions):
+            if not aggregate:
+                legends = set()
+
+            for cost_item, info in cost_items.items():
+                if (cost_item not in self.data) or (cost_item in exclude_cost_items):
+                    continue
+
+                to_plot = pd.concat(list(self.data[cost_item][region].values()), axis=1)
+                if cost_item in ["fix_subsidies"]:
+                    to_plot = -to_plot
+
+                if stacked_by == "techs":
+
+                    for t, values in to_plot.iteritems():
+                        if t in exclude_techs:
+                            continue
+
+                        name = self.configs["techs"].loc[t, "tech_name"]
+                        color = self.configs["techs"].loc[t, "tech_color"]
+
+                        fig.add_trace(
+                            plot(
+                                kind="bar",
+                                name=name,
+                                x=[values.index, [info["name"]] * len(values)],
+                                y=values.values,
+                                marker_color=color,
+                                legendgroup=name,
+                                visible=visible(step_index, aggregate),
+                                showlegend=False if t in legends else True,
+                            )
+                        )
+
+                        legends.add(t)
+
+                elif stacked_by == "items":
+                    for t, values in to_plot.iteritems():
+                        if t in exclude_techs:
+                            continue
+                        name = info["name"]
+                        color = info["color"]
+                        tech_name = self.configs["techs"].loc[t, "tech_name"]
+
+                        fig.add_trace(
+                            plot(
+                                kind="bar",
+                                name=name,
+                                x=[values.index, [tech_name] * len(values)],
+                                y=values.values,
+                                marker_color=color,
+                                legendgroup=name,
+                                visible=visible(step_index, aggregate),
+                                showlegend=False if cost_item in legends else True,
+                            )
+                        )
+                        legends.add(cost_item)
+
+                else:
+                    raise ValueError(
+                        "acceptable stacked_by inputs are ['techs','items']"
+                    )
+
+            counter.append(
+                (self.configs["regions"].loc[region, "region_name"], len(fig.data))
+            )
+
+        layout = {"barmode": "relative"}
         if not aggregate:
             fig = set_steps(fig, counter, mode)
         _plotter(fig=fig, layout=layout, path=path)
