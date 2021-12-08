@@ -5,7 +5,7 @@ API Documentation
 .. currentmodule:: hypatia
 
 ****************
-Model Creation
+Model creation
 ****************
 
 .. autosummary::
