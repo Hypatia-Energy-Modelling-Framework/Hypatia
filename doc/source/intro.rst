@@ -4,10 +4,10 @@ Introduction
 
 What is Hypatia
 =========================================
-Hypatia is an energy system modelling framework written in the Objective Oriented
+Hypatia is an energy system modelling framework written in the objective oriented
 Python programming language. Contrary to most of the Python-based open-source energy and power
 system modelling frameworks that are using `Pyomo <https://pyomo.readthedocs.io/en/stable/>`_ for 
-solving the convex optimization problem, Hypatia is based on `CVXPY <https://www.cvxpy.org/>`_ domain-specific language 
+solving the optimization problem, Hypatia is based on `CVXPY <https://www.cvxpy.org/>`_ Domain-Specific Language 
 developed by [Diamond2016]_ . Hypatia can optimize both the hourly dispatch 
 and the annual capacity deployments of the energy system. Its final objective is 
 to minimize the total discounted cost of the system by considering all the required cost components 
@@ -31,7 +31,7 @@ in each of its optimization modes. In summery, Hypatia is designed with the foll
   starting from small-scale applications to the national and continental applications.
 
 * Allow to model the bilateral trade among any pairs of nodes through modelling the
-  cross border transmission links for all the represented energy carriers within the Reference Energy System
+  inter-regional transmission links for all the represented energy carriers within the Reference Energy System
 
 * Able to adopt arbitary resolutions in time for each modelling year,
   allowing to consider the full hourly variability of both demand and supply sides.
@@ -53,16 +53,16 @@ challenges of the modern energy system modelling frameworks that are shortly exp
 
 * **Dynamic annual investments on the energy system:** With the aim of
   exploring the possible evolution of the energy systems in the transition pathways,
-  the energy modeling frameworks need to cover the both operation and planning modes by simulateneously 
-  delivering the dynamic annual capacity expansions and full hourly dispatch of the energy systems. 
+  the energy modeling frameworks need to cover both the operation and planning modes by simulateneously 
+  delivering the required dynamic annual capacity expansions and full hourly dispatch of different technologies within the energy systems. 
   However, most of the existing models with high temporal resolution are falling
-  short of delivering the all the required annual investments in the long-term horizons and just
-  follow a snapshot approach for estimating the required new capacities of different technologies.
+  short of delivering all the required annual investments in the long-term horizons and just
+  follow a snapshot approach for estimating the required new capacities to be installed for the future growths in the final demand.
 
 
 * **Resolution in time:** On the other hand, most of the planning models are not computationally
   able to include fine temporal resolutions down to hourly timesteps within each modelling year
-  of the time horizon. Therefore, they my deliver inaccurate results due to missing the full variability
+  of the time horizon. Therefore, they may deliver inaccurate results due to missing the full variability
   of the both demand and supply sides of the energy system.
   
 * **Resolution in space:** The concept of spatial resolution contains not only the ability of
@@ -71,7 +71,7 @@ challenges of the modern energy system modelling frameworks that are shortly exp
   
 * **Sector coupling:** The interactions and synergies among different sectors of the energy system
   must be considered in the energy modelling frameworks by following a comprehensive technology definition
-  like in all the above mentioned models.
+  similar to all the above mentioned models.
     
 * **Transparency:** The concept of transparency and opennes has manifold aspects. The open science
   approach for an energy model is not only about publishing the governing structures and equations but also
@@ -85,9 +85,11 @@ challenges of the modern energy system modelling frameworks that are shortly exp
 Acknowledgement
 =========================================
 
-The development of Hypatia was not possible without the kind attention and help of Professor
-`Emanuela Colombo <https://www4.ceda.polimi.it/manifesti/manifesti/controller/ricerche/RicercaPerDocentiPublic.do?EVN_DIDATTICA=evento&k_doc=44891&lang=EN&aa=2014&tab_ricerca=1>`_.
-We are fully grateful for having the chance to work under supervison and would like to express our gratitude for her unwavering support.
+* The development of Hypatia was not possible without the kind attention and help of Professor
+  `Emanuela Colombo <https://www4.ceda.polimi.it/manifesti/manifesti/controller/ricerche/RicercaPerDocentiPublic.do?EVN_DIDATTICA=evento&k_doc=44891&lang=EN&aa=2014&tab_ricerca=1>`_.
+  We are fully grateful for having the chance to work under her supervison and would like to express our gratitude for her unwavering support.
+
+* We would also like to acknowledge `Steve Dimond <https://stevediamond.github.io/WWW/>`_ for his kind support and guide that allows us to better understand and use CVXPY for this framework
     
 License
 ========
