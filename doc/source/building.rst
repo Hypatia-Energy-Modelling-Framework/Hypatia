@@ -9,44 +9,16 @@ Building a model
 Building a model in hypatia is very simple and includes three main steps:
 
 #. Defining the **Reference Energy System (RES)**
-#. Filling the parameters of the model through a sets of excel file that can be generated automatically by the model
-#. Running the model after giving the parameters
+#. Providing the excel-based structural inputs 
+#. Providing the excel-based model parameters through a sets of excel files that can be generated automatically by the model
 
-In order to create a RES, you just need hypatia terminology to define the correct type of technology or energy carrier.
-The RES will be defined using a couple of excel files:
-
-* global.xlsx which contains the information about:
-
-    * Time horizon
-    * Time resolution
-    * Golabl technologies (within the whole spatial resolution) and their type
-    * Global energy carriers and their type
-    * Nodes or regions of the model
-
-* a couple of other excel files defined by the name of region that should contain informatio about:
-
-    * Available technologies in the region
-    * Available energy carriers in the region
-    * The carrier in and carrier out of any single technology in the region
-
-
-
-Time Horizon
--------------
-time horizon in hypatia defines the number of **Years** to be modeled. Every year in the time horizon is a point that model make the decisions on the
-expansion of the technologies. The acceptable time step for hypatia is one year.
-
-Time resolution
-----------------
-hypatia accpets any kind of user specified time resolution from yearly, seasonal, day and night, to hourly time resultion. The time resolution will be defined by defining the timeslices and the fraction
-of every timeslice in terms of number of hours in a year.
-
+To create the RES based on your model application, you just need the hypatia terminology for the correct representation of different technologies and energy carriers.
 
 Technology Definiton
 ---------------------
-hypatia uses a technology classification inspired by `Calliope <https://calliope.readthedocs.io/en/stable/index.html>`_ as follow:
+hypatia uses a technology classification inspired by `Calliope <https://calliope.readthedocs.io/en/stable/index.html>`_ as follows:
 
-.. list-table:: hypatia technology type terminology
+.. list-table:: The category of technologies in hypatia
    :widths: 25 50
    :header-rows: 1
 
