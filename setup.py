@@ -25,6 +25,7 @@ setup(
         "IPython >= 7.22.0",
         "cvxpy >= 1.1.15",
         "cvxopt >= 1.2.7",
+        "scipy >= 1.1.0",
     ],
     classifiers=[
         "Programming Language :: Python :: 3.7",
