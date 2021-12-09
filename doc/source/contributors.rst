@@ -7,8 +7,8 @@ The research activity of SESAM focuses on the use of mathematical models for the
 industrial ecology.
 
 
-* `Negar Namazifard  <https://www.linkedin.com/in/negarnamazifard/>`_ : Code development, code maintenance & functional design
-* `Mohammad Amin Tahavori <https://www.linkedin.com/in/mohammadamintahavori/>`_ : Code maintenance
+* `Negar Namazifard  <https://www.linkedin.com/in/negarnamazifard/>`_ : Conceptualization, Code development & Functional design
+* `Mohammad Amin Tahavori <https://www.linkedin.com/in/mohammadamintahavori/>`_ : Code maintenance and Functional design
 * `Emanuela Colombo <https://www4.ceda.polimi.it/manifesti/manifesti/controller/ricerche/RicercaPerDocentiPublic.do?EVN_DIDATTICA=evento&k_doc=44891&lang=EN&aa=2014&tab_ricerca=1>`_ : Scientific coordination
 
 
@@ -17,6 +17,6 @@ Communication, issues, bugs and contributions
 We use github for tracking bugs, issues and suggestions related to Hypatia. Any communications
 through email are welcomed.
 
-You may also follow us on social media like LinkedIn, Twitter or our official website to follow last news
+You may also follow us on social media like twitter or our official website to follow last news
 on Hypatia or our research. We are looking forward for future communications and contributions.
 
