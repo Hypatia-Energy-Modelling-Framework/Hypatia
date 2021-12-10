@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="hypatia",
+    name="hypatia_test",
     description=(
         "An Operation and Planning Energy System Modelling Framework in Python"
     ),
