@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="hypatia_test",
+    name="hypatia-py",
     description=(
         "An Operation and Planning Energy System Modelling Framework in Python"
     ),
@@ -11,7 +11,7 @@ setup(
     url="https://github.com/SESAM-Polimi/hypatia",
     author="Negar Namazifard",
     author_email="negarnamazifard@gmail.com",
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages(),
     license="Apache 2.0",
     python_requires=">.3.7.0",
@@ -36,7 +36,5 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: Python",
         "Topic :: Scientific/Engineering",
-        "Topic :: Energy Modelling",
-        "Topic :: Energy Transition",
     ],
 )
