@@ -47,7 +47,7 @@ Then, you can use *pip* to install hypatia as follow:
 
 .. code-block:: bash
 
-    pip install hypatia
+    pip install hypatia-py
 
 Most of the open source solvers that are supported by CVXPY (the optimization library used in Hypatia), will be installed
 automatically with the software. For the commercial solvers, you should follow the specific installation methods. 
