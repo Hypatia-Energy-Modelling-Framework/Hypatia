@@ -2,109 +2,159 @@
 Building and Running a Model
 ########################################
 
+.. role:: raw-html(raw)
+    :format: html
 
 Building a model
 ==================
 
-Building a model in hypatia is very simple and includes three main steps:
+Building a model in Hypatia is very simple and includes three main steps:
 
 #. Defining the **Reference Energy System (RES)**
-#. Filling the parameters of the model through a sets of excel file that can be generated automatically by the model
-#. Running the model after giving the parameters
-
-In order to create a RES, you just need hypatia terminology to define the correct type of technology or energy carrier.
-The RES will be defined using a couple of excel files:
-
-* global.xlsx which contains the information about:
-
-    * Time horizon
-    * Time resolution
-    * Golabl technologies (within the whole spatial resolution) and their type
-    * Global energy carriers and their type
-    * Nodes or regions of the model
-
-* a couple of other excel files defined by the name of region that should contain informatio about:
-
-    * Available technologies in the region
-    * Available energy carriers in the region
-    * The carrier in and carrier out of any single technology in the region
+#. Delivering the structural inputs (sets) to the model through a number of excel-based files
+#. Delivering the parameters (data) to the model through a number of excel-based files generated automatically by the model
 
 
+Reference Energy System (RES)
+------------------------------
+In order to create the RES based on your model application, you just need the Hypatia terminology to define the correct type of technologies and energy carriers.
 
-Time Horizon
--------------
-time horizon in hypatia defines the number of **Years** to be modeled. Every year in the time horizon is a point that model make the decisions on the
-expansion of the technologies. The acceptable time step for hypatia is one year.
+Technology categorization
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Hypatia uses a technology classification inspired by `Calliope <https://calliope.readthedocs.io/en/stable/index.html>`_ as follows:
 
-Time resolution
-----------------
-hypatia accpets any kind of user specified time resolution from yearly, seasonal, day and night, to hourly time resultion. The time resolution will be defined by defining the timeslices and the fraction
-of every timeslice in terms of number of hours in a year.
-
-
-Technology Definiton
----------------------
-hypatia uses a technology classification inspired by `Calliope <https://calliope.readthedocs.io/en/stable/index.html>`_ as follow:
-
-.. list-table:: hypatia technology type terminology
+.. list-table:: The technology categorization in Hypatia
    :widths: 25 50
    :header-rows: 1
 
-   * - Technoloy Type
+   * - Technoloy Category
      - Definition
    * - Supply
-     - Supplies an energy carrier without consuming any energy carrier within the RES
+     - Supplies an energy carrier to the system without consuming any other carriers
    * - Demand
-     - Only consumes an energy carrier in the RES
+     - Consumes and sinks an energy carrier from the energy system
    * - Transmission
-     - Transmit an energy carrier from the production point to the consumption point (local and cross border transmission)
+     - Transmits an energy carrier locally from a supply point to a demand point
    * - Conversion
-     - Supplies an energy carrier by converting (consuming) another energy carrier
+     - Converts an energy carrier to another
    * - Conversion_plus
-     - Supplies one/multiple energy carrier/s by converting (consuming) an/multiple energy carrier/s (such as CHP plants)
+     - Converts one/muliple energy carrier to one/multiple other carriers
+   * - Storage
+     - Stores and energy carrier and discharge it when it is required  
 
-Carriers Definiton
--------------------
-besides technology classifications, hypatia also considers different kinds of energy carriers as follow:
+.. note::
 
-.. list-table:: hypatia carrier type terminology
+   Currently, there is only the possibility of on-grid utility storage in the hourly resolution. Other types of storage for other temporal resolutions and
+   the possibility of connecting a storage facility to another technologies is still under development in the Hypatia framework and it will be available in the
+   next version release.
+
+.. note::
+
+   All the technologies in a Hypatia model can have only on carrier input and one carrier output except the technologies within the Conversion-plus category
+   which can have multiple carrier inputs and outputs.
+
+Carrier types
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+besides the technology classifications, hypatia also considers different kinds of energy carriers as follow:
+
+.. list-table:: Different carrier types in a hypatia model
    :widths: 25 50
    :header-rows: 1
 
    * - Carrier Type
      - Definition
    * - Resource
-     - The energy source extracted from nature and not processed such as sun or raw oil
+     - The energy source extracted from the nature and that are not still processed such as raw oil
    * - Intermediate
      - An energy carrier that can be consumed by **non-Demand** technologies
    * - Demand
      - An energy carrier that can be consumed by **Demand** technologies
 
-Regions
---------
-Every single region represents a site that can have multiple specified technologies and carriers of any kind. The regions can be connected through the transmission technologies for
-trading different carriers.
+.. note::
+
+  The Reference Energy System in a Hypatia model should always starts from Supply technologies (such as resource extraction technologies) and ends with Demand technologies
 
 
-Definiton of sets
-------------------
-The sets of the model will be defined through a couple of excel files and by using excel tables. The first excel file that defines global sets, should be named :guilabel:`&global.xlsx`.
-Within this file, following information should be defined:
+Definiton of the structural inputs (sets)
+-------------------------------------------
+The sets of the model must be defined through "n+1" number of excel files in different tables where "n" is the number of regions within the model.
+The first excel file defines the global sets and must be named as :guilabel:`&global.xlsx`.
+Following tables should be included within the global file:
 
-* Regions
-* Years
-* Technologies and Technology Category
-* Carriers and Carrier Type
-* Timeslices and Timeslice Fraction
+* **Regions:** Including all the regions within the model with the follwoing columns. The region in a hypatia model has a general definition and can include any geographical scale.
+  For example, if the user is modelling the whole world, each region can be the representative of each country or if they are modelling a specific country, each region can be the
+  representative of each province.
 
-When the :guilabel:`&global.xlsx` is prepared, for every single **Region**, a single excel file is required which has the same name of the region. For example, if model has a region called **utopia**,
-the file should be named :guilabel:`&utopia.xlsx`.
+  - **Region:** The region codes which are going to be used within source code
+  - **Region_name:** The main name of the regions
 
-For every single region, there is the need of defining following information:
+* **Years:** Including all the modelling years within the time horizon of the model with the following columns. The operation mode of the model accepts only one year, while
+  the planning mode acceptes multiple years with both short-term and long-term horizons.
 
-* Available technologies in the region
-* Available carriers in the region
-* Specifing the **Carrier_in** and **Carrier_out** for the technologies.
+  - **Years:** The year codes
+  - **Years_name:**. The main name of the years
+
+
+* **Technologies_glob:** Including all the technologies within all the regions of the model with following columns
+
+  - **Technology:** The technology codes
+  - **Tech_name:** The real name of the technologies
+  - **Tech_category:** The cargory of technologies
+
+
+* **Carriers_glob:** Including all the carriers within all the regions of the model with the follwowing columns:
+
+  - **Carrier:** The carrier codes
+  - **Carr_name:** The real name of the carriers
+  - **Carr_type:** The carrier types
+
+
+* **Timesteps:** Including all the time slices within each year of the model with the follwowing columns. The temporal resolution is completely arbitary and can differ based on the user goal,
+  from seasonal timeslices down to hourly resolutions in both the operation and planning modes.
+
+  - **Timeslice:** The ordered number of the timeslices
+  - **Timeslice_name:** The names of the timeslices
+  - **Timeslice_fraction:** The fraction each the timeslice to the length of the whole year
+
+
+When the :guilabel:`&global.xlsx` is prepared, for every single region, an excel file is required. The name of the regional files must be exactly similar to the region
+codes given in the :guilabel:`&global.xlsx` file. For example if "reg1" is given as the region code of the first region, the set file for this region
+should be named as :guilabel:`&reg1.xlsx`.
+
+For every single regional file, it is required to provide the following information:
+
+* **Technologies:** Including all the technologies within the RES of the specified region with following columns:
+
+  - **Technology:** The technology codes
+  - **Tech_name:** The real name of the technologies
+  - **Tech_category:** The cargory of technologies
+
+
+* **Carriers:** Including all the carriers within the RES of the specified region with the follwowing columns:
+
+  - **Carrier:** The carrier codes
+  - **Carr_name:** The real name of the carriers
+  - **Carr_type:** The carrier types
+
+
+* **Carrier_input:** Including the input carriers of different technologies with the follwowing columns:
+
+  - **Technology:** The technology codes
+  - **Carrier_in:** The input carrier
+
+
+* **Carrier_output:** Including the output carriers of different technologies with the follwowing columns:
+
+  - **Technology:** The technology codes
+  - **Carrier_out:** The output carrier
+
+
+.. note::
+
+  If there are similar technologies in various regions, their names must be identical in different regional set files 
+  and therefore, only one name as the representative of that technology in all the regions must be included in the “Technologies_glob” in the global set file.
+  For example, if there is Hydropower plant in some of the considered locations within the geographical coverage of the model, one single name such as “Hydro PP” 
+  must be considered in all the regional set files and this name should be brought only once in the “global” set file.
 
 .. note::
 
@@ -113,15 +163,15 @@ For every single region, there is the need of defining following information:
   * Conversion technologies accept only one Carrier_in and one Carrier_out
   * Conversion_plus technologies accept multiple Carrier_in and multiple Carrier_out
 
-When these excel files are ready, you can start creating your **Model** and debuging possile mistakes in the definition of sets.
-In order to initialize the model, you need to import the :guilabel:`&Model` class. For initializing the model, two inputs to the Model
-class are needed:
 
-#. path to the folder which sets files are
+When these excel files are ready, you can start creating your **Model** and debuging possile mistakes in the definition of sets.
+In order to initialize the model, you need to import the :guilabel:`&Model` class. Two inputs must be passed to the Model class for initializing the model:
+
+#. path to the folder where the sets files are located 
 #. the mode of the model:
 
-  * **Operational:** for operational analysis just for a single year
-  * **Planning:** for continues capacity expansion analysis
+  * **Operation:** for the operational analysis in one year
+  * **Planning:** for continuous capacity deployment analysis
 
 .. code-block:: python
 
@@ -141,10 +191,14 @@ In order to have a rapid look on the model sets, you can print the model:
 .. note::
   Planning mode is only implementable when the time horizon is just one year.
 
-When the sets are parsed successfully, the nexts step is to define the parameters for the model. Like sets, parameters should be prepared in a set of excel files. For every single region,
-the excle file should be called in a specific way. Assuming that model has one region called **utopia**,
-the file should be named :guilabel:`&parameters_utopia.xlsx`. Depending on the mode of the mode, different input parameters maybe required. Every parameter of a region should be specified in
-different sheets of the excel file. Following table represents different sheet names with a short description.
+When the sets are parsed successfully, the nexts step is to define the parameters for the model. Similar to the sets, parameters should be prepared in a set of excel files. The number
+of the parameter files which can be created by the model is "n+2" where "n" is the number of the given regions. These files are named as follows:
+
+* **parameters_connections.xlsx:** If a multi-node model model application is applied
+* **parameters_global.xlsx:** If a nulti-node model application is applied
+* **paramaters_{region_code}.xlsx:** For each region a parameter file will be created. These files are named based on the region codes that are given in the :guilabel:`&global.xlsx` set file.
+
+Each parameter file includes different sheets for different data. As an example, the following table includes different sheets the regional parameter files.
 
 .. list-table:: Parameters
    :widths: 20 25 15 20 20
@@ -241,8 +295,11 @@ different sheets of the excel file. Following table represents different sheet n
      - Time horizon * Timeslice
      - Planning/Operational
 
+.. note::
+  Please refer to the example gallery for a better understanding of the structure of both the set and parameter files.
 
-As the excel files are supposed to follow strict format and is not easy to create all the sheets, you may use :guilabel:`&create_data_excels` function to automatically gerneate all the excel files.
+
+Since the parameter excel files are supposed to follow strict format and it is not easy to create all the sheets, you may use :guilabel:`&create_data_excels` function to automatically gerneate all the excel files.
 Then, you can fill the excel files accordingly. For example, to save all the excel files in a directory called 'parameters':
 
 .. code-block:: python
@@ -251,10 +308,7 @@ Then, you can fill the excel files accordingly. For example, to save all the exc
     path = 'parameters'
   )
 
-In case that the model is multi region, an extra file will be needed (and will be created by the function) called :guilabel:`&parameters_connections.xlsx` which is specified for shaping the
-connections between the regions.
-
-When the files are filled, you can parse the data to the model by specifing the directory of the folder containing the excel files:
+When the files are filled, you can parse the data to the model by specifing the directory of the folder containing the filled excel files:
 
 .. code-block:: python
 

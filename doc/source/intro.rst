@@ -36,9 +36,6 @@ in each of its optimization modes. In summery, Hypatia is designed with the foll
 * Able to adopt arbitary resolutions in time for each modelling year,
   allowing to consider the full hourly variability of both demand and supply sides.
 
-* Compuationally affrodable in running large model applications due to its element-wise
-  matrix-based mathematical formulation
-
 * Have a fully transparent and open-source code, flexible to any possible future
   modification and integration
 
