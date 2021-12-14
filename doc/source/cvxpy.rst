@@ -4,19 +4,26 @@ Why CVXPY
 
 What is CVXPY
 ==============
-`CVXPY <https://www.cvxpy.org>`_ is Python-based modelling language for convex optimization problems.
-While, usually writing an optimization prblem needs to be in restrictive standard form required by
-solvers, CVXPY lets the modeller to express an optimization problem in a natural way that follows the math. More than that,
-CVXPY supports mixed-integer convest programs. More importantluy, CVXPY allows the modeller to **vectorize** the model that fasten the preprocessing of the problem
-for the solver. `Vectorized problems vs. scalar problems <https://github.com/cvxpy/cvxpy/blob/master/examples/notebooks/building_models_with_fast_compile_times.ipynb>`_,
-avoids multiple nested **for loops** in the preprocessing which for large problems become extremely time consuming.
+`CVXPY <https://www.cvxpy.org>`_ is Python-based domain-specific language (DSL) for convex optimization problems.
+To use a convex optimization problem in an application, it is needed to develop a costum solver or convert the problem into a standard form
+required by the solvers. An alternative is to use a DSL like CVXPY that lets the modeller to express an optimization problem in a natural way that follows the math.
+CVXPY helped us to add a lot if potentials to the Hypatia framework. One of the most salient ones is the possibility to include two dimensional variables and 
+parameters in the model which allow us to construct element-wise vector and matrix-based equations. To be more specific, rather than using scalar-based
+mathematical equations that are mostly used in Pyomo-based energy optimization models, Hypatia uses element-wise matrix-based equations which help to
+bypass most of the rquired for loops on some of the structural inputs (sets) of the energy model such as the modelling years, technologies and more
+importantly the timesteps defined within each year of the time horizon. Therefore it is possible to say that "vectorized" problems are less time consuming
+compared to "scalar-based" problems in terms of building and passing the model to the solver.
 
-In this document, we tested the performance of CVXPY vs. `Pyomo <https://github.com/Pyomo/pyomo>`_ as the most popular Python optimization library for energy modellers.
-In order to test the performance in terms of time to build a unique optimization problem, we create a dummy multi node energy model with hourly time resolution and capacity expansion in
-Pyomo and CVXPY. We set the iteration limit of the solver equal to 1 to avoid the solver, solving the problem. As a result, we will test only the performance of the two libraries
-in terms of generating and loading the problem to the solver. Moreover, through this example, we show how defining a problem in CVXPY is close to mathematical language of the problem.
+In this document, we compare the performance of CVXPY vs. `Pyomo <https://github.com/Pyomo/pyomo>`_ that is the most popular Python optimization library for the energy modellers.
+To test the performance of these two optimization libraries in terms of the required time to build a unique model, A dummy two-node energy system application with hourly time resolution and annual capacity expansion is created in
+both Pyomo and CVXPY langiages. We configure the solvers to terminate immidiately after one single iteration to avoid considering the time required to solve the problem and, therefore, only the time required to 
+generate and load the problem to the solver has been investigated. Moreover, through this example, one can also understand how defining an optimization problem in CVXPY is more convinient and transparent than in Pyomo. Tnis feature of CVXPY helps energy modellers without professional coding
+skills understand the models and contribute to the development easier.
 
-The data that are used for the test are available in github along with the jupyter notebook.
+
+.. note::
+
+    The data of the test along with its jupyter notebook script are available in GitHub.
 
 Pyomo Version
 ---------------
@@ -179,10 +186,7 @@ CVXPY Version
 
 Results
 ---------
-Testing the two models for 2 nodes and changing the number of years, CVXPY always show a better performance in terms of time needed
-to generate the model. While for small problems, the difference is quiete negligible, for big problems, the difference is so considerable as shown
-in the figure. Moreover, writing an optimization problem in CVXPY is usually more transparent that can help energy modellers without professional coding
-skills understand the models and contribute to the development easier.
+As it is illustrated below, CVXPY always show a better performance in terms of time needed to pass the model to the solver. While for short time horizons, the difference is quite negligible, for long time horizon, the difference is so considerable.
 
 .. image:: _static/test_speed.png
    :align: center

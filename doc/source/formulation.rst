@@ -6,8 +6,8 @@ Mathematical Formulation
 
 Objective function
 ===================
-The objective function equation of the planning mode is the sum of all the regional
-and cross-border transmission link costs discounted to the reference year.
+The objective function equation of the planning mode is the sum of all the regional costs
+in addition to the inter-regional tranmission link costs discounted to the reference year.
 While, in the operational mode, the objective function is just the sum of the
 fixed and variable costs with their related taxes within the modeled year.
 
@@ -83,7 +83,7 @@ Total Objective Function
 
       \begin{eqnarray}
          min: Eq\_{obj} = \sum_{reg} Reg\_{obj}(reg) + Exchange\_{links}\_{obj}
-         \forll reg \in regions
+         \;\;\; \forall reg \in regions
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -102,7 +102,7 @@ Regional Objective Function
          \bigg[FixCost(reg,tech)+
          VarCost(reg,tech)+FixTax(reg,tech)-
          FixSub(reg,tech)+CO2Cost(reg,tech)\bigg]
-         \forall reg \in regions , \forall tech \in technologies
+         \;\;\; \forall reg \in regions , \forall tech \in technologies
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -120,7 +120,7 @@ Trades Objective Function
          Exchange\_{links}\_{obj} = \sum_{link}
          \bigg[FixCost\_{link}(link)+VarCost\_{link}(link)+
          FixTax\_{link}(link)-FixSub\_{link}(link)\bigg]
-         \forall link \in links
+         \;\;\; \forall link \in links
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -138,8 +138,9 @@ by the related taxes considered for each unit of investment or fixed cost
 of the technologies. Carbon taxes are also included to be applied for the
 carbon-intensive technologies. Alongside the related costs of technologies,
 some revenues are considered in the objective function with a negative sign.
-These revenues are including subsidies that are applied to some technologies
-based on the national policies and the salvage values.
+These revenues are including the salvage values on some of the investments where the operational 
+lifetime of the technology lasts longer than the end of the modelling time horizon
+and subsidies that are applied to some technologies based on the national policies.
 The Hypatia model considers the economic life time of the technologies in the
 investment cost calculation. Therefore, each required investment in a specific
 year “y” is divided into a stream of annuities during several years
@@ -150,11 +151,14 @@ economic lifetime, depreciation rate and time value of money.
 
    In Hypatia, the inter-regional links are modeled as technologies. Therefore all the below
    equations for calculating the objective function cost components and intermediate
-   variables except all the taxes and subsidies have been correspondingly written for the links.
+   variables except the taxes and subsidies have been correspondingly written in the source code
+   for the transmission links.
 
 
 Investment Cost
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The cost required for the new installed capacity of the technologies.
 
 :raw-html:`<br />`
 
@@ -179,8 +183,6 @@ Investment Cost
          \boldsymbol{Inv\_{present}}(reg,tech,year) =
          \boldsymbol{NewCapcity}(reg,tech,year)
          \times INV(reg,tech,year)
-         \forall reg \in regions , \forall tech \in technologies ,
-         \forall year \in years
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -192,7 +194,7 @@ Investment Cost
 
       \begin{eqnarray}
          Depreciation(reg,tech) = \frac{r(1+r)^n}{(1+r)^n-1}
-         \text{where:} \; n = Economic\_{lifetime}(reg,tech) \;\;
+         \;\;\; \text{where:} \; n = Economic\_{lifetime}(reg,tech) \;\;
          r = Interest\_{rate}(reg,tech)
       \end{eqnarray}
 
@@ -207,8 +209,6 @@ Investment Cost
          \boldsymbol{Annuity}(reg,tech,year_k) =
          Depreciation(reg,tech) \times
          \boldsymbol{Inv\_{present}}(reg,tech,year)
-         \forall reg \in regions , \forall tech \in technologies ,
-         \forall year \in years
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -221,7 +221,7 @@ Investment Cost
       \begin{eqnarray}
          \boldsymbol{InvCost}(reg,tech,y) =
          \sum_{year_k=year+1}^{year+Economic\_{lifetime}+1}
-         (1+Discount\_{rate})^{year-year_k} \times \boldsymbol{annuity}(reg,tech,year_k)	\forall reg \in regions , \forall tech \in technologies , \forall year \in years
+         (1+Discount\_{rate})^{year-year_k} \times \boldsymbol{annuity}(reg,tech,year_k)
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -230,8 +230,14 @@ Investment Cost
 Investment Salvage Value
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The revenues calculated at the end of the time horizon for the unused period of the investments whose technical liftime exceeds 
+the modelling horizon.
+
 Fixed Cost
 ^^^^^^^^^^^^
+
+The fixed annual operation and maintenance cost based on the total installed capacity of each technology.
+:raw-html:`<br />`
 
 .. container:: scrolling-wrapper
 
@@ -241,7 +247,7 @@ Fixed Cost
       \begin{eqnarray}
          \boldsymbol{FixCost}(reg,tech,year) =
          \boldsymbol{TotalCapacity}(reg,tech,year)
-         \times F\_{OM}(reg,tech,year)	\forall reg \in regions ,
+         \times F\_{OM}(reg,tech,year)	\;\;\; \forall reg \in regions ,
          \forall tech \in technologies , \forall year \in years
       \end{eqnarray}
 
@@ -250,6 +256,9 @@ Fixed Cost
 
 Taxes & Subsidies
 ^^^^^^^^^^^^^^^^^^
+
+Taxes and incentives calculated based on the total investment and fixed cost of each technology.
+:raw-html:`<br />`
 
 .. container:: scrolling-wrapper
 
@@ -303,6 +312,9 @@ Taxes & Subsidies
 Decommissioning Cost
 ^^^^^^^^^^^^^^^^^^^^^
 
+Cost of dismantling the new capacities installed in the vintage years of the modelling horizon.
+:raw-html:`<br />`
+
 .. container:: scrolling-wrapper
 
    .. math::
@@ -312,7 +324,7 @@ Decommissioning Cost
          \boldsymbol{DecomCost}(reg,tech,year) =
          \boldsymbol{DecomCap}(reg,tech,year)
          \times Decom\_{cost}(reg,tech,year)
-         \forall reg \in regions , \forall tech \in technologies ,
+         \;\;\; \forall reg \in regions , \forall tech \in technologies ,
          \forall year \in years
       \end{eqnarray}
 
@@ -321,6 +333,8 @@ Decommissioning Cost
 
 Variable Cost
 ^^^^^^^^^^^^^^^^^^^^^
+Annual variable operation and maintenance costs including the cost of consumed fuels.
+:raw-html:`<br />`
 
 .. container:: scrolling-wrapper
 
@@ -330,7 +344,7 @@ Variable Cost
       \begin{eqnarray}
          \boldsymbol{VarCost}(reg,tech,year) =
          \boldsymbol{Production\_{annual}}(reg,tech,year)
-         \times V\_{OM}(reg,tech,year)	\forall reg \in regions ,
+         \times V\_{OM}(reg,tech,year)	\;\;\; \forall reg \in regions ,
          \forall tech \in technologies , \forall year \in years
       \end{eqnarray}
 
@@ -339,6 +353,9 @@ Variable Cost
 
 Carbon Tax
 ^^^^^^^^^^^^^^^^^^^^^
+
+The taxed dedicated to the amount of CO2 emitted by each technology.
+:raw-html:`<br />`
 
 .. container:: scrolling-wrapper
 
@@ -349,7 +366,7 @@ Carbon Tax
          \boldsymbol{CO2Cost}(reg,tech,year) =
          \boldsymbol{Production\_{annual}}(reg,tech,year)
          \times Specific\_{emission}(reg,tech,year)
-         \times Carbon\_{tax}(reg,tech,year)	\forall reg
+         \times Carbon\_{tax}(reg,tech,year)	\;\;\; \forall reg
          \in regions , \forall tech \in technologies ,
          \forall year \in years
       \end{eqnarray}
@@ -370,10 +387,10 @@ Accumulated New Installed Capacity
 
       \begin{eqnarray}
          \boldsymbol{Accumulated\_{NewCapacity}}(reg,tech,year) =
-         \sum_{vintage_year} \boldsymbol{NewCapacity}(reg,tech,vintage_year)
-         \forall reg \in regions , \forall tech \in technologies ,
+         \sum_{vintage\_{year}} \boldsymbol{NewCapacity}(reg,tech,vintage\_{year})
+          \;\;\; \forall reg \in regions , \forall tech \in technologies ,
          \forall year \in years
-         if \; year - vintage\_{year} \leq Tech\_{lifetime}(reg,tech)
+         \;\;\; if \; year - vintage\_{year} \leq Tech\_{lifetime}(reg,tech)
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -390,7 +407,7 @@ Total Installed Capacity
       \begin{eqnarray}
          \boldsymbol{TotalCapacity}(reg,tech,year) =
          \boldsymbol{Accumulated\_{NewCapacity}}(reg,tech,year) +
-         Residual\_{capacity}(reg,tech,year)	\forall reg \in regions ,
+         Residual\_{capacity}(reg,tech,year)	\;\;\; \forall reg \in regions ,
          \forall tech \in technologies , \forall year \in years
       \end{eqnarray}
 
@@ -410,9 +427,9 @@ new capacities in the vintage years of the horizon.
 
       \begin{eqnarray}
          \boldsymbol{DecomCapacity}(reg,tech,y) =
-         \sum_{vintage_year} \boldsymbol{NewCapacity}(reg,tech,vintage_year)
-         \forall reg \in regions , \forall tech \in technologies ,
-         \forall year \in years	if \; year - vintage\_{year}
+         \sum_{vintage\_{year}} \boldsymbol{NewCapacity}(reg,tech,vintage\_{year})
+         \;\;\; \forall reg \in regions , \forall tech \in technologies ,
+         \forall year \in years	\;\;\; if \; year - vintage\_{year}
          \geq Tech\_{lifetime}(reg,tech)
       \end{eqnarray}
 
@@ -421,6 +438,9 @@ new capacities in the vintage years of the horizon.
 
 Emission
 ----------
+Calculates the annual CO2 emission based on the annual production of each technology
+and the exogenous specific emission given by the user per unit of output activity.
+:raw-html:`<br />`
 
 .. container:: scrolling-wrapper
 
@@ -431,7 +451,7 @@ Emission
          \boldsymbol{CO2\_{equivalent}}(reg,tech,year) =
          \boldsymbol{Production\_{annual}}(reg,tech,year)
          \times Specific\_{emission}(reg,tech,year)
-         \forall reg \in regions , \forall tech \in technologies ,
+         \;\;\; \forall reg \in regions , \forall tech \in technologies ,
          \forall year \in years
       \end{eqnarray}
 
@@ -468,7 +488,7 @@ Guarantees the balance between the supply and demand sides of the energy system.
 
       \begin{eqnarray}
          \sum_{tech \notin tech\_{Demand}}
-         \boldsymbol{Production}(reg,carr,tech,y,ts) +
+         \boldsymbol{Production}(reg,carr,tech,year,ts) +
          \sum_{REG} \boldsymbol{Imports}(reg,carr,REG,year,ts)
          \geq \sum_{tech \notin tech\_{Demand} \& tech\_{Supply}}
          \boldsymbol{Use}(reg,carr,tech,year,ts) + \sum_{REG}
@@ -480,9 +500,10 @@ Guarantees the balance between the supply and demand sides of the energy system.
 
 .. note::
 
-   All the technologies within Hypatia have one input carrier or one output
-   carrier except for the conversion plus techs where the production and use of
-   each carrier must be calculated from the following eaquation:
+   All the technologies within Hypatia have one input carrier or/and one output
+   carrier except for the conversion-plus technologies whose the production and use of
+   each input and output carrier must be calculated from the following equations based on
+   the given input and output carrier ratios given by the user:
 
 :raw-html:`<br />`
 
@@ -492,9 +513,9 @@ Guarantees the balance between the supply and demand sides of the energy system.
       :nowrap:
 
       \begin{eqnarray}
-         \boldsymbol{Production}(reg,carr,tech,y,ts) =
-         \boldsymbol{Production\_{total}}(reg,tech,y,ts)
-         \time Carrier\_{ratio}\_{output}(reg,carr,tech,y,ts)
+         \boldsymbol{Production}(reg,carr,tech,year,ts) =
+         \boldsymbol{Production\_{total}}(reg,tech,year,ts)
+         \times Carrier\_{ratio}\_{output}(reg,carr,tech,year,ts)
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -505,9 +526,9 @@ Guarantees the balance between the supply and demand sides of the energy system.
       :nowrap:
 
       \begin{eqnarray}
-         \boldsymbol{Use}(reg,carr,tech,y,ts) =
-         \boldsymbol{Use\_{total}}(reg,tech,y,ts)
-         \time Carrier\_{ratio}\_{input}(reg,carr,tech,y,ts)
+         \boldsymbol{Use}(reg,carr,tech,year,ts) =
+         \boldsymbol{Use\_{total}}(reg,tech,year,ts)
+         \times Carrier\_{ratio}\_{input}(reg,carr,tech,year,ts)
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -518,7 +539,6 @@ Trade balance
 
 Ensures that the amounts of imports and exports among any pair of
 regions are completely balanced.
-
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -529,7 +549,7 @@ regions are completely balanced.
       \begin{eqnarray}
          \boldsymbol{Imports}(reg,carr,REG,year,ts) =
          \boldsymbol{Exports}(REG,carr,reg,year,ts)
-         \forall reg \& REG \in regions ,
+         \;\;\; \forall reg \& REG \in regions ,
          \forall carr \in carriers ,
          \forall year \in years ,
          \forall ts \in timesteps
@@ -542,8 +562,7 @@ Resource & Technology Availability
 -----------------------------------
 
 Ensures that the production of each technology does not exceed its
-available activity based technology capacity factor and resource capacity factor.
-
+available activity based both the technology capacity factor and resource capacity factor.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -556,7 +575,7 @@ available activity based technology capacity factor and resource capacity factor
          \leq \boldsymbol{TotalCapacity}(reg,tech,year)
          \times Resource\_{capacity}\_{factor}(reg,tech,year,ts)
          \times Annual\_{production}\_{per}\_{unitcapacity}(reg,tech)
-         \times Timeslice\_{fraction}(ts)	\forall reg \in regions ,
+         \times Timeslice\_{fraction}(ts)	\;\;\; \forall reg \in regions ,
          \forall carr \in carriers , \forall tech \in technologies,
          \forall year \in years , \forall ts \in timesteps
       \end{eqnarray}
@@ -575,7 +594,7 @@ available activity based technology capacity factor and resource capacity factor
          \times Resource\_{capacity}\_{factor}(reg,tech,year,ts)
          \times Annual\_{production}\_{per}\_{unitcapacity}(reg,tech)
          \times Timeslice\_{fraction}(ts)\bigg]	\forall reg \in regions ,
-         \forall carr \in carriers , \forall tech \in technologies,
+         \;\;\; \forall carr \in carriers , \forall tech \in technologies,
          \forall year \in years , \forall ts \in timesteps
       \end{eqnarray}
 
@@ -588,8 +607,7 @@ Capacity
 Maximum & Minimum Regional Total Capacity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Maximum and minimum allowed annual total installed capacity for each
-technology in each region.
-
+technology in each region based on the defined scenario.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -632,8 +650,8 @@ technology in each region.
 
 Maximum & Minimum Regional New Capacity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Maximum and minimum allowed annual new installed capacity for each technology in each region.
-
+Maximum and minimum allowed annual new installed capacity for each technology in each region
+based on the defined scenario.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -672,8 +690,8 @@ Maximum and minimum allowed annual new installed capacity for each technology in
 
 Maximum & Minimum Overall Total Capacity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Maximum and minimum allowed annual aggregated total installed capacity for each technology over all the regions.
-
+Maximum and minimum allowed annual aggregated total installed capacity for each technology over all the regions
+based on the defined scenario.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -713,8 +731,8 @@ Maximum and minimum allowed annual aggregated total installed capacity for each 
 
 Maximum & Minimum Overall New Capacity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Maximum and minimum allowed annual aggregated new installed capacity for each technology over all the regions.
-
+Maximum and minimum allowed annual aggregated new installed capacity for each technology over all the regions
+based on the defined scenario.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -757,8 +775,8 @@ Activity
 
 Maximum & Minimum Regional Production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Maximum and minimum allowed production of each technology in each region.
-
+Maximum and minimum allowed production of each technology in each region
+based on the defined scenario.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -801,8 +819,8 @@ Maximum and minimum allowed production of each technology in each region.
 
 Maximum & Minimum Overall Production
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Maximum and minimum aggregated production of each technology over all the regions.
-
+Maximum and minimum aggregated production of each technology over all the regions
+based on the defined scenario.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -841,6 +859,7 @@ Maximum and minimum aggregated production of each technology over all the region
 
 Output to Input Activity Ratio
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ensures the relationship between the production and consumption of each technology based on the given efficiency (output/input activity ratio)
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -849,7 +868,7 @@ Output to Input Activity Ratio
       :nowrap:
 
       \begin{eqnarray}
-         \boldsymbol{Production}(reg,tech,year,ts) = Output\_{input}\_{act}\_{ratio}(reg,tech,year) \times \boldsymbol{Use}(reg,tech,year,ts) \forall reg \in regions , \forall tech \in technologies, \forall year \in years , \foral ts \in timesteps
+         \boldsymbol{Production}(reg,tech,year,ts) = Output\_{input}\_{act}\_{ratio}(reg,tech,year) \times \boldsymbol{Use}(reg,tech,year,ts) \;\;\; \forall reg \in regions , \forall tech \in technologies, \forall year \in years , \forall ts \in timesteps
       \end{eqnarray}
 
 :raw-html:`<br />`
@@ -861,8 +880,7 @@ CO\ :sub:`2` Equivalent Emissions
 Regional Emission cap
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Ensures regional maximum allowed annual carbon emissions.
-
+Ensures that the annual amount of CO2 emisstion emitted in each region does not exceed the given maximum allowed annual carbon emissions.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -871,7 +889,7 @@ Ensures regional maximum allowed annual carbon emissions.
       :nowrap:
 
       \begin{eqnarray}
-         \sum_{tech} \boldsymbol{CO2\_{equivalent}}(reg,tech,year) \leq Emission\_{cap}\_{annual}(reg,year) \forall reg \in regions , \forall tech \in technologies, \forall year \in years
+         \sum_{tech} \boldsymbol{CO2\_{equivalent}}(reg,tech,year) \leq Emission\_{cap}\_{annual}(reg,year) \;\;\; \forall reg \in regions , \forall tech \in technologies, \forall year \in years
 
       \end{eqnarray}
 
@@ -881,8 +899,7 @@ Ensures regional maximum allowed annual carbon emissions.
 Overall Emission cap
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Ensures global maximum allowed annual carbon emissions over all the regions.
-
+Ensures that the aggregated annual amount of CO2 emitted over all the regions does not exceed the maixmum allowed annual values by the user.
 :raw-html:`<br />`
 
 .. container:: scrolling-wrapper
@@ -891,5 +908,5 @@ Ensures global maximum allowed annual carbon emissions over all the regions.
       :nowrap:
 
       \begin{eqnarray}
-         \sum_{reg} \sum_{tech} \boldsymbol{CO2\_{equivalent}}(reg,tech,year) \leq Global\_{emission}\_{cap}\_{annual}(year) \forall reg \in regions , \forall tech \in technologies, \forall year \in years:
+         \sum_{reg} \sum_{tech} \boldsymbol{CO2\_{equivalent}}(reg,tech,year) \leq Global\_{emission}\_{cap}\_{annual}(year) \;\;\; \forall reg \in regions , \forall tech \in technologies, \forall year \in years:
       \end{eqnarray}
