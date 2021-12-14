@@ -36,7 +36,7 @@ you can create the raw excel file by the model in the proper structure and fill 
 
 this function will create an excel file with the following structure:
 
-.. image:: _static/config.PNG
+.. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/config.png?raw=true
    :align: center
 
 In order to have meaningful plots, it is necessary fill the tech_group and fuel_group in the correct way. For example, you may consider
