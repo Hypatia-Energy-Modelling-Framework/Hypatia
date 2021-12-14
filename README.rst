@@ -3,8 +3,8 @@
     :target: https://github.com/psf/black
     
 .. image:: https://readthedocs.org/projects/hypatia-py/badge/?version=latest
-:target: https://hypatia-py.readthedocs.io/en/latest/?badge=latest
-:alt: Documentation Status
+    :target: https://hypatia-py.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
     
 .. image:: https://raw.githubusercontent.com/SESAM-Polimi/MARIO/767d2c0e9e42ae0b6acf7c3a1cc379d7bcd367fa/doc/source/_static/images/polimi.svg
    :width: 200
