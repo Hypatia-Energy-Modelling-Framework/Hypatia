@@ -31,7 +31,6 @@ Visualization
     Plotter.plot_total_capacity
     Plotter.plot_prod_by_tech
     Plotter.plot_fuel_prod_cons
-    Plotter.plot_emissions
-    Plotter.plot_hourly_prod_by_tech
+
 
 
