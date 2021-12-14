@@ -1,0 +1,16 @@
+name: hypatia-py
+
+channels:
+    - conda-forge
+
+dependencies:
+    - python=3.8  # https://docs.readthedocs.io/en/stable/config-file/v2.html#python-version
+    - sphinx=4.1.2
+    - sphinx_rtd_theme >= 0.2.4
+    - nbsphinx
+    - ipykernel
+    - sphinx-autobuild
+    - nbconvert  # To generate HTML files from example notebooks
+    - pip
+    - pip:
+        - "git+https://github.com/readthedocs/readthedocs-sphinx-search@master"
