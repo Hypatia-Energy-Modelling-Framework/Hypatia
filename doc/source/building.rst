@@ -33,26 +33,32 @@ Hypatia uses a technology classification inspired by `Calliope <https://calliope
    * - Supply
      - Supplies an energy carrier to the system without consuming any other carriers
      - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
+          :width: 100
           :align: center
    * - Demand
      - Consumes and sinks an energy carrier from the energy system
      - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
+          :width: 100
           :align: center
    * - Transmission
      - Transmits an energy carrier locally from a supply point to a demand point
      - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
+          :width: 100
           :align: center
    * - Conversion
      - Converts an energy carrier to another
      - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
+          :width: 100
           :align: center
    * - Conversion_plus
      - Converts one/muliple energy carrier to one/multiple other carriers
      - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
+          :width: 100
           :align: center
    * - Storage
      - Stores and energy carrier and discharge it when it is required 
      - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
+          :width: 100
           :align: center 
 
 .. note::
