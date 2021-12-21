@@ -34,7 +34,7 @@ you can create the raw excel file by the model in the proper structure and fill 
     path = 'path/to/directory/config.xlsx'
   )
 
-this function will create an excel file with the following structure:
+This function will create an excel file with the following structure:
 
 .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/config.png?raw=true
    :align: center

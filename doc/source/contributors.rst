@@ -7,8 +7,8 @@ The research activity of SESAM focuses on the use of mathematical models for the
 industrial ecology.
 
 
-* `Negar Namazifard  <https://www.linkedin.com/in/negarnamazifard/>`_ : Conceptualization, Code development & Functional design
-* `Mohammad Amin Tahavori <https://www.linkedin.com/in/mohammadamintahavori/>`_ : Code maintenance and Functional design
+* `Negar Namazifard  <https://www.linkedin.com/in/negarnamazifard/>`_ : Code development, Coda maintenance & Functional design
+* `Mohammad Amin Tahavori <https://www.linkedin.com/in/mohammadamintahavori/>`_ : Code maintenance & Functional design
 * `Emanuela Colombo <https://www4.ceda.polimi.it/manifesti/manifesti/controller/ricerche/RicercaPerDocentiPublic.do?EVN_DIDATTICA=evento&k_doc=44891&lang=EN&aa=2014&tab_ricerca=1>`_ : Scientific coordination
 
 
