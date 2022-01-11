@@ -33,32 +33,32 @@ Hypatia uses a technology classification inspired by `Calliope <https://calliope
    * - Supply
      - Supplies an energy carrier to the system without consuming any other carriers
      - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
-          :width: 100
+          :width: 105
           :align: center
    * - Demand
      - Consumes and sinks an energy carrier from the energy system
-     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
-          :width: 100
+     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/demand.png?raw=true
+          :width: 110
           :align: center
    * - Transmission
      - Transmits an energy carrier locally from a supply point to a demand point
-     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
-          :width: 100
+     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/transmission.png?raw=true
+          :width: 140
           :align: center
    * - Conversion
      - Converts an energy carrier to another
-     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
-          :width: 100
+     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/conversion.png?raw=true
+          :width: 140
           :align: center
    * - Conversion_plus
      - Converts one/muliple energy carrier to one/multiple other carriers
-     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
-          :width: 100
+     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/conversion_plus.png?raw=true
+          :width: 140
           :align: center
    * - Storage
      - Stores and energy carrier and discharge it when it is required 
-     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/supply.png?raw=true
-          :width: 100
+     - .. image:: https://github.com/SESAM-Polimi/Hypatia/blob/main/doc/source/_static/Tech_ctgry/storage.png?raw=true
+          :width: 115
           :align: center 
 
 .. note::
@@ -81,9 +81,9 @@ besides the technology classifications, hypatia also considers different kinds o
    :header-rows: 1
 
    * - Carrier Type
-     - Definition
+     - Description
    * - Resource
-     - The energy source extracted from the nature and that are not still processed such as raw oil
+     - The energy resource extracted from the nature (by a supply technology) that are not still processed such as raw oil
    * - Intermediate
      - An energy carrier that can be consumed by **non-Demand** technologies
    * - Demand
@@ -223,24 +223,52 @@ Each parameter file includes different sheets for different data. As an example,
    :widths: 20 25 15 20 20
    :header-rows: 1
 
-   * - Sheet name
+   * - Group
+     - Sheet Name
      - Description
-     - Category
+     - Unit
      - Time dimension
      - Mode
-   * - INV
-     - Investment cost
-     - Costs
-     - Time horizon
+   * - Economic
+     - INV
+     - Specific investment cost per unit of new installed capacity of each technology
+     - Currency / Capacity unit
+     - Modelling years
      - Planning
-   * - F_OM
-     - Fix O&M
-     - Costs
+   * - Economic
+     - F_OM
+     - Specific fixed operation and maintenance cost per unit of total installed capacity of each technology
+     - Currency / Capacity unit
+     - Modelling years
+     - Planning/Operational
+   * - Economic
+     - V_OM
+     - Specific variable operation and maintenance cost per unit of production of each technology
+     - Currency / Production unit
+     - Modelling years
+     - Planning/Operational
+   * - Economic
+     - Decom_cost
+     - Specific decomissioning cost per unit of dismantled capacity of each technology
+     - Currency / Capacity unit
+     - Modelling years
+     - Planning
+   * - Economic
+     - Investment_taxsub
+     - 
+     -
+     -
+   * - Economic
+     - Fix_taxsub
+   * - Economic
+     - Carbon_tax
+     - Specific tax on emission
+     - Policy/Cost
      - Time horizon
      - Planning/Operational
-   * - V_OM
-     - Variable O&M
-     - Costs
+   * - Fix_taxsub
+     - Tax or subsidy on fix costs
+     - Policy/Cost
      - Time horizon
      - Planning/Operational
    * - Residual_capacity
@@ -277,16 +305,6 @@ Each parameter file includes different sheets for different data. As an example,
      - Capacity to activity conversion
      - Technical
      - [-]
-     - Planning/Operational
-   * - Carbon_tax
-     - Specific tax on emission
-     - Policy/Cost
-     - Time horizon
-     - Planning/Operational
-   * - Fix_taxsub
-     - Tax or subsidy on fix costs
-     - Policy/Cost
-     - Time horizon
      - Planning/Operational
    * - Emission_cap_annual
      - Annual emission production budget
