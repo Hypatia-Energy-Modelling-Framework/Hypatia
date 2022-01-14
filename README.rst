@@ -127,3 +127,8 @@ License
 
 This work is licensed under `Apache 2.0 <https://www.apache.org/licenses/>`_
 
+
+
+.. image:: https://badges.gitter.im/Hypatia-py/community.svg
+   :alt: Join the chat at https://gitter.im/Hypatia-py/community
+   :target: https://gitter.im/Hypatia-py/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
