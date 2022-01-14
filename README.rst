@@ -9,6 +9,10 @@
 .. image:: https://raw.githubusercontent.com/SESAM-Polimi/MARIO/767d2c0e9e42ae0b6acf7c3a1cc379d7bcd367fa/doc/source/_static/images/polimi.svg
    :width: 200
    :align: right
+   
+.. image:: https://badges.gitter.im/Hypatia-py/community.svg)](https://gitter.im/Hypatia-py/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
+    :target: https://gitter.im/Hypatia-py/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link
+    :alt: Documentation Status
 
 ********
 Hypatia
