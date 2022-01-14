@@ -10,7 +10,7 @@
    :width: 200
    :align: right
    
-.. image:: https://badges.gitter.im/Hypatia-py/community.svg)](https://gitter.im/Hypatia-py/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
+.. image:: https://badges.gitter.im/Hypatia-py/community.svg
     :target: https://gitter.im/Hypatia-py/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link
     :alt: Documentation Status
 
