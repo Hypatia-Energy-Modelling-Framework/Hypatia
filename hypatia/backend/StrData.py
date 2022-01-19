@@ -30,7 +30,8 @@ from hypatia.utility.constants import (
     technology_categories,
     carrier_types,
 )
-from hypatia.utility.constants import take_trade_ids, take_ids, take_global_ids
+from hypatia.utility.constants import (list_connection_operation, list_connection_planning,
+ take_regional_sheets, take_trade_ids, take_ids, take_global_ids)
 
 MODES = ["Planning", "Operation"]
 
@@ -364,6 +365,9 @@ class ReadSets:
                 },
             }
 
+            connections_operation_sorted = sorted(self.connection_sheet_ids.items(), key=lambda pair: list_connection_operation.index(pair[0]))
+            self.connection_sheet_ids_sorted = dict(connections_operation_sorted)
+
             if self.mode == "Planning":
 
                 self.connection_sheet_ids.update(
@@ -421,6 +425,8 @@ class ReadSets:
                         },
                     }
                 )
+                connections_planning_sorted = sorted(self.connection_sheet_ids.items(), key=lambda pair: list_connection_planning.index(pair[0]))
+                self.connection_sheet_ids_sorted = dict(connections_planning_sorted)
 
                 self.global_sheet_ids.update(
                     {
@@ -464,7 +470,10 @@ class ReadSets:
                     }
                 )
 
+        take_sorted_sheets= take_regional_sheets(self.mode,
+        self.Technologies,self.regions)
         self.regional_sheets_ids = {}
+        self.regional_sheets_ids_sorted= {}
         indexer_reg = {}
         indexer_reg_drop1 = {}
         indexer_reg_drop2 = {}
@@ -906,6 +915,10 @@ class ReadSets:
                             },
                         }
                     )
+            
+            regional_sheets_sorted = sorted(self.regional_sheets_ids[reg].items(), key=lambda pair: take_sorted_sheets[reg].index(pair[0]))
+            self.regional_sheets_ids_sorted[reg] = dict(regional_sheets_sorted)
+            
 
     def _write_input_excel(self, path):
         """
@@ -918,7 +931,7 @@ class ReadSets:
                 r"{}/parameters_connections.xlsx".format(path)
             ) as writer:
 
-                for key, value in self.connection_sheet_ids.items():
+                for key, value in self.connection_sheet_ids_sorted.items():
 
                     connection_data = pd.DataFrame(
                         value["value"], index=value["index"], columns=value["columns"]
@@ -938,7 +951,7 @@ class ReadSets:
 
             with pd.ExcelWriter(r"{}/parameters_{}.xlsx".format(path, reg)) as writer:
 
-                for key, value in self.regional_sheets_ids[reg].items():
+                for key, value in self.regional_sheets_ids_sorted[reg].items():
 
                     regional_data = pd.DataFrame(
                         value["value"], index=value["index"], columns=value["columns"]

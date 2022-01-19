@@ -4,6 +4,78 @@ This module returns the constants of the code inclduing the info of sets and
 parameter filese
 """
 
+# Sorted connection parameter sheets
+
+list_connection_operation = ["V_OM","F_OM","Line_efficiency",
+"AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line"]
+
+list_connection_planning = ["V_OM","F_OM","INV","Decom_cost",
+"Line_Economic_life","Interest_rate","Line_lifetime","Line_efficiency",
+"AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line",
+"Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
+
+
+# Sorted regional parameter sheets
+
+storage_sheets = ["Storage_initial_SOC","Storage_min_SOC",
+"Storage_charge_efficiency","Storage_discharge_efficiency",
+"Storage_charge_time","Storage_discharge_time"]
+
+conversion_plus_sheets = ["Carrier_ratio_in","Carrier_ratio_out"]
+
+def take_regional_sheets(mode,technologies,regions):
+    regional_sheets = {}
+    for reg in regions:
+
+        if mode == "Operation":
+            
+            regional_sheets[reg] = ["V_OM","F_OM","Tech_efficiency",
+            "AnnualProd_perunit_capacity","Residual_capacity",
+            "Capacity_factor_tech","capacity_factor_resource",
+            "Specific_emission","Fix_taxsub","Carbon_tax",
+            "Min_production","Max_production","Min_production_h",
+            "Max_production_h","Emission_cap_annual","Demand"]
+
+            position1_operation = regional_sheets[reg].index("Tech_efficiency")
+            
+
+            if "Conversion_plus" in technologies[reg].keys():
+                for sheet, item in enumerate(conversion_plus_sheets):
+                    regional_sheets[reg].insert(sheet + position1_operation+1, item)
+            position2_operation = regional_sheets[reg].index("capacity_factor_resource")
+            
+            if "Storage" in technologies[reg].keys():
+                for sheet,item in enumerate(storage_sheets):
+                    regional_sheets[reg].insert(sheet + position2_operation+1, item)
+
+        if mode == "Planning":
+
+            regional_sheets[reg] = ["V_OM","F_OM","INV","Decom_cost",
+            "Economic_lifetime","Interest_rate","Discount_rate","Tech_lifetime",
+            "Tech_efficiency","AnnualProd_perunit_capacity","Residual_capacity",
+            "Capacity_factor_tech","capacity_factor_resource","Specific_emission",
+            "Investment_taxsub","Fix_taxsub", "Carbon_tax","Min_newcap",
+            "Max_newcap","Min_totalcap","Max_totalcap","Min_production",
+            "Max_production","Min_production_h","Max_production_h",
+            "Emission_cap_annual","Demand"]
+
+            position1_planning = regional_sheets[reg].index("Tech_efficiency")
+            
+
+            if "Conversion_plus" in technologies[reg].keys():
+                for sheet, item in enumerate(conversion_plus_sheets):
+                    regional_sheets[reg].insert(sheet + position1_planning+1, item)
+            
+            position2_planning= regional_sheets[reg].index("capacity_factor_resource")
+            
+            if "Storage" in technologies[reg].keys():
+                for sheet,item in enumerate(storage_sheets):
+                    regional_sheets[reg].insert(sheet + position2_planning+1, item)
+
+    return regional_sheets
+
+
+# Constants of connections data
 
 def take_trade_ids(mode):
     """
@@ -82,6 +154,7 @@ def take_trade_ids(mode):
 
     return trade_data_ids
 
+# Constants of parameters_glob data
 
 def take_global_ids(mode):
     """
