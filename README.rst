@@ -131,5 +131,3 @@ License
 
 This work is licensed under `Apache 2.0 <https://www.apache.org/licenses/>`_
 
-CIAO
-
