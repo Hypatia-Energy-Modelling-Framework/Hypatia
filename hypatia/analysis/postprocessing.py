@@ -71,7 +71,7 @@ def year_slice_index(
 def set_DataFrame(
     results, regions, years, time_fraction, glob_mapping, technologies, mode
 ):
-    """Creates pd.DataFrame from reulsts"""
+    """Creates pd.DataFrame from results"""
 
     _years = glob_mapping["Years"]
     years = _years[_years["Year"].isin(years)]["Year_name"]

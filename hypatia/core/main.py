@@ -219,27 +219,33 @@ class Model:
         path : str
             defines the path and the name of the excel file to be created.
         """
-        techs_sheet = pd.DataFrame(
+
+        techs_property = {"tech_name": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_name"]),
+                "tech_group": '',
+                "tech_color": '',
+                "tech_cap_unit": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_cap_unit"]),
+                "tech_production_unit": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_act_unit"]),}
+
+        techs_sheet = pd.DataFrame(techs_property,
             index=self._StrData.glob_mapping["Technologies_glob"]["Technology"],
-            columns=[
-                "tech_name",
-                "tech_group",
-                "tech_color",
-                "tech_cap_unit",
-                "tech_production_unit",
-            ],
         )
 
-        fuels_sheet = pd.DataFrame(
+        fuels_property = {"fuel_name": list(self._StrData.glob_mapping["Carriers_glob"]["Carr_name"]),
+                "fuel_group": '',
+                "fuel_color": '',
+                "fuel_unit": list(self._StrData.glob_mapping["Carriers_glob"]["Carr_unit"]),}
+
+        fuels_sheet = pd.DataFrame(fuels_property,
             index=self._StrData.glob_mapping["Carriers_glob"]["Carrier"],
-            columns=["fuel_name", "fuel_group", "fuel_color", "fuel_unit",],
         )
 
-        regions_sheet = pd.DataFrame(
+        regions_property = {"region_name": list(self._StrData.glob_mapping["Regions"]["Region_name"]),
+                "region_color": '',}
+
+        regions_sheet = pd.DataFrame(regions_property,
             index=self._StrData.glob_mapping["Regions"]["Region"],
-            columns=["region_name", "region_color",],
         )
-
+        # --TODO-- Make the emissions general
         emissions_sheet = pd.DataFrame(
             index=["CO2-equivalent"], columns=["emission_unit",],
         )

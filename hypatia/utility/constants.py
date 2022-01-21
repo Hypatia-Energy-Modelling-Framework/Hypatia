@@ -419,8 +419,10 @@ global_set_ids = {
     "Years": ["Year", "Year_name"],
     "Timesteps": ["Timeslice", "Timeslice_name", "Timeslice_fraction"],
     "Time_horizon": ["Start", "End"],
-    "Carriers_glob": ["Carrier", "Carr_name", "Carr_type"],
-    "Technologies_glob": ["Technology", "Tech_name", "Tech_category"],
+    "Carriers_glob": ["Carrier", "Carr_name", "Carr_type", "Carr_unit"],
+    "Technologies_glob": ["Technology", "Tech_name", "Tech_category",
+    "Tech_cap_unit", "Tech_act_unit"],
+    "Emissions": ["Emission", "Emission_name", "Emission_unit"]
 }
 
 
