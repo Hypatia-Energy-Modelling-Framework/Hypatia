@@ -206,10 +206,9 @@ class Model:
                     f"Folder {path} already exists. To over write"
                     f" the results, use force_rewrite=True."
                 )
-            else:
-                os.rmdir(path)
+        else:
+            os.mkdir(path)
 
-        os.mkdir(path)
         dict_to_csv(self.results, path)
 
     def create_config_file(self, path):

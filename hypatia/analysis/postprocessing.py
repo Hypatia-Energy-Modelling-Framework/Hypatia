@@ -54,7 +54,7 @@ def dict_to_csv(Dict, path):
             value.to_csv(f"{path}//{key}.csv")
         else:
             new_path = f"{path}//{key}"
-            os.mkdir(new_path)
+            os.makedirs(new_path, exist_ok=True)
             dict_to_csv(value, new_path)
 
 
