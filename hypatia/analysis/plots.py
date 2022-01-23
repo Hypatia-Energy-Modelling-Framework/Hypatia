@@ -650,9 +650,9 @@ class Plotter:
                         )
 
                         legends.add(t)
-                counter.append(
-                    (self.configs["regions"].loc[region, "region_name"], len(fig.data))
-                )
+            counter.append(
+                (self.configs["regions"].loc[region, "region_name"], len(fig.data))
+            )
         layout = {
             "title": "Total Capacity",
             "yaxis": {"title": unit},
