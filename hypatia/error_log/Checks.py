@@ -78,21 +78,18 @@ def check_sheet_name(path, file_name, ids):
     """
 
     file = pd.ExcelFile(r"{}/{}.xlsx".format(path, file_name))
-    sheet_list = file.sheet_names
-    allowed_list = []
+    given_sheets = set(file.sheet_names)
 
-    for key, value in ids.items():
+    neccessary_sheets = set()
+    for value in ids.values():
+        neccessary_sheets.add(value["sheet_name"])
 
-        allowed_list.append(value["sheet_name"])
+    differences = neccessary_sheets.difference(given_sheets)
 
-    for sheet in sheet_list:
-
-        if sheet not in allowed_list:
-
-            raise WrongSheetName(
-                f"The sheet name '{sheet}' in the '{file_name}' file is not a valid name.\
-                               valid sheet names are '{allowed_list}'"
-            )
+    if differences:
+        raise WrongSheetName(
+            f"Following necessary sheets are missing in {file_name}. \n {differences}"
+        )
 
 
 def check_tech_category(tech_table, allowed_categories, file_name):
@@ -187,3 +184,6 @@ def check_years_mode_consistency(mode, main_years):
                 f"The number of years is invalid.The '{mode}' optimization mode of the energy system\
                                      can be analyzed only with 'one year' time horizon"
             )
+#%%
+
+# %%
