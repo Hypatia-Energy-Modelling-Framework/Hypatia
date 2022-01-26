@@ -8,12 +8,15 @@ amin_tests.py
 # C extensions
 *.so
 
+negar_tests.py
+**/negar_tests
+
 # OS-specific
 .DS_Store
 
 # exmaples results
-exmaples/Utopia1_operation_multi_node/results/
-exmaples/Utopia2_planning_single_node_DN/results/
+**/results
+
 
 # Editors
 *~
