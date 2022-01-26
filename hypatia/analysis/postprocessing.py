@@ -28,7 +28,7 @@ RESULT_MAP = {
     "fix_tax_cost": {"index": "years", "var": "results.cost_fix_tax"},
     "fix_subsidies": {"index": "years", "var": "results.cost_fix_sub"},
     "emission_cost": {"index": "years", "var": "results.emission_cost"},
-    "CO2_equivalent": {"index": "years", "var": "results.CO2_equivalent"},
+    "emissions": {"index": "years", "var": "results.CO2_equivalent"},
     "lines_total_capacity": {"index": "years", "var": "results.line_totalcapacity"},
     "lines_decommissioned_capacity": {
         "index": "years",

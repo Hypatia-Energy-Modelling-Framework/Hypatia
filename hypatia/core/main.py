@@ -245,10 +245,9 @@ class Model:
         regions_sheet = pd.DataFrame(regions_property,
             index=self._StrData.glob_mapping["Regions"]["Region"],
         )
-        # --TODO-- Make the emissions general
-        emissions_sheet = pd.DataFrame(
-            index=["CO2-equivalent"], columns=["emission_unit",],
-        )
+        
+        emissions_sheet = self._StrData.glob_mapping['Emissions'].set_index(['Emission'],inplace=False)
+
 
         with pd.ExcelWriter(path) as file:
             for sheet in [

@@ -176,6 +176,9 @@ class Plotter:
         self.fuels = deepcopy(
             results._StrData.glob_mapping["Carriers_glob"]["Carrier"].tolist()
         )
+        self.emissions = deepcopy(
+            results._StrData.glob_mapping["Emissions"]["Emission"].tolist()
+        )
 
         reformed_sets = {}
         for region in results._StrData.regions:
@@ -1005,6 +1008,7 @@ class Plotter:
             Defines the path and the name of the file to save
         tech_group : str
             the techn_group to plot based on config excel file.
+
         regions : list[str]
             Which regions to plot
         kind : str, optional
@@ -1016,7 +1020,9 @@ class Plotter:
         """
         techs = self.configs["techs"]
         techs = techs[techs["tech_group"].isin(str2ls(tech_group))].index
-        unit = self.configs["emissions"].loc["CO2-equivalent", "emission_unit"]
+        unit = self.configs["emissions"].loc[self.emissions[0], "emission_unit"]
+        emission_name = self.configs["emissions"].loc[self.emissions[0], "emission_name"]
+        
 
         if regions == "all":
             regions = self.regions
@@ -1031,7 +1037,7 @@ class Plotter:
         for step_index, region in enumerate(regions):
             if not aggregate:
                 legends = set()
-            for df in self.data["CO2_equivalent"][region].values():
+            for df in self.data["emissions"][region].values():
                 for t, values in df.iteritems():
                     if t not in techs:
                         continue
@@ -1054,7 +1060,7 @@ class Plotter:
                 (self.configs["regions"].loc[region, "region_name"], len(fig.data))
             )
         layout = {
-            "title": "CO2 Equivalent",
+            "title": emission_name,
             "xaxis": dict(tickmode="array", tickvals=values.index, dtick=1),
             "yaxis_title": unit,
         }
