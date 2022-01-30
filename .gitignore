@@ -9,7 +9,7 @@ amin_tests.py
 *.so
 
 negar_tests.py
-**/negar_tests
+**/test
 
 # OS-specific
 .DS_Store

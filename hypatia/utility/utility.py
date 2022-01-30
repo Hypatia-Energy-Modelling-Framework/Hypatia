@@ -412,17 +412,27 @@ def salvage_factor(
     return salvage_factor_mod
 
 
-def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps):
+def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency):
 
     """
     Calculates the state of charge of the storage 
     """
+    charge_efficiency_reshape = pd.concat(
+    [charge_efficiency]
+    * len(time_steps)
+    ).sort_index()
+
+    discharge_efficiency_reshape = pd.concat(
+    [discharge_efficiency]
+    * len(time_steps)
+    ).sort_index()
 
     initial_storage_concat = pd.concat(
         [initial_storage] * len(time_steps) * len(main_years)
     )
 
-    state_of_charge = cp.cumsum(flow_in) + initial_storage_concat - cp.cumsum(flow_out)
+    state_of_charge = cp.multiply(cp.cumsum(flow_in),charge_efficiency_reshape) + initial_storage_concat - \
+        cp.multiply(cp.cumsum(flow_out),(np.ones((discharge_efficiency_reshape.shape))/discharge_efficiency_reshape.values))
 
     return state_of_charge
 
