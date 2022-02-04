@@ -28,7 +28,12 @@ By installing the hypatia software, you will install minimum depencies automatic
 #. `Pandas <https://pandas.pydata.org/>`_
 #. `Numpy <https://numpy.org/>`_
 #. `Plotly <https://plotly.com/>`_
-#. `Cvxpy <https://pypi.org/project/cvxpy/>`_ (domain-specific language)
+#. `Cvxpy <https://pypi.org/project/cvxpy/>`_ 
+
+.. note::
+
+   The CVXPY library that is the domain specific optimization language used to write the Hypatia core code will not be installed
+   automatically after installing the hypatia software. Therefore, it is required to install it separately as it is demonstrated in the following.
 
 Solvers
 --------
@@ -58,11 +63,11 @@ refer to the solver website for the installation instruction.
 Recommended installation method
 ===============================
 
-There are different ways to install the hypatia software on your machine:
+There are different ways to install the hypatia software on your machine. The fastest one is through pip:
 
 **Installing with pip**
 
-If you are using pip, it is suggested to create a new environment to avoid conflicts of the other packages.
+If you are using pip, it is suggested to create a new environment to avoid possible conflicts with the other packages.
 To create a new environment, you should use *Anaconda Prompt*:
 
 .. code-block:: bash
@@ -76,9 +81,9 @@ the following line in *Anaconda Prompt*:
 
     conda activate hypatia
 
-After activateing the environment, you first need to install **CVXPY** using **conda**:
+After activating the environment, you first need to install **CVXPY** using **conda**:
 
-.. code-block: bash
+.. code-block:: bash
 
     conda install -c conda-forge cvxpy
 
@@ -89,11 +94,6 @@ Then you can use **pip** to install the hypatia software:
     pip install hypatia-py
 
 
-**Installing with conda**
-
-
-
-**Installing manually**
 
 
 

@@ -4,7 +4,7 @@ Analyzing and Visualizing a Model
 
 The results of a hypatia model
 ---------------------------------
-When a model is solved, the results in will be postprocessed and uploaded to the interface in the format of a *nested Python dictionary*.
+When a model is solved, the results will be postprocessed and uploaded to the interface in the format of a *nested Python dictionary*.
 The results dictionary classifies the outputs of the model in the following hierarchy:
 
 * Variable Level
@@ -16,7 +16,7 @@ For example, for a *model* that is solved, user can have access to variable *pro
 
 .. code-block:: python
 
-    model.results['production_by_tech']['Supply']['region1']
+    model.results['production_by_tech']['region1']['Supply']
 
 Visualization
 --------------

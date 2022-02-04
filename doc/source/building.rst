@@ -63,13 +63,13 @@ Hypatia uses a technology classification inspired by `Calliope <https://calliope
 
 .. note::
 
-   Currently, there is only the possibility of on-grid utility storage in the hourly resolution. Other types of storage for other temporal resolutions and
-   the possibility of connecting a storage facility to another technologies is still under development in the Hypatia framework and it will be available in the
+   Currently, it is only possible to model the on-grid storage utilities in the hourly resolution. Other types of storage for other temporal resolutions and
+   the possibility of connecting a storage facility to another technologies are still under development in the Hypatia framework and it will be available in the
    next version release.
 
 .. note::
 
-   All the technologies in a Hypatia model can have only on carrier input and one carrier output except the technologies within the Conversion-plus category
+   All the technologies in a Hypatia model can have only one carrier input and one carrier output except the technologies within the Conversion-plus category
    which can have multiple carrier inputs and outputs.
 
 Carrier types
@@ -91,7 +91,7 @@ besides the technology classifications, hypatia also considers different kinds o
 
 .. note::
 
-  The Reference Energy System in a Hypatia model should always starts from Supply technologies (such as resource extraction technologies) and ends with Demand technologies
+   The Reference Energy System in a Hypatia model should always starts from Supply technologies (such as resource extraction technologies) and ends with Demand technologies
 
 
 Definiton of the structural inputs (sets)
@@ -111,7 +111,7 @@ Following tables should be included within the global file:
   the planning mode acceptes multiple years with both short-term and long-term horizons.
 
   - **Years:** The year codes
-  - **Years_name:**. The main name of the years
+  - **Years_name:** The main name of the years
 
 
 * **Technologies_glob:** Including all the technologies within all the regions of the model with following columns
@@ -119,6 +119,8 @@ Following tables should be included within the global file:
   - **Technology:** The technology codes
   - **Tech_name:** The real name of the technologies
   - **Tech_category:** The cargory of technologies
+  - **Tech_cap_unit:** The capacity units of technologies
+  - **Tech_act_unit:** The activity units of technologies
 
 
 * **Carriers_glob:** Including all the carriers within all the regions of the model with the follwowing columns:
@@ -126,6 +128,7 @@ Following tables should be included within the global file:
   - **Carrier:** The carrier codes
   - **Carr_name:** The real name of the carriers
   - **Carr_type:** The carrier types
+  - **Carr_unit:** The carrier units
 
 
 * **Timesteps:** Including all the time slices within each year of the model with the follwowing columns. The temporal resolution is completely arbitary and can differ based on the user goal,
@@ -208,7 +211,7 @@ In order to have a rapid look on the model sets, you can print the model:
   print(model)
 
 .. note::
-  Planning mode is only implementable when the time horizon is just one year.
+  The "Operational" mode of Hypatia is implementable only when the lenght of the time horizon is equal or less than one year.
 
 When the sets are parsed successfully, the nexts step is to define the parameters for the model. Similar to the sets, parameters should be prepared in a set of excel files. The number
 of the parameter files which can be created by the model is "n+2" where "n" is the number of the given regions. These files are named as follows:
@@ -220,7 +223,7 @@ of the parameter files which can be created by the model is "n+2" where "n" is t
 Each parameter file includes different sheets for different data. As an example, the following table includes different sheets the regional parameter files.
 
 .. list-table:: Parameters
-   :widths: 20 25 15 20 20
+   :widths: 20 25 150 20 20 20
    :header-rows: 1
 
    * - Group
@@ -230,108 +233,156 @@ Each parameter file includes different sheets for different data. As an example,
      - Time dimension
      - Mode
    * - Economic
-     - INV
-     - Specific investment cost per unit of new installed capacity of each technology
-     - Currency / Capacity unit
+     - V_OM
+     - Specific variable operation and maintenance cost per unit of production of each technology
+     - Currency / Production unit (e.g. USD/GWh)
      - Modelling years
-     - Planning
+     - Planning, Operational
    * - Economic
      - F_OM
      - Specific fixed operation and maintenance cost per unit of total installed capacity of each technology
-     - Currency / Capacity unit
+     - Currency / Capacity unit (e.g. USD/GW)
      - Modelling years
-     - Planning/Operational
+     - Planning, Operational
    * - Economic
-     - V_OM
-     - Specific variable operation and maintenance cost per unit of production of each technology
-     - Currency / Production unit
-     - Modelling years
-     - Planning/Operational
-   * - Economic
-     - Decom_cost
-     - Specific decomissioning cost per unit of dismantled capacity of each technology
-     - Currency / Capacity unit
+     - INV
+     - Specific investment cost per unit of new installed capacity of each technology
+     - Currency / Capacity unit (e.g. USD/GW)
      - Modelling years
      - Planning
    * - Economic
+     - Decom_cost
+     - Specific decomissioning cost per unit of dismantled capacity of each technology
+     - Currency / Capacity unit (e.g. USD/GW)
+     - Modelling years
+     - Planning
+   * - Economic
+     - Economic_lifetime
+     - The period over which the investment annuities are spread. In other words, each required investment in a specific year "y" is divided into a stream of annuities during several years starting from "y+1" to "y+economic lifetime"
+     - years
+     - None
+     - Planning
+   * - Economic
+     - Interest_rate
+     - Technology-specific interest rate is required to calculate the depreciation rate of each technology
+     - None
+     - None
+     - Planning
+   * - Economic
+     - Discount_rate
+     - General discount rate for calculating the net present value of the cost components of the objective function
+     - None
+     - Modelling years
+     - Planning
+   * - Technical
+     - Tech_lifetime
+     - The useful operational lifetime of technologies before dismantling
+     - years
+     - None
+     - Planning
+   * - Technical
+     - Tech_efficiency
+     - The ratio between the output activity of the technology to the input activity (Due to the possible difference between the input and output activity units, this parameter can be also higher than one)
+     - None
+     - Modelling years
+     - Planning, Operational
+   * - Technical
+     - AnnualProd_perunit_capacity
+     - The amount of output activity per unit of installed capcity of each technology in each modelling year of the time horizon
+     - Activity unit per year / Capacity unit (e.g. GWh/y/GW )
+     - Modelling years
+     - Planning, Operational
+   * - Technical
+     - Residual_capacity
+     - The total installed capacity of each technology before starting the modelling horizon
+     - Capacity unit (e.g. GW)
+     - Modelling years
+     - Planning, Operational
+   * - Technical
+     - Capacity_factor_tech
+     - Average capacity of a technology over on year divided by its nominal total capacity (allows to consider the planned outages or the operation and maintenance times)
+     - None
+     - Modelling years
+     - Planning, Operational
+   * - Technical
+     - capacity_factor_resource
+     - The max production of one unit capacity of each technology in each time slice based on the variable resource availability (allows to consider the availability of resources especially for renewable technologies in each time slice of the year)
+     - None
+     - Modelling years & timeslices
+     - Planning, Operational
+   * - Environmental
+     - Specific_emission
+     - Specific CO2 or CO2-equivalent emission of each technology per unit of production
+     - emission unit / activity unit (e.g. ton/GWh)
+     - Modelling years
+     - Planning, Operational
+   * - Scenario-based
      - Investment_taxsub
-     - 
-     -
-     -
-   * - Economic
+     - Taxes and subsidies as a fraction per unit of investment cost
+     - Currency / currency (e.g. USD of tax or sub / USD of investment)
+     - Modelling years
+     - Planning
+   * - Scenario-based
      - Fix_taxsub
-   * - Economic
+     - Taxes and subsidies as a fraction per unit of fixed O&M cost
+     - Currency / currency (e.g. USD of tax or sub / USD of fixed cost)
+     - Modelling years
+     - Planning
+   * - Scenario-based
      - Carbon_tax
-     - Specific tax on emission
-     - Policy/Cost
-     - Time horizon
-     - Planning/Operational
-   * - Fix_taxsub
-     - Tax or subsidy on fix costs
-     - Policy/Cost
-     - Time horizon
-     - Planning/Operational
-   * - Residual_capacity
-     - Residual capacity
-     - Calibration
-     - Time horizon
-     - Planning/Operational
-   * - Max_production
-     - Maximum yearly production
-     - Constraint
-     - Time horizon
-     - Planning/Operational
-   * - Min_production
-     - Minimum yearly production
-     - Constraint
-     - Time horizon
-     - Planning/Operational
-   * - Capacity_factor_tech
-     - Technology capacity factor
-     - Technical
-     - Time horizon
-     - Planning/Operational
-   * - Tech_efficiency
-     - Technology efficiency
-     - Technical
-     - Time horizon
-     - Planning/Operational
-   * - Specific_emission
-     - Technology activity specific emission
-     - Technical
-     - Time horizon
-     - Planning/Operational
-   * - AnnualProd_perunit_capacity
-     - Capacity to activity conversion
-     - Technical
-     - [-]
-     - Planning/Operational
-   * - Emission_cap_annual
-     - Annual emission production budget
-     - Policy
-     - Time horizon
-     - Planning/Operational
+     - The tax defined for each unit of produced CO2 emissions
+     - Currency / CO2 emission unit (e.g. USD of tax / tons of CO2 emissions)
+     - Modelling years
+     - Planning, Operational
+   * - Scenario-based
+     - Min_newcap
+     - The minimum allowed annual new installed capacity of each technology specified in a particular scenario
+     - Capacity units (e.g. GW)
+     - Modelling year
+     - Planning
+   * - Scenario-based
+     - Max_newcap
+     - The maximum allowed annual new installed capacity of each technology specified in a particular scenario
+     - Capacity units (e.g. GW)
+     - Modelling year
+     - Planning
+   * - Scenario-based
+     - Min_totalcap
+     - The minimum allowed annual total installed capacity of each technology specified in a particular scenario
+     - Capacity units (e.g. GW)
+     - Modelling year
+     - Planning
+   * - Scenario-based
+     - Max_totalcap
+     - The maximum allowed annual total installed capacity of each technology specified in a particular scenario
+     - Capacity units (e.g. GW)
+     - Modelling year
+     - Planning
+   * - Scenario-based
+     - Min_production
+     - The minimum allowed annual production of each technology specified in a particular scenario
+     - Activity units (e.g. GWh)
+     - Modelling years
+     - Planning, Operational
+   * - Scenario-based
+     - Max_production
+     - The maximum allowed annual production of each technology specified in a particular scenario
+     - Activity units (e.g. GWh)
+     - Modelling years
+     - Planning, Operational
+   * - Scenario-based
+     - Emission_cap_annual
+     - The allowed cap on the annual CO2 emission production
+     - CO2 emission units
+     - Modelling years
+     - Planning, operational
    * - Demand
-     - Carrier deamnd for the technologies
      - Demand
-     - Time horizon * Timeslice
-     - Planning/Operational
-   * - capacity_factor_resource
-     - Resource capacity factor of technologies
-     - Availability
-     - Time horizon * Timeslice
-     - Planning/Operational
-   * - carrier_ratio_in
-     - The ratio of carriers input for conversion_plus
-     - Technical
-     - Time horizon * Timeslice
-     - Planning/Operational
-   * - carrier_ratio_out
-     - The ratio of carriers output for conversion_plus
-     - Technical
-     - Time horizon * Timeslice
-     - Planning/Operational
-
+     - The final demand specified for each demand technology
+     - Activity units (e.g. GWh)
+     - Modelling years & timeslices
+     - Planning, Operational
+  
 .. note::
   Please refer to the example gallery for a better understanding of the structure of both the set and parameter files.
 
