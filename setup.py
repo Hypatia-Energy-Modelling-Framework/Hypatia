@@ -11,7 +11,7 @@ setup(
     url="https://github.com/SESAM-Polimi/hypatia",
     author="Negar Namazifard",
     author_email="negarnamazifard@gmail.com",
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages(),
     license="Apache 2.0",
     python_requires=">.3.7.0",
