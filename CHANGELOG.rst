@@ -1,7 +1,7 @@
 Release History
 ===============
 
-0.1.1 (??)
+0.1.1 (04/02/2022)
 ------------------
 * **Bug**: total capacity plot duplicating regions solved (issue #1).
 * **Bug**: results overwrite bug fixed (issue #3).
