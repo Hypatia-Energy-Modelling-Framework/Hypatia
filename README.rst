@@ -13,6 +13,9 @@
 .. image:: https://badges.gitter.im/Hypatia-py/community.svg
     :target: https://gitter.im/Hypatia-py/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link
     :alt: Documentation Status
+    
+.. image:: https://zenodo.org/badge/434963275.svg
+   :target: https://zenodo.org/badge/latestdoi/434963275
 
 ********
 Hypatia
