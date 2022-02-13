@@ -6,9 +6,8 @@
     :target: https://hypatia-py.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
     
-.. image:: https://raw.githubusercontent.com/SESAM-Polimi/MARIO/767d2c0e9e42ae0b6acf7c3a1cc379d7bcd367fa/doc/source/_static/images/polimi.svg
-   :width: 200
-   :align: right
+.. image:: https://img.shields.io/pypi/v/hypatia-py
+    :target: https://pypi.org/project/hypatia-py/
    
 .. image:: https://badges.gitter.im/Hypatia-py/community.svg
     :target: https://gitter.im/Hypatia-py/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link
@@ -16,6 +15,10 @@
     
 .. image:: https://zenodo.org/badge/434963275.svg
    :target: https://zenodo.org/badge/latestdoi/434963275
+
+.. image:: https://raw.githubusercontent.com/SESAM-Polimi/MARIO/767d2c0e9e42ae0b6acf7c3a1cc379d7bcd367fa/doc/source/_static/images/polimi.svg
+   :width: 200
+   :align: right
 
 ********
 Hypatia
