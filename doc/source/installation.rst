@@ -93,6 +93,12 @@ Then you can use **pip** to install the hypatia software:
 
     pip install hypatia-py
 
+If you already installed the package and just need to upgrade it to lastet version, you need to use the following command after activating the environment:
+
+.. code-block:: bash
+
+    pip install --upgrade hypatia-py
+
 
 
 
