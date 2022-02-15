@@ -64,6 +64,12 @@ Then, you can use *pip* to install hypatia as follow:
 .. code-block:: bash
 
     pip install hypatia-py
+    
+If you already installed the package and just need to upgrade it to lastet version, you need to use the following command after activating the environment:
+
+.. code-block:: bash
+
+    pip install --upgrade hypatia-py
 
 Most of the open source solvers that are supported by CVXPY (the optimization library used in Hypatia), will be installed
 automatically with the software. For the commercial solvers, you should follow the specific installation methods. 
