@@ -247,6 +247,12 @@ class Model:
         )
         
         emissions_sheet = self._StrData.glob_mapping['Emissions'].set_index(['Emission'],inplace=False)
+        emissions_sheet = pd.DataFrame(
+            emissions_sheet.values,
+            index = emissions_sheet.index,
+            columns = ['emission_name','emission_unit']
+        )
+        emissions_sheet.index.name = 'Emission'
 
 
         with pd.ExcelWriter(path) as file:
