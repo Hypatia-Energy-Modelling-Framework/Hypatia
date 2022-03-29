@@ -20,6 +20,7 @@ from hypatia.analysis.postprocessing import (
     dict_to_csv,
 )
 import os
+import shutil
 import pandas as pd
 
 import logging
@@ -88,7 +89,7 @@ class Model:
                     f" the parameter files, use force_rewrite=True."
                 )
             else:
-                os.rmdir(path)
+                shutil.rmtree(path)
 
         os.mkdir(path)
         self._StrData._write_input_excel(path)
@@ -245,7 +246,7 @@ class Model:
         regions_sheet = pd.DataFrame(regions_property,
             index=self._StrData.glob_mapping["Regions"]["Region"],
         )
-        
+
         emissions_sheet = self._StrData.glob_mapping['Emissions'].set_index(['Emission'],inplace=False)
         emissions_sheet = pd.DataFrame(
             emissions_sheet.values,
