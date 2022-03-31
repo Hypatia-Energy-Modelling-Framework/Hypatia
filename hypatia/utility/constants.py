@@ -34,7 +34,8 @@ def take_regional_sheets(mode,technologies,regions):
             "Capacity_factor_tech","capacity_factor_resource",
             "Specific_emission","Fix_taxsub","Carbon_tax",
             "Min_production","Max_production","Min_production_h",
-            "Max_production_h","Emission_cap_annual","Demand"]
+            "Max_production_h","Emission_cap_annual","Sectoral_emission_cap_annual",
+            "Demand"]
 
             position1_operation = regional_sheets[reg].index("Tech_efficiency")
             
@@ -57,7 +58,7 @@ def take_regional_sheets(mode,technologies,regions):
             "Investment_taxsub","Fix_taxsub", "Carbon_tax","Min_newcap",
             "Max_newcap","Min_totalcap","Max_totalcap","Min_production",
             "Max_production","Min_production_h","Max_production_h",
-            "Emission_cap_annual","Demand"]
+            "Emission_cap_annual","Sectoral_emission_cap_annual","Demand"]
 
             position1_planning = regional_sheets[reg].index("Tech_efficiency")
             
@@ -295,6 +296,12 @@ def take_ids(regions, technologies, mode):
                 "index_col": 0,
                 "header": 0,
             },
+            "sectoral_emission_cap_annual": {
+                "sheet_name": "Sectoral_emission_cap_annual",
+                "index_col": 0,
+                "header": 0,
+            },
+
         }
 
         if mode == "Planning":

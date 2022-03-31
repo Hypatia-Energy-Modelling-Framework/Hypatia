@@ -94,6 +94,7 @@ class BuildModel:
             self._constr_tech_efficiency()
             self._constr_prod_annual()
             self._constr_emission_cap()
+            self._constr_emission_sectoral_cap()
             self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
@@ -123,6 +124,7 @@ class BuildModel:
             self._constr_tech_efficiency()
             self._constr_prod_annual()
             self._constr_emission_cap()
+            self._constr_emission_sectoral_cap()
             self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
@@ -1202,20 +1204,16 @@ class BuildModel:
         """
         self.regional_emission = {}
         self.global_emission = np.zeros(
-            (len(self.sets.main_years) * len(self.sets.time_steps), 1)
+            (len(self.sets.main_years) , 1)
         )
         for reg in self.sets.regions:
-
             self.regional_emission[reg] = np.zeros(
-                (len(self.sets.main_years) * len(self.sets.time_steps), 1)
+                (len(self.sets.main_years) , 1)
             )
-
             for key, value in self.CO2_equivalent[reg].items():
 
                 self.regional_emission[reg] += cp.sum(value, axis=1)
-
                 emission_cap = self.sets.data[reg]["emission_cap_annual"].values
-
                 emission_cap.shape = self.regional_emission[reg].shape
 
             self.global_emission += self.regional_emission[reg]
@@ -1230,6 +1228,55 @@ class BuildModel:
             global_emission_cap.shape = self.global_emission.shape
 
             self.constr.append(global_emission_cap - self.global_emission >= 0)
+
+    def _constr_emission_sectoral_cap(self):
+
+        """
+        Defines the CO2 emission cap globally and within each region for the final
+        demand sectors (technologies)
+        """
+
+        for reg in self.sets.regions:
+
+            self.sectoral_emissions_regional = {}
+
+            for indx,tech in enumerate(self.sets.Technologies[reg]["Demand"]):
+
+                self.sectoral_emissions_regional[tech] = np.zeros(
+                (len(self.sets.main_years),1)
+                )
+
+                for key,value in self.sets.Technologies[reg].items():
+
+                    if key != "Demand" and key !="Transmission" and key != "Storage":
+
+                        for indx_, tech_ in enumerate(value):
+
+                            if (self.sets.mapping[reg]["Carrier_input"].loc[self.sets.mapping[reg]["Carrier_input"]["Technology"]==tech]["Carrier_in"].values in
+                            self.sets.mapping[reg]["Carrier_output"].loc[self.sets.mapping[reg]["Carrier_output"]["Technology"]==tech_]["Carrier_out"].values):
+
+                                self.sectoral_emissions_regional[tech] += self.CO2_equivalent[reg][key][:,indx_]
+
+                    elif key == "Transmission":
+
+                        for _tech_ in value:
+
+                            if (self.sets.mapping[reg]["Carrier_input"].loc[self.sets.mapping[reg]["Carrier_input"]["Technology"]==tech]["Carrier_in"].values in
+                            self.sets.mapping[reg]["Carrier_output"].loc[self.sets.mapping[reg]["Carrier_output"]["Technology"]==_tech_]["Carrier_out"].values):
+
+                                for key_,value_ in self.sets.Technologies[reg].items():
+
+                                    if key_ != "Demand" and key_ !="Transmission" and key_ != "Storage":
+
+                                        for _indx_, tech__ in enumerate(value_):
+
+                                            if (self.sets.mapping[reg]["Carrier_input"].loc[self.sets.mapping[reg]["Carrier_input"]["Technology"]==_tech_]["Carrier_in"].values in
+                                            self.sets.mapping[reg]["Carrier_output"].loc[self.sets.mapping[reg]["Carrier_output"]["Technology"]==tech__]["Carrier_out"].values):
+
+                                                self.sectoral_emissions_regional[tech] += self.CO2_equivalent[reg][key_][:,_indx_]
+
+                self.constr.append(self.sets.data[reg]["sectoral_emission_cap_annual"][tech].values >= self.sectoral_emissions_regional[tech])
+
 
     def _constr_storage_max_min_charge(self):
 

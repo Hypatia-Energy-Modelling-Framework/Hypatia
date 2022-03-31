@@ -363,6 +363,7 @@ class ReadSets:
                     "index": pd.Index(self.main_years, name="Years"),
                     "columns": ["Global Emission Cap"],
                 },
+
             }
 
             connections_operation_sorted = sorted(self.connection_sheet_ids.items(), key=lambda pair: list_connection_operation.index(pair[0]))
@@ -658,6 +659,11 @@ class ReadSets:
                     "value": 1e10,
                     "index": pd.Index(self.main_years, name="Years"),
                     "columns": ["Emission Cap"],
+                },
+                "Sectoral_emission_cap_annual": {
+                    "value": 1e10,
+                    "index": pd.Index(self.main_years, name="Years"),
+                    "columns": self.Technologies[reg]["Demand"],
                 },
                 "AnnualProd_perunit_capacity": {
                     "value": 1,
