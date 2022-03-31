@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from enum import Enum
+
 """
 This module returns the constants of the code inclduing the info of sets and
 parameter filese
@@ -443,3 +445,7 @@ technology_categories = [
 ]
 
 carrier_types = ["Resource", "Intermediate", "Demand"]
+
+class ModelMode(Enum):
+    Planning = "Planning"
+    Operation = "Operation"
