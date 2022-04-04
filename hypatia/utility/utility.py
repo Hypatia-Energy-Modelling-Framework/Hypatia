@@ -465,3 +465,61 @@ def storage_max_flow(
     max_flow = cp.multiply(storage_capacity_available, timeslice_fraction) * 8760 / time
 
     return max_flow
+
+
+"""
+A helper function used in ReadSets to initialize the column field
+of technology-specific parameter files
+
+Parameters
+----------
+technologies_hierarchy : Dict[str => List[Str]]
+    A dictionary defining the mapping between a technology category
+    and a list of technologies belonging to that category.
+    i.e. {"Supply": ["NG_extraction", "Geo_PP"]}
+
+ignored_tech_categories : List[str]
+    A list of technology categories that should be excluded from
+    the parameter's file columns
+
+additional_level : None/Touple(str, List[str])
+    An additional top hierarchy level to be added to the columns.
+    It is in the form (column name, column values).
+    i.e. ("Taxes or Subsidies", ["Tax", "Sub"])
+"""
+def create_technology_columns(
+    technologies_hierarchy,
+    ignored_tech_categories=["Demand"],
+    additional_level=None,
+):
+    tuples = []
+    names = ["Tech_category", "Technology"]
+    for tech_category, technologies in technologies_hierarchy.items():
+        for technology in technologies:
+            tuples.append((tech_category, technology))
+
+    # Remove technologies of ignored categories
+    for ignored_tech_category in ignored_tech_categories:
+        if ignored_tech_category in technologies_hierarchy.keys():
+            tuples = [t for t in tuples if t[0] != ignored_tech_category]
+
+    # Add an additional top level if it was specified
+    if additional_level != None:
+        additional_level_name = additional_level[0]
+        additional_level_values = additional_level[1]
+
+        names.insert(0, additional_level_name)
+
+        new_tuples = []
+        for additional_level_value in additional_level_values:
+            for t in tuples:
+                l = list(t)
+                l.insert(0, additional_level_value)
+                new_tuples.append(tuple(l))
+        tuples = new_tuples
+
+    indexer = pd.MultiIndex.from_tuples(
+        tuples, names=names
+    )
+
+    return indexer
