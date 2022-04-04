@@ -24,7 +24,7 @@ def stack(a, b, axis=0):
 def newcap_accumulated(newcap, techs, main_years, tlft):
 
     """
-    Calculates the accumulated new capacity of each technology in each 
+    Calculates the accumulated new capacity of each technology in each
     year of the model horizon based on the useful technical lifetime
     """
 
@@ -54,7 +54,7 @@ def _calc_variable_overall(
 ):
 
     """
-    Calculates the aggregated annual total or new capacity of each technology 
+    Calculates the aggregated annual total or new capacity of each technology
     over all the regions
     """
 
@@ -80,7 +80,7 @@ def _calc_production_overall(
 ):
 
     """
-    Calculates the aggregated annual production of each technology 
+    Calculates the aggregated annual production of each technology
     over all the regions
     """
 
@@ -105,7 +105,7 @@ def _calc_production_overall(
 def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft):
 
     """
-    Calculates the accumulated new capacity of each inter-regional link in each 
+    Calculates the accumulated new capacity of each inter-regional link in each
     year the model horizon based on the useful technical lifetime
     """
 
@@ -137,7 +137,7 @@ def decomcap(newcap, techs, main_years, tlft):
 
     """
     Calculates the annual decomissioned capacity of each technology in each
-    year of the time horizon based on life time of the new capacities 
+    year of the time horizon based on life time of the new capacities
     installed in the vintage years
     """
     index = pd.MultiIndex.from_product([techs, main_years])
@@ -165,7 +165,7 @@ def line_decomcap(line_newcap, carriers, main_years, line_tlft):
 
     """
     Calculates the annual decomissioned capacity of each inter-regional link in each
-    year of the time horizon based on life time of the new capacities 
+    year of the time horizon based on life time of the new capacities
     installed in the vintage years
     """
 
@@ -371,7 +371,7 @@ def salvage_factor(
 
     """
     Calculates the salvage factor of the investment cost for the capacities
-    that remain after the end of the time horizon to avoid the end of the horizon 
+    that remain after the end of the time horizon to avoid the end of the horizon
     effect
     """
 
@@ -415,7 +415,7 @@ def salvage_factor(
 def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency):
 
     """
-    Calculates the state of charge of the storage 
+    Calculates the state of charge of the storage
     """
     charge_efficiency_reshape = pd.concat(
     [charge_efficiency]
@@ -445,7 +445,7 @@ def get_regions_with_storage(sets):
 
     for reg in sets.regions:
 
-        if "Storage" in sets.Technologies[reg]:
+        if "Storage" in sets.technologies[reg]:
 
             yield reg
 
@@ -454,7 +454,7 @@ def storage_max_flow(
     storage_totalcapacity, time, storage_capacity_factor, timeslice_fraction
 ):
     """
-    Calculates the maximum allowed inflow and ouflow of storage technologies 
+    Calculates the maximum allowed inflow and ouflow of storage technologies
     based on the charge/discharge time and the total nominal capacity
     """
 
