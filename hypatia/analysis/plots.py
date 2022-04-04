@@ -167,56 +167,56 @@ class Plotter:
         """Extracts the data for plots"""
 
         self.data = deepcopy(results.results)
-        self.regions = deepcopy(results._StrData.regions)
-        self.years = deepcopy(results._StrData.main_years)
-        self.time_fraction = deepcopy(results._StrData.timeslice_fraction)
+        self.regions = deepcopy(results.get_model_data().settings.regions)
+        self.years = deepcopy(results.get_model_data().settings.years)
+        self.time_fraction = deepcopy(results.get_model_data().settings.timeslice_fraction)
         self.techs = deepcopy(
-            results._StrData.glob_mapping["Technologies_glob"]["Technology"].tolist()
+            results.get_model_data().settings.global_settings["Technologies_glob"]["Technology"].tolist()
         )
         self.fuels = deepcopy(
-            results._StrData.glob_mapping["Carriers_glob"]["Carrier"].tolist()
+            results.get_model_data().settings.global_settings["Carriers_glob"]["Carrier"].tolist()
         )
         self.emissions = deepcopy(
-            results._StrData.glob_mapping["Emissions"]["Emission"].tolist()
+            results.get_model_data().settings.global_settings["Emissions"]["Emission"].tolist()
         )
 
         reformed_sets = {}
-        for region in results._StrData.regions:
+        for region in self.regions:
             reformed_sets[region] = {}
-            for key, value in results._StrData.mapping[region].items():
+            for key, value in results.get_model_data().settings.regional_settings[region].items():
                 reformed_sets[region][key] = value.set_index(
                     [main_index[key]], inplace=False
                 )
         self.sets = reformed_sets
 
         self.glob_mapping = dict(
-            techs=results._StrData.glob_mapping["Technologies_glob"].set_index(
+            techs=results.get_model_data().settings.global_settings["Technologies_glob"].set_index(
                 ["Technology"], inplace=False
             ),
-            fuels=results._StrData.glob_mapping["Carriers_glob"].set_index(
+            fuels=results.get_model_data().settings.global_settings["Carriers_glob"].set_index(
                 ["Carrier"], inplace=False
             ),
         )
 
-        self.mapping = results._StrData.mapping
+        self.mapping = results.get_model_data().settings.regional_settings
 
-        years = results._StrData.main_years
-        _years = results._StrData.glob_mapping["Years"]
+        years = results.get_model_data().settings.years
+        _years = results.get_model_data().settings.global_settings["Years"]
         years = _years[_years["Year"].isin(years)]["Year_name"]
-        time_fraction = results._StrData.time_steps
+        time_fraction = results.get_model_data().settings.time_steps
         year_slice = year_slice_index(years, time_fraction)
 
         for item in ["tech_residual_cap", "carrier_ratio_in", "carrier_ratio_out"]:
 
             self.data[item] = {}
             for reg in self.regions:
-                if item not in results._StrData.data[reg]:
+                if item not in results.get_model_data().regional_parameters[reg]:
                     continue
                 if item == "tech_residual_cap":
                     index = years
                 else:
                     index = year_slice
-                data = results._StrData.data[reg][item]
+                data = results.get_model_data().regional_parameters[reg][item]
                 self.data[item][reg] = pd.DataFrame(
                     data=data.values, index=index, columns=data.columns
                 )
@@ -1022,7 +1022,7 @@ class Plotter:
         techs = techs[techs["tech_group"].isin(str2ls(tech_group))].index
         unit = self.configs["emissions"].loc[self.emissions[0], "emission_unit"]
         emission_name = self.configs["emissions"].loc[self.emissions[0], "emission_name"]
-        
+
 
         if regions == "all":
             regions = self.regions
@@ -1218,7 +1218,7 @@ class Plotter:
         exclude_cost_items=[],
     ):
         """
-        
+
 
         Parameters
         ----------
