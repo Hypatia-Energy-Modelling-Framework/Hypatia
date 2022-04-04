@@ -25,7 +25,7 @@ from hypatia.error_log.Checks import (
     check_carrier_type,
     check_years_mode_consistency,
 )
-from hypatia.backend.StrData import create_technology_columns
+from hypatia.utility.utility import create_technology_columns
 
 class ModelSettings:
     """
