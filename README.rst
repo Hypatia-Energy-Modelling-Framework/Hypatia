@@ -56,7 +56,7 @@ the following line in *Anaconda Prompt*:
 After activating the environment, you need to install **CVXPY**:
 
 .. note::
-   Please pay attention to the version of CVXPY while installing it
+    Please pay attention to the version of CVXPY while installing it
 
 .. code-block:: bash
 
