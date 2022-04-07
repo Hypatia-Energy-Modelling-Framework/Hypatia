@@ -53,10 +53,7 @@ the following line in *Anaconda Prompt*:
 
     conda activate hypatia
 
-After activating the environment, you need to install **CVXPY**:
-
-.. note::
-    Please pay attention to the version of CVXPY while installing it
+After activating the environment, you need to install **CVXPY, version 1.1.17**:
 
 .. code-block:: bash
 
