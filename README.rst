@@ -58,6 +58,7 @@ After activating the environment, you need to install **CVXPY**:
 .. code-block:: bash
 
     conda install -c conda-forge cvxpy=1.1.17 
+    
 .. note::
    **Please pay attention to the version of CVXPY while installing it** 
 
