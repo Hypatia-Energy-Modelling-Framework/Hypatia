@@ -81,11 +81,11 @@ the following line in *Anaconda Prompt*:
 
     conda activate hypatia
 
-After activating the environment, you first need to install **CVXPY** using **conda**:
+After activating the environment, you first need to install **CVXPY, version 1.1.17** using **conda**:
 
 .. code-block:: bash
 
-    conda install -c conda-forge cvxpy
+    conda install -c conda-forge cvxpy=1.1.17
 
 Then you can use **pip** to install the hypatia software:
 
