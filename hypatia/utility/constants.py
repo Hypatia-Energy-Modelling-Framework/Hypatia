@@ -5,6 +5,7 @@ from enum import Enum
 This module returns the constants of the code inclduing the info of sets and
 parameter filese
 """
+from typing import TypedDict
 
 global_set_ids = {
     "Regions": ["Region", "Region_name"],
@@ -39,3 +40,7 @@ carrier_types = ["Resource", "Intermediate", "Demand"]
 class ModelMode(Enum):
     Planning = "Planning"
     Operation = "Operation"
+
+class TopologyType(Enum):
+    SingleNode = "SingleNone"
+    MultiNode = "MultiNode"

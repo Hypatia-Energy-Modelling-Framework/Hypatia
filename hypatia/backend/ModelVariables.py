@@ -29,6 +29,7 @@ class ModelVariables():
             self._calc_variable_operation()
             if self.model_data.settings.multi_node:
                 self._calc_variable_operation_line()
+        self._calc_emission_variables()
 
         # Reshape the demand
         self.demand = {
@@ -175,8 +176,6 @@ class ModelVariables():
             decomcapacity_regional = {}
             cost_decom_regional = {}
             cost_variable_regional = {}
-            CO2_equivalent_regional = {}
-            emission_cost_regional = {}
             production_annual_regional = {}
 
             for key in self.new_capacity[reg].keys():
@@ -250,17 +249,6 @@ class ModelVariables():
                     self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
                 )
 
-                if key != "Transmission" and key != "Storage":
-
-                    CO2_equivalent_regional[key] = cp.multiply(
-                        production_annual_regional[key],
-                        self.model_data.regional_parameters[reg]["specific_emission"].loc[:, key],
-                    )
-
-                    emission_cost_regional[key] = cp.multiply(
-                        CO2_equivalent_regional[key],
-                        self.model_data.regional_parameters[reg]["carbon_tax"].loc[:, key],
-                    )
 
                 cost_fvalue_regional[key] = invcosts_annuity(
                     cost_inv_regional[key],
@@ -282,8 +270,6 @@ class ModelVariables():
             self.decommissioned_capacity[reg] = decomcapacity_regional
             self.cost_decom[reg] = cost_decom_regional
             self.cost_variable[reg] = cost_variable_regional
-            self.CO2_equivalent[reg] = CO2_equivalent_regional
-            self.emission_cost[reg] = emission_cost_regional
             self.cost_inv_fvalue[reg] = cost_fvalue_regional
             self.production_annual[reg] = production_annual_regional
 
@@ -358,8 +344,6 @@ class ModelVariables():
         self.cost_fix_tax = {}
         self.cost_fix_sub = {}
         self.cost_variable = {}
-        self.CO2_equivalent = {}
-        self.emission_cost = {}
         self.production_annual = {}
         for reg in self.model_data.settings.regions:
 
@@ -368,8 +352,6 @@ class ModelVariables():
             cost_fix_tax_regional = {}
             cost_fix_Sub_regional = {}
             cost_variable_regional = {}
-            CO2_equivalent_regional = {}
-            emission_cost_regional = {}
             production_annual_regional = {}
 
             for key in self.model_data.settings.technologies[reg].keys():
@@ -402,25 +384,11 @@ class ModelVariables():
                         self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
                     )
 
-                    if key != "Transmission" and key != "Storage":
-
-                        CO2_equivalent_regional[key] = cp.multiply(
-                            production_annual_regional[key],
-                            self.model_data.regional_parameters[reg]["specific_emission"].loc[:, key],
-                        )
-
-                        emission_cost_regional[key] = cp.multiply(
-                            CO2_equivalent_regional[key],
-                            self.model_data.regional_parameters[reg]["carbon_tax"].loc[:, key],
-                        )
-
             self.totalcapacity[reg] = totalcapacity_regional
             self.cost_fix[reg] = cost_fix_regional
             self.cost_fix_tax[reg] = cost_fix_tax_regional
             self.cost_fix_sub[reg] = cost_fix_Sub_regional
             self.cost_variable[reg] = cost_variable_regional
-            self.CO2_equivalent[reg] = CO2_equivalent_regional
-            self.emission_cost[reg] = emission_cost_regional
             self.production_annual[reg] = production_annual_regional
 
     def _calc_variable_operation_line(self):
@@ -626,3 +594,34 @@ class ModelVariables():
             self.totalimportbycarrier[reg] = totalimportbycarrier_regional
             self.totalexportbycarrier[reg] = totalexportbycarrier_regional
             self.totaldemandbycarrier[reg] = totaldemandbycarrier_regional
+
+
+    def _calc_emission_variables(self):
+        self.CO2_equivalent = {}
+        self.emission_cost = {}
+        self.regional_emission = {}
+        for reg in self.model_data.settings.regions:
+            CO2_equivalent_regional = {}
+            emission_cost_regional = {}
+            emission = np.zeros(
+                (len(self.model_data.settings.years) * len(self.model_data.settings.time_steps), 1)
+            )
+            for key in self.model_data.settings.technologies[reg].keys():
+                if key == "Demand" or key == "Transmission" or key == "Storage":
+                    continue
+
+                CO2_equivalent_regional[key] = cp.multiply(
+                    self.production_annual[reg][key],
+                    self.model_data.regional_parameters[reg]["specific_emission"].loc[:, key],
+                )
+
+                emission_cost_regional[key] = cp.multiply(
+                    CO2_equivalent_regional[key],
+                    self.model_data.regional_parameters[reg]["carbon_tax"].loc[:, key],
+                )
+
+                emission += cp.sum(CO2_equivalent_regional[key], axis=1)
+
+            self.CO2_equivalent[reg] = CO2_equivalent_regional
+            self.emission_cost[reg] = emission_cost_regional
+            self.regional_emission[reg] = emission
