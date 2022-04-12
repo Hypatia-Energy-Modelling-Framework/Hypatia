@@ -9,6 +9,7 @@ import cvxpy as cp
 import numpy as np
 from collections import namedtuple
 from hypatia.backend.ModelData import ModelData
+from hypatia.backend.ModelVariables import ModelVariables
 from hypatia.utility.constants import ModelMode
 from hypatia.utility.utility import (
     invcosts,
@@ -36,7 +37,12 @@ logger = logging.getLogger(__name__)
 
 
 RESULTS = [
-    "variables",
+    "technology_prod",
+    "technology_use",
+    "line_import",
+    "line_export",
+    "new_capacity",
+    "line_new_capacity",
     "cost_fix",
     "cost_variable",
     "totalcapacity",
@@ -76,8 +82,8 @@ class BuildModel:
     def __init__(self, model_data: ModelData):
 
         self.model_data = model_data
+        self.vars = ModelVariables(self.model_data)
         self.constr = []
-        self._set_variables()
 
         timeslice_fraction = self.model_data.settings.timeslice_fraction
         if not isinstance(timeslice_fraction, int):
@@ -86,8 +92,6 @@ class BuildModel:
 
         # calling the methods based on the defined mode by the user
         if self.model_data.settings.mode == ModelMode.Planning:
-            self._calc_variable_planning()
-            self._balance_()
             self._constr_totalcapacity_regional()
             self._constr_newcapacity_regional()
             self._constr_balance()
@@ -95,7 +99,6 @@ class BuildModel:
             self._constr_tech_efficiency()
             self._constr_prod_annual()
             self._constr_emission_cap()
-            self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
             self._set_regional_objective_planning()
@@ -103,7 +106,6 @@ class BuildModel:
             if not self.model_data.settings.multi_node:
                 self._set_final_objective_singlenode()
             else:
-                self._calc_variable_planning_line()
                 self._constr_totalcapacity_line()
                 self._constr_totalcapacity_overall()
                 self._constr_newcapacity_overall()
@@ -114,14 +116,11 @@ class BuildModel:
                 self._set_final_objective_multinode()
 
         elif self.model_data.settings.mode == ModelMode.Operation:
-            self._calc_variable_operation()
-            self._balance_()
             self._constr_balance()
             self._constr_resource_tech_availability()
             self._constr_tech_efficiency()
             self._constr_prod_annual()
             self._constr_emission_cap()
-            self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
             self._set_regional_objective_operation()
@@ -129,7 +128,6 @@ class BuildModel:
             if not self.model_data.settings.multi_node:
                 self._set_final_objective_singlenode()
             else:
-                self._calc_variable_operation_line()
                 self._constr_line_availability()
                 self._constr_trade_balance()
                 self._constr_prod_annual_overall()
@@ -148,11 +146,6 @@ class BuildModel:
         problem.solve(solver=solver, verbose=verbosity, **kwargs)
 
         if problem.status == "optimal":
-
-            # Reshape the demand
-            self.demand = {
-                reg: self.model_data.regional_parameters[reg]["demand"] for reg in self.model_data.settings.regions
-            }
 
             res = RESULTS.copy()
             to_add = []
@@ -178,7 +171,7 @@ class BuildModel:
             res.extend(to_add)
             result_collector = namedtuple("result", res)
             results = result_collector(
-                **{result: getattr(self, result) for result in res}
+                **{result: getattr(self.vars, result) for result in res}
             )
 
             return results
@@ -189,611 +182,6 @@ class BuildModel:
                 "critical",
             )
 
-    def _set_variables(self):
-
-        """
-        Creates the matrixed-based variables of the problem
-        in a nested dict format for each region and each technology category.
-        """
-
-        technology_prod = {}
-        technology_use = {}
-        new_capacity = {}
-        line_newcapacity = {}
-        line_import = {}
-        line_export = {}
-
-        for reg in self.model_data.settings.regions:
-            regional_prod = {}
-            regional_use = {}
-            for key in self.model_data.settings.technologies[reg].keys():
-
-                if key != "Demand":
-
-                    regional_prod[key] = cp.Variable(
-                        shape=(
-                            len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),
-                            len(self.model_data.settings.technologies[reg][key]),
-                        ),
-                        nonneg=True,
-                    )
-                if key != "Demand" and key != "Supply":
-                    regional_use[key] = cp.Variable(
-                        shape=(
-                            len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),
-                            len(self.model_data.settings.technologies[reg][key]),
-                        ),
-                        nonneg=True,
-                    )
-
-            technology_prod[reg] = regional_prod
-            technology_use[reg] = regional_use
-
-            export_ = {}
-            import_ = {}
-            for reg_ in self.model_data.settings.regions:
-
-                if reg_ != reg:
-                    export_[reg_] = cp.Variable(
-                        shape=(
-                            len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),
-                            len(self.model_data.settings.global_settings["Carriers_glob"].index),
-                        ),
-                        nonneg=True,
-                    )
-                    import_[reg_] = cp.Variable(
-                        shape=(
-                            len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),
-                            len(self.model_data.settings.global_settings["Carriers_glob"].index),
-                        ),
-                        nonneg=True,
-                    )
-
-            line_export[reg] = export_
-            line_import[reg] = import_
-
-        self.variables = {
-            "productionbyTechnology": technology_prod,
-            "usebyTechnology": technology_use,
-        }
-
-        if len(self.model_data.settings.regions) > 1:
-
-            self.variables.update(
-                {"line_export": line_export, "line_import": line_import,}
-            )
-
-        if self.model_data.settings.mode == ModelMode.Planning:
-
-            for reg in self.model_data.settings.regions:
-                regional_newcap = {}
-                for key in self.model_data.settings.technologies[reg].keys():
-
-                    if key != "Demand":
-
-                        regional_newcap[key] = cp.Variable(
-                            shape=(
-                                len(self.model_data.settings.years),
-                                len(self.model_data.settings.technologies[reg][key]),
-                            ),
-                            nonneg=True,
-                        )
-
-                new_capacity[reg] = regional_newcap
-
-            self.variables.update({"newcapacity": new_capacity})
-
-            if len(self.model_data.settings.regions) > 1:
-
-                for line in self.model_data.settings.lines_list:
-
-                    line_newcapacity[line] = cp.Variable(
-                        shape=(
-                            len(self.model_data.settings.years),
-                            len(self.model_data.settings.global_settings["Carriers_glob"].index),
-                        ),
-                        nonneg=True,
-                    )
-
-                self.variables.update({"line_newcapacity": line_newcapacity})
-
-    def _calc_variable_planning(self):
-
-        """
-        Calculates all the cost components of the objective function and the
-        intermediate variables in the planning mode, for each region
-        """
-
-        self.cost_inv = {}
-        self.cost_inv_tax = {}
-        self.cost_inv_sub = {}
-        self.cost_inv_fvalue = {}
-        self.salvage_inv = {}
-        self.accumulated_newcapacity = {}
-        self.totalcapacity = {}
-        self.cost_fix = {}
-        self.cost_fix_tax = {}
-        self.cost_fix_sub = {}
-        self.decommissioned_capacity = {}
-        self.cost_decom = {}
-        self.cost_variable = {}
-        self.CO2_equivalent = {}
-        self.emission_cost = {}
-        self.production_annual = {}
-
-        for reg in self.model_data.settings.regions:
-
-            cost_inv_regional = {}
-            cost_inv_tax_regional = {}
-            cost_inv_sub_regional = {}
-            cost_fvalue_regional = {}
-            salvage_inv_regional = {}
-            accumulated_newcapacity_regional = {}
-            totalcapacity_regional = {}
-            cost_fix_regional = {}
-            cost_fix_tax_regional = {}
-            cost_fix_Sub_regional = {}
-            decomcapacity_regional = {}
-            cost_decom_regional = {}
-            cost_variable_regional = {}
-            CO2_equivalent_regional = {}
-            emission_cost_regional = {}
-            production_annual_regional = {}
-
-            for key in self.variables["newcapacity"][reg].keys():
-
-                (
-                    cost_inv_regional[key],
-                    cost_inv_tax_regional[key],
-                    cost_inv_sub_regional[key],
-                ) = invcosts(
-                    self.model_data.regional_parameters[reg]["tech_inv"][key],
-                    self.variables["newcapacity"][reg][key],
-                    self.model_data.regional_parameters[reg]["inv_taxsub"]["Tax"][key],
-                    self.model_data.regional_parameters[reg]["inv_taxsub"]["Sub"][key],
-                )
-
-                salvage_inv_regional[key] = cp.multiply(
-                    salvage_factor(
-                        self.model_data.settings.years,
-                        self.model_data.settings.technologies[reg][key],
-                        self.model_data.regional_parameters[reg]["tech_lifetime"].loc[:, key],
-                        self.model_data.regional_parameters[reg]["interest_rate"].loc[:, key],
-                        self.model_data.regional_parameters[reg]["discount_rate"],
-                        self.model_data.regional_parameters[reg]["economic_lifetime"].loc[:, key],
-                    ),
-                    cost_inv_regional[key],
-                )
-
-                accumulated_newcapacity_regional[key] = newcap_accumulated(
-                    self.variables["newcapacity"][reg][key],
-                    self.model_data.settings.technologies[reg][key],
-                    self.model_data.settings.years,
-                    self.model_data.regional_parameters[reg]["tech_lifetime"].loc[:, key],
-                )
-
-                totalcapacity_regional[key] = (
-                    accumulated_newcapacity_regional[key]
-                    + self.model_data.regional_parameters[reg]["tech_residual_cap"].loc[:, key]
-                )
-
-                (
-                    cost_fix_regional[key],
-                    cost_fix_tax_regional[key],
-                    cost_fix_Sub_regional[key],
-                ) = fixcosts(
-                    self.model_data.regional_parameters[reg]["tech_fixed_cost"][key],
-                    totalcapacity_regional[key],
-                    self.model_data.regional_parameters[reg]["fix_taxsub"]["Tax"][key],
-                    self.model_data.regional_parameters[reg]["fix_taxsub"]["Sub"][key],
-                )
-
-                decomcapacity_regional[key] = decomcap(
-                    self.variables["newcapacity"][reg][key],
-                    self.model_data.settings.technologies[reg][key],
-                    self.model_data.settings.years,
-                    self.model_data.regional_parameters[reg]["tech_lifetime"].loc[:, key],
-                )
-
-                cost_decom_regional[key] = cp.multiply(
-                    self.model_data.regional_parameters[reg]["tech_decom_cost"].loc[:, key].values,
-                    decomcapacity_regional[key],
-                )
-
-                production_annual_regional[key] = annual_activity(
-                    self.variables["productionbyTechnology"][reg][key],
-                    self.model_data.settings.years,
-                    self.model_data.settings.time_steps,
-                )
-
-                cost_variable_regional[key] = cp.multiply(
-                    production_annual_regional[key],
-                    self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
-                )
-
-                if key != "Transmission" and key != "Storage":
-
-                    CO2_equivalent_regional[key] = cp.multiply(
-                        production_annual_regional[key],
-                        self.model_data.regional_parameters[reg]["specific_emission"].loc[:, key],
-                    )
-
-                    emission_cost_regional[key] = cp.multiply(
-                        CO2_equivalent_regional[key],
-                        self.model_data.regional_parameters[reg]["carbon_tax"].loc[:, key],
-                    )
-
-                cost_fvalue_regional[key] = invcosts_annuity(
-                    cost_inv_regional[key],
-                    self.model_data.regional_parameters[reg]["interest_rate"].loc[:, key],
-                    self.model_data.regional_parameters[reg]["economic_lifetime"].loc[:, key],
-                    self.model_data.settings.technologies[reg][key],
-                    self.model_data.settings.years,
-                    self.model_data.regional_parameters[reg]["discount_rate"],
-                )
-
-            self.cost_inv[reg] = cost_inv_regional
-            self.cost_inv_tax[reg] = cost_inv_tax_regional
-            self.cost_inv_sub[reg] = cost_inv_sub_regional
-            self.salvage_inv[reg] = salvage_inv_regional
-            self.totalcapacity[reg] = totalcapacity_regional
-            self.cost_fix[reg] = cost_fix_regional
-            self.cost_fix_tax[reg] = cost_fix_tax_regional
-            self.cost_fix_sub[reg] = cost_fix_Sub_regional
-            self.decommissioned_capacity[reg] = decomcapacity_regional
-            self.cost_decom[reg] = cost_decom_regional
-            self.cost_variable[reg] = cost_variable_regional
-            self.CO2_equivalent[reg] = CO2_equivalent_regional
-            self.emission_cost[reg] = emission_cost_regional
-            self.cost_inv_fvalue[reg] = cost_fvalue_regional
-            self.production_annual[reg] = production_annual_regional
-
-    def _calc_variable_planning_line(self):
-
-        """
-        Calculates all the cost and intermediate variables related to the inter-
-        regional links in the planning mode
-        """
-
-        self.cost_inv_line = {}
-        self.line_accumulated_newcapacity = {}
-        self.line_totalcapacity = {}
-        self.cost_fix_line = {}
-        self.line_decommissioned_capacity = {}
-        self.cost_decom_line = {}
-
-        for key in self.variables["line_newcapacity"].keys():
-
-            self.cost_inv_line[key] = cp.multiply(
-                self.model_data.trade_parameters["line_inv"].loc[:, key].values,
-                self.variables["line_newcapacity"][key],
-            )
-
-            self.line_accumulated_newcapacity[key] = line_newcap_accumulated(
-                self.variables["line_newcapacity"][key],
-                self.model_data.settings.global_settings["Carriers_glob"]["Carrier"],
-                self.model_data.settings.years,
-                self.model_data.trade_parameters["line_lifetime"].loc[:, key],
-            )
-
-            self.line_totalcapacity[key] = (
-                self.line_accumulated_newcapacity[key]
-                + self.model_data.trade_parameters["line_residual_cap"].loc[:, key].values
-            )
-
-            self.cost_fix_line[key] = cp.multiply(
-                self.model_data.trade_parameters["line_fixed_cost"].loc[:, key].values,
-                self.line_totalcapacity[key],
-            )
-
-            self.line_decommissioned_capacity[key] = line_decomcap(
-                self.variables["line_newcapacity"][key],
-                self.model_data.settings.global_settings["Carriers_glob"]["Carrier"],
-                self.model_data.settings.years,
-                self.model_data.trade_parameters["line_lifetime"].loc[:, key],
-            )
-
-            self.cost_decom_line[key] = cp.multiply(
-                self.model_data.trade_parameters["line_decom_cost"].loc[:, key].values,
-                self.line_decommissioned_capacity[key],
-            )
-
-        self.cost_variable_line = line_varcost(
-            self.model_data.trade_parameters["line_var_cost"],
-            self.variables["line_import"],
-            self.model_data.settings.regions,
-            self.model_data.settings.years,
-            self.model_data.settings.time_steps,
-            self.model_data.settings.lines_list,
-        )
-
-    def _calc_variable_operation(self):
-
-        """
-        Calculates all the cost components of the objective function and the
-        intermediate variables in the operation mode, for each region
-        """
-
-        self.totalcapacity = {}
-        self.cost_fix = {}
-        self.cost_fix_tax = {}
-        self.cost_fix_sub = {}
-        self.cost_variable = {}
-        self.CO2_equivalent = {}
-        self.emission_cost = {}
-        self.production_annual = {}
-        for reg in self.model_data.settings.regions:
-
-            totalcapacity_regional = {}
-            cost_fix_regional = {}
-            cost_fix_tax_regional = {}
-            cost_fix_Sub_regional = {}
-            cost_variable_regional = {}
-            CO2_equivalent_regional = {}
-            emission_cost_regional = {}
-            production_annual_regional = {}
-
-            for key in self.model_data.settings.technologies[reg].keys():
-
-                if key != "Demand":
-
-                    totalcapacity_regional[key] = (
-                        self.model_data.regional_parameters[reg]["tech_residual_cap"].loc[:, key].values
-                    )
-
-                    (
-                        cost_fix_regional[key],
-                        cost_fix_tax_regional[key],
-                        cost_fix_Sub_regional[key],
-                    ) = fixcosts(
-                        self.model_data.regional_parameters[reg]["tech_fixed_cost"][key],
-                        totalcapacity_regional[key],
-                        self.model_data.regional_parameters[reg]["fix_taxsub"]["Tax"][key],
-                        self.model_data.regional_parameters[reg]["fix_taxsub"]["Sub"][key],
-                    )
-
-                    production_annual_regional[key] = annual_activity(
-                        self.variables["productionbyTechnology"][reg][key],
-                        self.model_data.settings.years,
-                        self.model_data.settings.time_steps,
-                    )
-
-                    cost_variable_regional[key] = cp.multiply(
-                        production_annual_regional[key],
-                        self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
-                    )
-
-                    if key != "Transmission" and key != "Storage":
-
-                        CO2_equivalent_regional[key] = cp.multiply(
-                            production_annual_regional[key],
-                            self.model_data.regional_parameters[reg]["specific_emission"].loc[:, key],
-                        )
-
-                        emission_cost_regional[key] = cp.multiply(
-                            CO2_equivalent_regional[key],
-                            self.model_data.regional_parameters[reg]["carbon_tax"].loc[:, key],
-                        )
-
-            self.totalcapacity[reg] = totalcapacity_regional
-            self.cost_fix[reg] = cost_fix_regional
-            self.cost_fix_tax[reg] = cost_fix_tax_regional
-            self.cost_fix_sub[reg] = cost_fix_Sub_regional
-            self.cost_variable[reg] = cost_variable_regional
-            self.CO2_equivalent[reg] = CO2_equivalent_regional
-            self.emission_cost[reg] = emission_cost_regional
-            self.production_annual[reg] = production_annual_regional
-
-    def _calc_variable_operation_line(self):
-
-        """
-        Calculates all the cost and intermediate variables related to the inter-
-        regional links in the operation mode
-        """
-
-        self.line_totalcapacity = {}
-        self.cost_fix_line = {}
-        for key in self.model_data.settings.lines_list:
-
-            self.line_totalcapacity[key] = (
-                self.model_data.trade_parameters["line_residual_cap"].loc[:, key].values
-            )
-            self.cost_fix_line[key] = cp.multiply(
-                self.model_data.trade_parameters["line_fixed_cost"].loc[:, key].values,
-                self.line_totalcapacity[key],
-            )
-
-        self.cost_variable_line = line_varcost(
-            self.model_data.trade_parameters["line_var_cost"],
-            self.variables["line_import"],
-            self.model_data.settings.regions,
-            self.model_data.settings.years,
-            self.model_data.settings.time_steps,
-            self.model_data.settings.lines_list,
-        )
-
-    def _calc_variable_storage_SOC(self):
-
-        """
-        Calculates the annual state of charge of the on grid storage technologies,
-        in the models with hourly temporal resolution
-        """
-
-        self.storage_SOC = {}
-
-        for reg in get_regions_with_storage(self.model_data.settings):
-
-            self.storage_SOC[reg] = storage_state_of_charge(
-                self.model_data.regional_parameters[reg]["storage_initial_SOC"],
-                self.variables["usebyTechnology"][reg]["Storage"],
-                self.variables["productionbyTechnology"][reg]["Storage"],
-                self.model_data.settings.years,
-                self.model_data.settings.time_steps,
-                self.model_data.regional_parameters[reg]["storage_charge_efficiency"],
-                self.model_data.regional_parameters[reg]["storage_discharge_efficiency"],
-            )
-
-    def _balance_(self):
-
-        """
-        Creates the dictionaries for the annual total production by each technology,
-        total consumption by each technology, total import,total exports and total final demand
-        of each energy carrier within each region
-        """
-
-        self.totalusebycarrier = {}
-        self.totalprodbycarrier = {}
-        self.totalimportbycarrier = {}
-        self.totalexportbycarrier = {}
-        self.totaldemandbycarrier = {}
-
-        for reg in self.model_data.settings.regions:
-
-            totalusebycarrier_regional = {}
-            totalprodbycarrier_regional = {}
-            totalimportbycarrier_regional = {}
-            totalexportbycarrier_regional = {}
-            totaldemandbycarrier_regional = {}
-
-            for carr in self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]:
-
-                totalusebycarrier_regional[carr] = np.zeros(
-                    (len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),)
-                )
-                totalprodbycarrier_regional[carr] = np.zeros(
-                    (len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),)
-                )
-                totalimportbycarrier_regional[carr] = np.zeros(
-                    (len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),)
-                )
-                totalexportbycarrier_regional[carr] = np.zeros(
-                    (len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),)
-                )
-                totaldemandbycarrier_regional[carr] = np.zeros(
-                    (len(self.model_data.settings.years) * len(self.model_data.settings.time_steps),)
-                )
-
-                for key in self.model_data.settings.technologies[reg].keys():
-
-                    for indx, tech in enumerate(self.model_data.settings.technologies[reg][key]):
-
-                        if (
-                            carr
-                            in self.model_data.settings.regional_settings[reg]["Carrier_input"]
-                            .loc[
-                                self.model_data.settings.regional_settings[reg]["Carrier_input"]["Technology"]
-                                == tech
-                            ]["Carrier_in"]
-                            .values
-                        ):
-
-                            if key == "Conversion_plus":
-
-                                totalusebycarrier_regional[carr] += cp.multiply(
-                                    self.variables["usebyTechnology"][reg][key][
-                                        :, indx
-                                    ],
-                                    self.model_data.regional_parameters[reg]["carrier_ratio_in"][
-                                        (tech, carr)
-                                    ].values,
-                                )
-
-                            elif key == "Demand":
-
-                                totaldemandbycarrier_regional[carr] += self.model_data.regional_parameters[
-                                    reg
-                                ]["demand"][tech].values
-
-                            elif key != "Supply":
-
-                                totalusebycarrier_regional[carr] += self.variables[
-                                    "usebyTechnology"
-                                ][reg][key][:, indx]
-
-                        if (
-                            carr
-                            in self.model_data.settings.regional_settings[reg]["Carrier_output"]
-                            .loc[
-                                self.model_data.settings.regional_settings[reg]["Carrier_output"]["Technology"]
-                                == tech
-                            ]["Carrier_out"]
-                            .values
-                        ):
-                            if key == "Conversion_plus":
-
-                                totalprodbycarrier_regional[carr] += cp.multiply(
-                                    self.variables["productionbyTechnology"][reg][key][
-                                        :, indx
-                                    ],
-                                    self.model_data.regional_parameters[reg]["carrier_ratio_out"][
-                                        (tech, carr)
-                                    ].values,
-                                )
-                            else:
-
-                                totalprodbycarrier_regional[carr] += self.variables[
-                                    "productionbyTechnology"
-                                ][reg][key][:, indx]
-
-                if len(self.model_data.settings.regions) > 1:
-
-                    for key in self.variables["line_import"][reg].keys():
-
-                        if "{}-{}".format(reg, key) in self.model_data.settings.lines_list:
-
-                            line_eff = (
-                                pd.concat(
-                                    [
-                                        self.model_data.trade_parameters["line_eff"][
-                                            ("{}-{}".format(reg, key), carr)
-                                        ]
-                                    ]
-                                    * len(self.model_data.settings.time_steps)
-                                )
-                                .sort_index()
-                                .values
-                            )
-
-                        elif "{}-{}".format(key, reg) in self.model_data.settings.lines_list:
-
-                            line_eff = (
-                                pd.concat(
-                                    [
-                                        self.model_data.trade_parameters["line_eff"][
-                                            ("{}-{}".format(key, reg), carr)
-                                        ]
-                                    ]
-                                    * len(self.model_data.settings.time_steps)
-                                )
-                                .sort_index()
-                                .values
-                            )
-
-                        totalimportbycarrier_regional[carr] += cp.multiply(
-                            self.variables["line_import"][reg][key][
-                                :,
-                                list(
-                                    self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]
-                                ).index(carr),
-                            ],
-                            line_eff,
-                        )
-
-                        totalexportbycarrier_regional[carr] += self.variables[
-                            "line_export"
-                        ][reg][key][
-                            :,
-                            list(
-                                self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]
-                            ).index(carr),
-                        ]
-
-            self.totalusebycarrier[reg] = totalusebycarrier_regional
-            self.totalprodbycarrier[reg] = totalprodbycarrier_regional
-            self.totalimportbycarrier[reg] = totalimportbycarrier_regional
-            self.totalexportbycarrier[reg] = totalexportbycarrier_regional
-            self.totaldemandbycarrier[reg] = totaldemandbycarrier_regional
-
     def _constr_balance(self):
 
         """
@@ -802,17 +190,17 @@ class BuildModel:
         for reg in self.model_data.settings.regions:
             for carr in self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]:
 
-                self.totalusebycarrier[reg][carr] = cp.reshape(
-                    self.totalusebycarrier[reg][carr],
-                    self.totalprodbycarrier[reg][carr].shape,
+                self.vars.totalusebycarrier[reg][carr] = cp.reshape(
+                    self.vars.totalusebycarrier[reg][carr],
+                    self.vars.totalprodbycarrier[reg][carr].shape,
                 )
 
                 self.constr.append(
-                    self.totalprodbycarrier[reg][carr]
-                    + self.totalimportbycarrier[reg][carr]
-                    - self.totalusebycarrier[reg][carr]
-                    - self.totalexportbycarrier[reg][carr]
-                    - self.totaldemandbycarrier[reg][carr]
+                    self.vars.totalprodbycarrier[reg][carr]
+                    + self.vars.totalimportbycarrier[reg][carr]
+                    - self.vars.totalusebycarrier[reg][carr]
+                    - self.vars.totalexportbycarrier[reg][carr]
+                    - self.vars.totaldemandbycarrier[reg][carr]
                     == 0
                 )
 
@@ -825,11 +213,11 @@ class BuildModel:
 
         for reg in self.model_data.settings.regions:
 
-            for key in self.variables["line_import"][reg].keys():
+            for key in self.vars.line_import[reg].keys():
 
                 self.constr.append(
-                    self.variables["line_import"][reg][key]
-                    - self.variables["line_export"][key][reg]
+                    self.vars.line_import[reg][key]
+                    - self.vars.line_export[key][reg]
                     == 0
                 )
 
@@ -842,14 +230,14 @@ class BuildModel:
 
         for reg in self.model_data.settings.regions:
 
-            for key in self.variables["productionbyTechnology"][reg].keys():
+            for key in self.vars.technology_prod[reg].keys():
 
                 if key != "Storage":
 
                     for indx, year in enumerate(self.model_data.settings.years):
 
                         self.available_prod = available_resource_prod(
-                            self.totalcapacity[reg][key][indx : indx + 1, :],
+                            self.vars.totalcapacity[reg][key][indx : indx + 1, :],
                             self.model_data.regional_parameters[reg]["res_capacity_factor"]
                             .loc[(year, slice(None)), (key, slice(None))]
                             .values,
@@ -861,7 +249,7 @@ class BuildModel:
 
                         self.constr.append(
                             self.available_prod
-                            - self.variables["productionbyTechnology"][reg][key][
+                            - self.vars.technology_prod[reg][key][
                                 indx
                                 * len(self.model_data.settings.time_steps) : (indx + 1)
                                 * len(self.model_data.settings.time_steps),
@@ -878,7 +266,7 @@ class BuildModel:
                                 ],
                             )
                             - cp.sum(
-                                self.variables["productionbyTechnology"][reg][key][
+                                self.vars.technology_prod[reg][key][
                                     indx
                                     * len(self.model_data.settings.time_steps) : (indx + 1)
                                     * len(self.model_data.settings.time_steps),
@@ -898,7 +286,7 @@ class BuildModel:
 
         for reg in self.model_data.settings.regions:
 
-            for key, value in self.variables["line_import"][reg].items():
+            for key, value in self.vars.line_import[reg].items():
 
                 for indx, year in enumerate(self.model_data.settings.years):
 
@@ -914,7 +302,7 @@ class BuildModel:
                             .loc[:, ("{}-{}".format(reg, key), slice(None))]
                             .values
                         )
-                        capacity = self.line_totalcapacity["{}-{}".format(reg, key)][
+                        capacity = self.vars.line_totalcapacity["{}-{}".format(reg, key)][
                             indx : indx + 1, :
                         ]
 
@@ -930,7 +318,7 @@ class BuildModel:
                             .loc[:, ("{}-{}".format(key, reg), slice(None))]
                             .values
                         )
-                        capacity = self.line_totalcapacity["{}-{}".format(key, reg)][
+                        capacity = self.vars.line_totalcapacity["{}-{}".format(key, reg)][
                             indx : indx + 1, :
                         ]
 
@@ -976,7 +364,7 @@ class BuildModel:
         """
         for reg in self.model_data.settings.regions:
 
-            for key, value in self.totalcapacity[reg].items():
+            for key, value in self.vars.totalcapacity[reg].items():
 
                 self.constr.append(
                     value - self.model_data.regional_parameters[reg]["tech_mintotcap"].loc[:, key].values
@@ -993,15 +381,15 @@ class BuildModel:
         of each technology over all the regions
         """
 
-        self.totalcapacity_overall = _calc_variable_overall(
+        self.vars.totalcapacity_overall = _calc_variable_overall(
             self.model_data.settings.global_settings["Technologies_glob"],
             self.model_data.settings.regions,
             self.model_data.settings.years,
             self.model_data.settings.technologies,
-            self.totalcapacity,
+            self.vars.totalcapacity,
         )
 
-        for tech, value in self.totalcapacity_overall.items():
+        for tech, value in self.vars.totalcapacity_overall.items():
 
             self.constr.append(
                 value - self.model_data.global_parameters["global_mintotcap"].loc[:, tech].values
@@ -1019,7 +407,7 @@ class BuildModel:
         inter-regional links
         """
 
-        for key, value in self.line_totalcapacity.items():
+        for key, value in self.vars.line_totalcapacity.items():
 
             self.constr.append(
                 value <= self.model_data.trade_parameters["line_maxtotcap"][key].values
@@ -1037,7 +425,7 @@ class BuildModel:
 
         for reg in self.model_data.settings.regions:
 
-            for key, value in self.variables["newcapacity"][reg].items():
+            for key, value in self.vars.new_capacity[reg].items():
 
                 self.constr.append(
                     value >= self.model_data.regional_parameters[reg]["tech_min_newcap"].loc[:, key]
@@ -1058,7 +446,7 @@ class BuildModel:
             self.model_data.settings.regions,
             self.model_data.settings.years,
             self.model_data.settings.technologies,
-            self.variables["newcapacity"],
+            self.vars.new_capacity,
         )
 
         for tech, value in self.newcapacity_overall.items():
@@ -1076,7 +464,7 @@ class BuildModel:
         of the inter-regional links
         """
 
-        for key, value in self.variables["newcapaciy"].items():
+        for key, value in self.vars.new_capacity.items():
 
             self.constr.append(value <= self.model_data.trade_parameters["line_max_newcap"][key])
             self.constr.append(value >= self.model_data.trade_parameters["line_min_newcap"][key])
@@ -1090,7 +478,7 @@ class BuildModel:
 
         for reg in self.model_data.settings.regions:
 
-            for key, value in self.variables["productionbyTechnology"][reg].items():
+            for key, value in self.vars.technology_prod[reg].items():
 
                 if key != "Supply" and key != "Storage":
 
@@ -1102,7 +490,7 @@ class BuildModel:
                     self.constr.append(
                         value
                         - cp.multiply(
-                            self.variables["usebyTechnology"][reg][key],
+                            self.vars.technology_use[reg][key],
                             tech_efficiency_reshape.values,
                         )
                         == 0
@@ -1117,7 +505,7 @@ class BuildModel:
 
         for reg in self.model_data.settings.regions:
 
-            for key, value in self.variables["productionbyTechnology"][reg].items():
+            for key, value in self.vars.technology_prod[reg].items():
 
                 production_annual = annual_activity(
                     value, self.model_data.settings.years, self.model_data.settings.time_steps,
@@ -1148,7 +536,7 @@ class BuildModel:
 
         for reg in self.model_data.settings.regions:
 
-            for key, value in self.variables["productionbyTechnology"][reg].items():
+            for key, value in self.vars.technology_prod[reg].items():
 
                 if key != "Transmission" and key != "Storage":
 
@@ -1179,7 +567,7 @@ class BuildModel:
             self.model_data.settings.regions,
             self.model_data.settings.years,
             self.model_data.settings.technologies,
-            self.production_annual,
+            self.vars.production_annual,
         )
 
         for tech, value in self.production_overall.items():
@@ -1206,7 +594,7 @@ class BuildModel:
                 (len(self.model_data.settings.years) * len(self.model_data.settings.time_steps), 1)
             )
 
-            for key, value in self.CO2_equivalent[reg].items():
+            for key, value in self.vars.CO2_equivalent[reg].items():
 
                 self.regional_emission[reg] += cp.sum(value, axis=1)
 
@@ -1239,7 +627,7 @@ class BuildModel:
             for indx, year in enumerate(self.model_data.settings.years):
 
                 self.constr.append(
-                    self.totalcapacity[reg]["Storage"][indx : indx + 1, :]
+                    self.vars.totalcapacity[reg]["Storage"][indx : indx + 1, :]
                     - self.storage_SOC[reg][
                         indx
                         * len(self.model_data.settings.time_steps) : (indx + 1)
@@ -1257,7 +645,7 @@ class BuildModel:
                         :,
                     ]
                     - cp.multiply(
-                        self.totalcapacity[reg]["Storage"][indx : indx + 1, :],
+                        self.vars.totalcapacity[reg]["Storage"][indx : indx + 1, :],
                         self.model_data.regional_parameters[reg]["storage_min_SOC"].values[
                             indx : indx + 1, :
                         ],
@@ -1278,7 +666,7 @@ class BuildModel:
             for indx, year in enumerate(self.model_data.settings.years):
 
                 max_storage_flow_in = storage_max_flow(
-                    self.totalcapacity[reg]["Storage"][indx : indx + 1, :],
+                    self.vars.totalcapacity[reg]["Storage"][indx : indx + 1, :],
                     self.model_data.regional_parameters[reg]["storage_charge_time"].values,
                     self.model_data.regional_parameters[reg]["tech_capacity_factor"]["Storage"].values[
                         indx : indx + 1, :
@@ -1287,7 +675,7 @@ class BuildModel:
                 )
 
                 max_storage_flow_out = storage_max_flow(
-                    self.totalcapacity[reg]["Storage"][indx : indx + 1, :],
+                    self.vars.totalcapacity[reg]["Storage"][indx : indx + 1, :],
                     self.model_data.regional_parameters[reg]["storage_discharge_time"].values,
                     self.model_data.regional_parameters[reg]["tech_capacity_factor"]["Storage"].values[
                         indx : indx + 1, :
@@ -1297,7 +685,7 @@ class BuildModel:
 
                 self.constr.append(
                     max_storage_flow_in
-                    - self.variables["usebyTechnology"][reg]["Storage"][
+                    - self.vars.technology_use[reg]["Storage"][
                         indx
                         * len(self.model_data.settings.time_steps) : (indx + 1)
                         * len(self.model_data.settings.time_steps),
@@ -1308,7 +696,7 @@ class BuildModel:
 
                 self.constr.append(
                     max_storage_flow_out
-                    - self.variables["productionbyTechnology"][reg]["Storage"][
+                    - self.vars.technology_prod[reg]["Storage"][
                         indx
                         * len(self.model_data.settings.time_steps) : (indx + 1)
                         * len(self.model_data.settings.time_steps),
@@ -1336,23 +724,23 @@ class BuildModel:
                 if ctgry != "Demand":
 
                     totalcost_regional += cp.sum(
-                        self.cost_inv_tax[reg][ctgry]
-                        - self.cost_inv_sub[reg][ctgry]
-                        + self.cost_fix[reg][ctgry]
-                        + self.cost_fix_tax[reg][ctgry]
-                        - self.cost_fix_sub[reg][ctgry]
-                        + self.cost_variable[reg][ctgry]
-                        + self.cost_decom[reg][ctgry]
-                        - self.salvage_inv[reg][ctgry],
+                        self.vars.cost_inv_tax[reg][ctgry]
+                        - self.vars.cost_inv_sub[reg][ctgry]
+                        + self.vars.cost_fix[reg][ctgry]
+                        + self.vars.cost_fix_tax[reg][ctgry]
+                        - self.vars.cost_fix_sub[reg][ctgry]
+                        + self.vars.cost_variable[reg][ctgry]
+                        + self.vars.cost_decom[reg][ctgry]
+                        - self.vars.salvage_inv[reg][ctgry],
                         axis=1,
                     )
 
-                    self.inv_allregions += self.cost_inv_fvalue[reg][ctgry]
+                    self.inv_allregions += self.vars.cost_inv_fvalue[reg][ctgry]
 
                     if ctgry != "Transmission" and ctgry != "Storage":
 
                         totalcost_regional += cp.sum(
-                            self.emission_cost[reg][ctgry], axis=1
+                            self.vars.emission_cost[reg][ctgry], axis=1
                         )
 
             discount_factor = (
@@ -1379,16 +767,16 @@ class BuildModel:
                 if ctgry != "Demand":
 
                     totalcost_regional += cp.sum(
-                        self.cost_fix[reg][ctgry]
-                        + self.cost_fix_tax[reg][ctgry]
-                        - self.cost_fix_sub[reg][ctgry]
-                        + self.cost_variable[reg][ctgry]
+                        self.vars.cost_fix[reg][ctgry]
+                        + self.vars.cost_fix_tax[reg][ctgry]
+                        - self.vars.cost_fix_sub[reg][ctgry]
+                        + self.vars.cost_variable[reg][ctgry]
                     )
 
                     if ctgry != "Transmission" and ctgry != "Storage":
 
                         totalcost_regional += cp.sum(
-                            self.emission_cost[reg][ctgry], axis=1
+                            self.vars.emission_cost[reg][ctgry], axis=1
                         )
 
             self.totalcost_allregions += totalcost_regional
@@ -1406,15 +794,15 @@ class BuildModel:
         for line in self.model_data.settings.lines_list:
 
             self.totalcost_lines += cp.sum(
-                self.cost_inv_line[line]
-                + self.cost_fix_line[line]
-                + self.cost_decom_line[line],
+                self.vars.cost_inv_line[line]
+                + self.vars.cost_fix_line[line]
+                + self.vars.cost_decom_line[line],
                 axis=1,
             )
 
         for reg in self.model_data.settings.regions:
 
-            for key, value in self.cost_variable_line[reg].items():
+            for key, value in self.vars.cost_variable_line[reg].items():
 
                 self.totalcost_lines += cp.sum(value, axis=1)
 
@@ -1440,11 +828,11 @@ class BuildModel:
 
         for line in self.model_data.settings.lines_list:
 
-            self.totalcost_lines += cp.sum(self.cost_fix_line[line], axis=1)
+            self.totalcost_lines += cp.sum(self.vars.cost_fix_line[line], axis=1)
 
         for reg in self.model_data.settings.regions:
 
-            for key, value in self.cost_variable_line[reg].items():
+            for key, value in self.vars.cost_variable_line[reg].items():
 
                 self.totalcost_lines += cp.sum(value, axis=1)
 
