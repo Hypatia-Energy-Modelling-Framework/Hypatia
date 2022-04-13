@@ -86,8 +86,8 @@ def read_parameters(settings: ModelSettings, path: str) -> ModelData:
             global_parameters[key] = pd.read_excel(
                 r"{}/parameters_global.xlsx".format(path),
                 sheet_name=value["sheet_name"],
-                index_col=list(range(0, __get_number_of_levels(value["index"]))),
-                header=list(range(0, __get_number_of_levels(value["columns"]))),
+                index_col=list(range(0, value["index"].nlevels)),
+                header=list(range(0, value["columns"].nlevels)),
             )
 
     trade_parameters = None
@@ -97,8 +97,8 @@ def read_parameters(settings: ModelSettings, path: str) -> ModelData:
             trade_parameters[key] = pd.read_excel(
                 r"{}/parameters_connections.xlsx".format(path),
                 sheet_name=value["sheet_name"],
-                index_col=list(range(0, __get_number_of_levels(value["index"]))),
-                header=list(range(0, __get_number_of_levels(value["columns"]))),
+                index_col=list(range(0, value["index"].nlevels)),
+                header=list(range(0, value["columns"].nlevels)),
             )
 
     regional_parameters = {}
@@ -108,8 +108,8 @@ def read_parameters(settings: ModelSettings, path: str) -> ModelData:
             parameters[key] = pd.read_excel(
                 r"{}/parameters_{}.xlsx".format(path, region),
                 sheet_name=value["sheet_name"],
-                index_col=list(range(0, __get_number_of_levels(value["index"]))),
-                header=list(range(0, __get_number_of_levels(value["columns"]))),
+                index_col=list(range(0, value["index"].nlevels)),
+                header=list(range(0, value["columns"].nlevels)),
             )
         regional_parameters[region] = parameters
 
@@ -119,8 +119,3 @@ def read_parameters(settings: ModelSettings, path: str) -> ModelData:
         trade_parameters,
         regional_parameters,
     )
-
-def __get_number_of_levels(index):
-    if isinstance(index, pd.MultiIndex):
-        return len(index.names)
-    return 1
