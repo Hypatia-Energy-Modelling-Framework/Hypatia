@@ -242,37 +242,41 @@ class ModelSettings:
                 "sheet_name": "Max_production_global",
                 "value": 1e30,
                 "index": pd.Index(self.years, name="Years"),
-                "columns": self.global_settings["Technologies_glob"].loc[
-                    (
-                        self.global_settings["Technologies_glob"]["Tech_category"]
-                        != "Demand"
-                    )
-                    & (
-                        self.global_settings["Technologies_glob"]["Tech_category"]
-                        != "Storage"
-                    )
-                ]["Technology"],
+                "columns": pd.Index(
+                    self.global_settings["Technologies_glob"].loc[
+                        (
+                            self.global_settings["Technologies_glob"]["Tech_category"]
+                            != "Demand"
+                        )
+                        & (
+                            self.global_settings["Technologies_glob"]["Tech_category"]
+                            != "Storage"
+                        )
+                    ]["Technology"]
+                ),
             },
             "global_min_production": {
                 "sheet_name": "Min_production_global",
                 "value": 0,
                 "index": pd.Index(self.years, name="Years"),
-                "columns": self.global_settings["Technologies_glob"].loc[
-                    (
-                        self.global_settings["Technologies_glob"]["Tech_category"]
-                        != "Demand"
-                    )
-                    & (
-                        self.global_settings["Technologies_glob"]["Tech_category"]
-                        != "Storage"
-                    )
-                ]["Technology"],
+                "columns": pd.Index(
+                    self.global_settings["Technologies_glob"].loc[
+                        (
+                            self.global_settings["Technologies_glob"]["Tech_category"]
+                            != "Demand"
+                        )
+                        & (
+                            self.global_settings["Technologies_glob"]["Tech_category"]
+                            != "Storage"
+                        )
+                    ]["Technology"],
+                )
             },
             "global_emission_cap_annual": {
                 "sheet_name": "Glob_emission_cap_annual",
                 "value": 1e30,
                 "index": pd.Index(self.years, name="Years"),
-                "columns": ["Global Emission Cap"],
+                "columns": pd.Index(["Global Emission Cap"]),
             },
         }
 
@@ -283,43 +287,51 @@ class ModelSettings:
                         "sheet_name": "Min_totalcap_global",
                         "value": 0,
                         "index": pd.Index(self.years, name="Years"),
-                        "columns": self.global_settings["Technologies_glob"].loc[
-                            self.global_settings["Technologies_glob"]["Tech_category"]
-                            != "Demand"
-                        ]["Technology"],
+                        "columns": pd.Index(
+                            self.global_settings["Technologies_glob"].loc[
+                                self.global_settings["Technologies_glob"]["Tech_category"]
+                                != "Demand"
+                            ]["Technology"],
+                        )
                     },
                     "global_maxtotcap": {
                         "sheet_name": "Max_totalcap_global",
                         "value": 1e10,
                         "index": pd.Index(self.years, name="Years"),
-                        "columns": self.global_settings["Technologies_glob"].loc[
-                            self.global_settings["Technologies_glob"]["Tech_category"]
-                            != "Demand"
-                        ]["Technology"],
+                        "columns": pd.Index(
+                            self.global_settings["Technologies_glob"].loc[
+                                self.global_settings["Technologies_glob"]["Tech_category"]
+                                != "Demand"
+                            ]["Technology"],
+                        )
                     },
                     "global_min_newcap": {
                         "sheet_name": "Min_newcap_global",
                         "value": 0,
                         "index": pd.Index(self.years, name="Years"),
-                        "columns": self.global_settings["Technologies_glob"].loc[
-                            self.global_settings["Technologies_glob"]["Tech_category"]
-                            != "Demand"
-                        ]["Technology"],
+                        "columns": pd.Index(
+                            self.global_settings["Technologies_glob"].loc[
+                                self.global_settings["Technologies_glob"]["Tech_category"]
+                                != "Demand"
+                            ]["Technology"],
+                        )
                     },
                     "global_max_newcap": {
                         "sheet_name": "Max_newcap_global",
                         "value": 1e10,
                         "index": pd.Index(self.years, name="Years"),
-                        "columns": self.global_settings["Technologies_glob"].loc[
-                            self.global_settings["Technologies_glob"]["Tech_category"]
-                            != "Demand"
-                        ]["Technology"],
+                        "columns": pd.Index(
+                                self.global_settings["Technologies_glob"].loc[
+                                self.global_settings["Technologies_glob"]["Tech_category"]
+                                != "Demand"
+                            ]["Technology"],
+                        )
                     },
                     "global_discount_rate": {
                         "sheet_name": "Discount_rate",
                         "value": 0.05,
                         "index": pd.Index(self.years, name="Years"),
-                        "columns": ["Annual Discount Rate"],
+                        "columns": pd.Index(["Annual Discount Rate"]),
                     },
                 }
             )
@@ -536,7 +548,7 @@ class ModelSettings:
                     "sheet_name": "Emission_cap_annual",
                     "value": 1e10,
                     "index": pd.Index(self.years, name="Years"),
-                    "columns": ["Emission Cap"],
+                    "columns": pd.Index(["Emission Cap"]),
                 },
                 "annualprod_per_unitcapacity": {
                     "sheet_name": "AnnualProd_perunit_capacity",
@@ -597,7 +609,7 @@ class ModelSettings:
                             "sheet_name": "Discount_rate",
                             "value": 0.05,
                             "index": pd.Index(self.years, name="Years"),
-                            "columns": ["Annual Discount Rate"],
+                            "columns": pd.Index(["Annual Discount Rate"]),
                         },
                         "tech_lifetime": {
                             "sheet_name": "Tech_lifetime",
@@ -697,7 +709,7 @@ class ModelSettings:
                         "sheet_name": "Demand",
                         "value": 0,
                         "index": indexer_time,
-                        "columns": self.technologies[reg]["Demand"],
+                        "columns": pd.Index(self.technologies[reg]["Demand"]),
                     },
                     "res_capacity_factor": {
                         "sheet_name": "capacity_factor_resource",
