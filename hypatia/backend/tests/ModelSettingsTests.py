@@ -25,15 +25,31 @@ class TestModelSettings(unittest.TestCase):
 
     Test the ModelSettings initialization logic
     """
-    def test_create_technology_columns(self):
-        # single node
+    def test_single_node_planning_settings(self):
         ModelSettings(
             ModelMode.Planning,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
 
-        # multi node
+    def test_single_node_operation_settings(self):
+        self.assertRaises(
+            hypatiaException.WrongNumberOfYears,
+            lambda: ModelSettings(
+                ModelMode.Operation,
+                self.single_node.global_settings,
+                self.single_node.regional_settings,
+            )
+        )
+
+    def test_multi_node_planning_settings(self):
+        ModelSettings(
+            ModelMode.Planning,
+            self.multi_node.global_settings,
+            self.multi_node.regional_settings,
+        )
+
+    def test_multi_node_planning_operation(self):
         ModelSettings(
             ModelMode.Operation,
             self.multi_node.global_settings,
@@ -666,7 +682,7 @@ class TestModelSettings(unittest.TestCase):
         )
 
         #timesteps not define
-        global_settings = copy.deepcopy(self.single_node.global_settings)
+        global_settings = copy.deepcopy(self.multi_node.global_settings)
         global_settings.pop('Timesteps', None)
         model_settings = ModelSettings(
             ModelMode.Operation,
@@ -698,7 +714,7 @@ class TestModelSettings(unittest.TestCase):
         self.assertTrue(np.array_equal(expected, model_settings.timeslice_fraction))
 
         #timesteps not define
-        global_settings = copy.deepcopy(self.single_node.global_settings)
+        global_settings = copy.deepcopy(self.multi_node.global_settings)
         global_settings.pop('Timesteps', None)
         model_settings = ModelSettings(
             ModelMode.Operation,
