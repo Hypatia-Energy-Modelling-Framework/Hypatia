@@ -5,6 +5,7 @@ from hypatia.utility.constants import (
 )
 import cvxpy as cp
 import numpy as np
+import pandas as pd
 
 """
 Guarantees the adequecy of inter-regional link capacities based on their
@@ -91,3 +92,26 @@ class LineAvailability(Constraint):
                     )
 
         return rules
+
+    def _required_trade_parameters(settings):
+        indexer = pd.MultiIndex.from_product(
+            [settings.lines_list, settings.global_settings["Carriers_glob"]["Carrier"]],
+            names=["Line", "Transmitted Carrier"],
+        )
+
+        return {
+            "line_capacity_factor": {
+                "sheet_name": "Capacity_factor_line",
+                "value": 1,
+                "index": pd.Index(settings.years, name="Years"),
+                "columns": indexer,
+            },
+            "annualprod_per_unitcapacity": {
+                "sheet_name": "AnnualProd_perunit_capacity",
+                "value": 1,
+                "index": pd.Index(
+                    ["AnnualProd_Per_UnitCapacity"], name="Performance Parameter"
+                ),
+                "columns": indexer,
+            },
+        }

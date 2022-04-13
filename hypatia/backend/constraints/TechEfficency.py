@@ -3,9 +3,11 @@ from hypatia.utility.constants import (
     ModelMode,
     TopologyType
 )
+from hypatia.utility.utility import create_technology_columns
 import pandas as pd
 import cvxpy as cp
 import numpy as np
+
 
 """
 Defines the relationship between the input and output activity of
@@ -35,3 +37,22 @@ class TechEfficency(Constraint):
                         == 0
                     )
         return rules
+
+    def _required_regional_parameters(settings):
+        required_parameters = {}
+        for reg in settings.regions:
+            indexer = create_technology_columns(
+                settings.technologies[reg],
+                ignored_tech_categories=["Demand", "Storage"],
+            )
+
+            required_parameters[reg] = {
+                "tech_efficiency": {
+                    "sheet_name": "Tech_efficiency",
+                    "value": 1,
+                    "index": pd.Index(settings.years, name="Years"),
+                    "columns": indexer,
+                },
+            }
+
+        return required_parameters

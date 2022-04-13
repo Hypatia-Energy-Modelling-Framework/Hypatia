@@ -3,6 +3,7 @@ from hypatia.utility.constants import (
     ModelMode,
     TopologyType
 )
+import pandas as pd
 
 """
 Defines the CO2 emission cap within each region
@@ -22,3 +23,17 @@ class EmissionCapRegional(Constraint):
             rules.append(emission_cap - self.variables.regional_emission[reg] >= 0)
 
         return rules
+
+    def _required_regional_parameters(settings):
+        required_parameters = {}
+        for reg in settings.regions:
+            required_parameters[reg] = {
+                "emission_cap_annual": {
+                    "sheet_name": "Emission_cap_annual",
+                    "value": 1e10,
+                    "index": pd.Index(settings.years, name="Years"),
+                    "columns": pd.Index(["Emission Cap"]),
+                },
+            }
+
+        return required_parameters

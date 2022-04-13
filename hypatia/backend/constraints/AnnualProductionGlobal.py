@@ -4,6 +4,7 @@ from hypatia.utility.constants import (
     TopologyType
 )
 from hypatia.utility.utility import _calc_production_overall
+import pandas as pd
 
 
 """
@@ -34,3 +35,41 @@ class AnnualProductionGlobal(Constraint):
                 value - self.model_data.global_parameters["global_max_production"].loc[:, tech] <= 0
             )
         return rules
+
+    def _required_global_parameters(settings):
+        return {
+            "global_max_production": {
+                    "sheet_name": "Max_production_global",
+                    "value": 1e30,
+                    "index": pd.Index(settings.years, name="Years"),
+                    "columns": pd.Index(
+                        settings.global_settings["Technologies_glob"].loc[
+                            (
+                                settings.global_settings["Technologies_glob"]["Tech_category"]
+                                != "Demand"
+                            )
+                            & (
+                                settings.global_settings["Technologies_glob"]["Tech_category"]
+                                != "Storage"
+                            )
+                        ]["Technology"],
+                    )
+                },
+            "global_min_production": {
+                "sheet_name": "Min_production_global",
+                "value": 0,
+                "index": pd.Index(settings.years, name="Years"),
+                "columns": pd.Index(
+                    settings.global_settings["Technologies_glob"].loc[
+                        (
+                            settings.global_settings["Technologies_glob"]["Tech_category"]
+                            != "Demand"
+                        )
+                        & (
+                            settings.global_settings["Technologies_glob"]["Tech_category"]
+                            != "Storage"
+                        )
+                    ]["Technology"],
+                )
+            },
+        }

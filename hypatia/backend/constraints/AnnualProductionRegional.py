@@ -4,6 +4,8 @@ from hypatia.utility.constants import (
     TopologyType
 )
 from hypatia.utility.utility import annual_activity
+from hypatia.utility.utility import create_technology_columns
+import pandas as pd
 
 """
 Defines the upper and lower limit for the annual production of the technologies
@@ -36,3 +38,27 @@ class AnnualProductionRegional(Constraint):
                         >= 0
                     )
         return rules
+
+    def _required_regional_parameters(settings):
+        required_parameters = {}
+        for reg in settings.regions:
+            indexer = create_technology_columns(
+                settings.technologies[reg],
+                ignored_tech_categories=["Demand", "Storage", "Transmission"],
+            )
+
+            required_parameters[reg] = {
+                "tech_max_production": {
+                    "sheet_name": "Max_production",
+                    "value": 1e20,
+                    "index": pd.Index(settings.years, name="Years"),
+                    "columns": indexer,
+                },
+                "tech_min_production": {
+                    "sheet_name": "Min_production",
+                    "value": 0,
+                    "index": pd.Index(settings.years, name="Years"),
+                    "columns": indexer,
+                },
+            }
+        return required_parameters

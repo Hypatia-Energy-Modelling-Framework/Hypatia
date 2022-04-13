@@ -26,6 +26,7 @@ from hypatia.error_log.Checks import (
     check_years_mode_consistency,
 )
 from hypatia.utility.utility import create_technology_columns
+from hypatia.backend.constraints.ConstraintList import CONSTRAINTS
 
 class ModelSettings:
     """
@@ -237,96 +238,10 @@ class ModelSettings:
         if not self.multi_node:
             return None
 
-        global_parameters_template = {
-            "global_max_production": {
-                "sheet_name": "Max_production_global",
-                "value": 1e30,
-                "index": pd.Index(self.years, name="Years"),
-                "columns": pd.Index(
-                    self.global_settings["Technologies_glob"].loc[
-                        (
-                            self.global_settings["Technologies_glob"]["Tech_category"]
-                            != "Demand"
-                        )
-                        & (
-                            self.global_settings["Technologies_glob"]["Tech_category"]
-                            != "Storage"
-                        )
-                    ]["Technology"]
-                ),
-            },
-            "global_min_production": {
-                "sheet_name": "Min_production_global",
-                "value": 0,
-                "index": pd.Index(self.years, name="Years"),
-                "columns": pd.Index(
-                    self.global_settings["Technologies_glob"].loc[
-                        (
-                            self.global_settings["Technologies_glob"]["Tech_category"]
-                            != "Demand"
-                        )
-                        & (
-                            self.global_settings["Technologies_glob"]["Tech_category"]
-                            != "Storage"
-                        )
-                    ]["Technology"],
-                )
-            },
-            "global_emission_cap_annual": {
-                "sheet_name": "Glob_emission_cap_annual",
-                "value": 1e30,
-                "index": pd.Index(self.years, name="Years"),
-                "columns": pd.Index(["Global Emission Cap"]),
-            },
-        }
-
+        global_parameters_template = {}
         if self.mode == ModelMode.Planning:
             global_parameters_template.update(
                 {
-                    "global_mintotcap": {
-                        "sheet_name": "Min_totalcap_global",
-                        "value": 0,
-                        "index": pd.Index(self.years, name="Years"),
-                        "columns": pd.Index(
-                            self.global_settings["Technologies_glob"].loc[
-                                self.global_settings["Technologies_glob"]["Tech_category"]
-                                != "Demand"
-                            ]["Technology"],
-                        )
-                    },
-                    "global_maxtotcap": {
-                        "sheet_name": "Max_totalcap_global",
-                        "value": 1e10,
-                        "index": pd.Index(self.years, name="Years"),
-                        "columns": pd.Index(
-                            self.global_settings["Technologies_glob"].loc[
-                                self.global_settings["Technologies_glob"]["Tech_category"]
-                                != "Demand"
-                            ]["Technology"],
-                        )
-                    },
-                    "global_min_newcap": {
-                        "sheet_name": "Min_newcap_global",
-                        "value": 0,
-                        "index": pd.Index(self.years, name="Years"),
-                        "columns": pd.Index(
-                            self.global_settings["Technologies_glob"].loc[
-                                self.global_settings["Technologies_glob"]["Tech_category"]
-                                != "Demand"
-                            ]["Technology"],
-                        )
-                    },
-                    "global_max_newcap": {
-                        "sheet_name": "Max_newcap_global",
-                        "value": 1e10,
-                        "index": pd.Index(self.years, name="Years"),
-                        "columns": pd.Index(
-                                self.global_settings["Technologies_glob"].loc[
-                                self.global_settings["Technologies_glob"]["Tech_category"]
-                                != "Demand"
-                            ]["Technology"],
-                        )
-                    },
                     "global_discount_rate": {
                         "sheet_name": "Discount_rate",
                         "value": 0.05,
@@ -335,6 +250,13 @@ class ModelSettings:
                     },
                 }
             )
+
+        # collect global parameters from constraints
+        for costr in CONSTRAINTS:
+            global_parameters_template.update(
+                costr.required_global_parameters(costr, self)
+            )
+
         return global_parameters_template
 
     @cached_property
@@ -366,24 +288,10 @@ class ModelSettings:
                 "index": pd.Index(self.years, name="Years"),
                 "columns": indexer,
             },
-            "line_capacity_factor": {
-                "sheet_name": "Capacity_factor_line",
-                "value": 1,
-                "index": pd.Index(self.years, name="Years"),
-                "columns": indexer,
-            },
             "line_eff": {
                 "sheet_name": "Line_efficiency",
                 "value": 1,
                 "index": pd.Index(self.years, name="Years"),
-                "columns": indexer,
-            },
-            "annualprod_per_unitcapacity": {
-                "sheet_name": "AnnualProd_perunit_capacity",
-                "value": 1,
-                "index": pd.Index(
-                    ["AnnualProd_Per_UnitCapacity"], name="Performance Parameter"
-                ),
                 "columns": indexer,
             },
         }
@@ -400,30 +308,6 @@ class ModelSettings:
                     "line_decom_cost": {
                         "sheet_name": "Decom_cost",
                         "value": 0,
-                        "index": pd.Index(self.years, name="Years"),
-                        "columns": indexer,
-                    },
-                    "line_mintotcap": {
-                        "sheet_name": "Min_totalcap",
-                        "value": 0,
-                        "index": pd.Index(self.years, name="Years"),
-                        "columns": indexer,
-                    },
-                    "line_maxtotcap": {
-                        "sheet_name": "Max_totalcap",
-                        "value": 1e10,
-                        "index": pd.Index(self.years, name="Years"),
-                        "columns": indexer,
-                    },
-                    "line_min_newcap": {
-                        "sheet_name": "Min_newcap",
-                        "value": 0,
-                        "index": pd.Index(self.years, name="Years"),
-                        "columns": indexer,
-                    },
-                    "line_max_newcap": {
-                        "sheet_name": "Max_newcap",
-                        "value": 1e10,
                         "index": pd.Index(self.years, name="Years"),
                         "columns": indexer,
                     },
@@ -453,6 +337,13 @@ class ModelSettings:
                     },
                 }
             )
+
+        # collect trade parameters from constraints
+        for costr in CONSTRAINTS:
+            connection_parameters_template.update(
+                costr.required_trade_parameters(costr, self)
+            )
+
         return connection_parameters_template
 
     @cached_property
@@ -502,29 +393,11 @@ class ModelSettings:
                     "index": pd.Index(self.years, name="Years"),
                     "columns": indexer_reg,
                 },
-                "tech_max_production": {
-                    "sheet_name": "Max_production",
-                    "value": 1e20,
-                    "index": pd.Index(self.years, name="Years"),
-                    "columns": indexer_reg_drop2,
-                },
-                "tech_min_production": {
-                    "sheet_name": "Min_production",
-                    "value": 0,
-                    "index": pd.Index(self.years, name="Years"),
-                    "columns": indexer_reg_drop2,
-                },
                 "tech_capacity_factor": {
                     "sheet_name": "Capacity_factor_tech",
                     "value": 1,
                     "index": pd.Index(self.years, name="Years"),
                     "columns": indexer_reg,
-                },
-                "tech_efficiency": {
-                    "sheet_name": "Tech_efficiency",
-                    "value": 1,
-                    "index": pd.Index(self.years, name="Years"),
-                    "columns": indexer_reg_drop1,
                 },
                 "specific_emission": {
                     "sheet_name": "Specific_emission",
@@ -543,12 +416,6 @@ class ModelSettings:
                     "value": 0,
                     "index": pd.Index(self.years, name="Years"),
                     "columns": add_indexer,
-                },
-                "emission_cap_annual": {
-                    "sheet_name": "Emission_cap_annual",
-                    "value": 1e10,
-                    "index": pd.Index(self.years, name="Years"),
-                    "columns": pd.Index(["Emission Cap"]),
                 },
                 "annualprod_per_unitcapacity": {
                     "sheet_name": "AnnualProd_perunit_capacity",
@@ -578,30 +445,6 @@ class ModelSettings:
                         "tech_decom_cost": {
                             "sheet_name": "Decom_cost",
                             "value": 0,
-                            "index": pd.Index(self.years, name="Years"),
-                            "columns": indexer_reg,
-                        },
-                        "tech_mintotcap": {
-                            "sheet_name": "Min_totalcap",
-                            "value": 0,
-                            "index": pd.Index(self.years, name="Years"),
-                            "columns": indexer_reg,
-                        },
-                        "tech_maxtotcap": {
-                            "sheet_name": "Max_totalcap",
-                            "value": 1e10,
-                            "index": pd.Index(self.years, name="Years"),
-                            "columns": indexer_reg,
-                        },
-                        "tech_min_newcap": {
-                            "sheet_name": "Min_newcap",
-                            "value": 0,
-                            "index": pd.Index(self.years, name="Years"),
-                            "columns": indexer_reg,
-                        },
-                        "tech_max_newcap": {
-                            "sheet_name": "Max_newcap",
-                            "value": 1e10,
                             "index": pd.Index(self.years, name="Years"),
                             "columns": indexer_reg,
                         },
@@ -717,18 +560,6 @@ class ModelSettings:
                         "index": indexer_time,
                         "columns": indexer_reg_drop1,
                     },
-                    "tech_max_production_h": {
-                        "sheet_name": "Max_production_h",
-                        "value": 1e20,
-                        "index": indexer_time,
-                        "columns": indexer_reg_drop2,
-                    },
-                    "tech_min_production_h": {
-                        "sheet_name": "Min_production_h",
-                        "value": 0,
-                        "index": indexer_time,
-                        "columns": indexer_reg_drop2,
-                    },
                 }
             )
             if "Conversion_plus" in self.technologies[reg].keys():
@@ -814,5 +645,10 @@ class ModelSettings:
                         },
                     }
                 )
+
+        # collect regional parameters from constraints
+        for costr in CONSTRAINTS:
+            for region, parameters in costr.required_regional_parameters(costr, self).items():
+                regional_parameters_template[region].update(parameters)
 
         return regional_parameters_template

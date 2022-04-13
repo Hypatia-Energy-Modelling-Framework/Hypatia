@@ -4,6 +4,7 @@ from hypatia.utility.constants import (
     TopologyType
 )
 from hypatia.utility.utility import _calc_variable_overall
+import pandas as pd
 
 """
 Defines the upper and lower limit on the aggregated new installed capacity
@@ -35,3 +36,29 @@ class NewCapacityGlobal(Constraint):
             )
 
         return rules
+
+    def _required_global_parameters(settings):
+        return {
+            "global_min_newcap": {
+                "sheet_name": "Min_newcap_global",
+                "value": 0,
+                "index": pd.Index(settings.years, name="Years"),
+                "columns": pd.Index(
+                    settings.global_settings["Technologies_glob"].loc[
+                        settings.global_settings["Technologies_glob"]["Tech_category"]
+                        != "Demand"
+                    ]["Technology"],
+                )
+            },
+            "global_max_newcap": {
+                "sheet_name": "Max_newcap_global",
+                "value": 1e10,
+                "index": pd.Index(settings.years, name="Years"),
+                "columns": pd.Index(
+                    settings.global_settings["Technologies_glob"].loc[
+                        settings.global_settings["Technologies_glob"]["Tech_category"]
+                        != "Demand"
+                    ]["Technology"],
+                )
+            },
+        }

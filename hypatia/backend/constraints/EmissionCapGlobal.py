@@ -4,6 +4,7 @@ from hypatia.utility.constants import (
     TopologyType
 )
 import numpy as np
+import pandas as pd
 
 
 """
@@ -27,3 +28,13 @@ class EmissionCapGlobal(Constraint):
         ].values
         global_emission_cap.shape = global_emission.shape
         return [global_emission_cap - global_emission >= 0]
+
+    def _required_global_parameters(settings):
+        return {
+            "global_emission_cap_annual": {
+                "sheet_name": "Glob_emission_cap_annual",
+                "value": 1e30,
+                "index": pd.Index(settings.years, name="Years"),
+                "columns": pd.Index(["Global Emission Cap"]),
+            },
+        }
