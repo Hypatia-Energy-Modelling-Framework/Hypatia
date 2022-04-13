@@ -1,11 +1,10 @@
 import pandas as pd
 import unittest
-from hypatia.backend.StrData import create_technology_columns
+from hypatia.utility.utility import create_technology_columns
 
 '''
-Unit tests for the functions in StrData.py
+Unit tests for the functions in utility.py
 '''
-
 class TestCreateTechnologyColumns(unittest.TestCase):
     technologies_hierarchy = {
         "Supply": ["NG_extraction", "Geo_PP"],

@@ -11,8 +11,12 @@ from hypatia.error_log.Exceptions import (
     ResultOverWrite,
     SolverNotFound,
 )
-
-from hypatia.backend.StrData import ReadSets
+from hypatia.utility.excel import (
+    read_settings,
+    write_parameters_files,
+    read_parameters,
+)
+from hypatia.utility.constants import ModelMode
 from hypatia.backend.Build import BuildModel
 from copy import deepcopy
 from hypatia.analysis.postprocessing import (
@@ -56,8 +60,12 @@ class Model:
             Defines the name of the model.
         """
 
-        self._StrData = ReadSets(path=path, mode=mode,)
-
+        assert mode in ["Planning", "Operation"], "Invalid Operation"
+        model_mode = ModelMode.Planning if mode == "Planning" else ModelMode.Operation
+        self.results = None
+        self.backup_results = None
+        self.__settings = read_settings(path=path, mode=model_mode)
+        self.__model_data = None
         self.name = name
 
     def create_data_excels(self, path, force_rewrite=False):
@@ -82,17 +90,7 @@ class Model:
             the same file already exists. In case, you need to over-write,
             force_rewrite = True will do it
         """
-        if os.path.exists(path):
-            if not force_rewrite:
-                raise ResultOverWrite(
-                    f"Folder {path} already exists. To over write"
-                    f" the parameter files, use force_rewrite=True."
-                )
-            else:
-                shutil.rmtree(path)
-
-        os.mkdir(path)
-        self._StrData._write_input_excel(path)
+        write_parameters_files(self.__settings, path, force_rewrite=force_rewrite)
 
     def read_input_data(self, path):
 
@@ -108,7 +106,7 @@ class Model:
 
         """
 
-        self._StrData._read_data(path)
+        self.__model_data = read_parameters(self.__settings, path)
 
     def run(self, solver, verbosity=True, force_rewrite=False, **kwargs):
 
@@ -139,7 +137,7 @@ class Model:
         """
 
         # checks if the input parameters are imported to the model
-        if not hasattr(self._StrData, "data"):
+        if self.__model_data == None:
 
             raise DataNotImported(
                 "No data is imported to the model. Use " "'read_input_data' function."
@@ -147,7 +145,7 @@ class Model:
 
         # checks if the model is already solved when force_rewrite is false
         # and takes a backup of previous results if force_rewrite is true
-        if hasattr(self, "results"):
+        if self.results != None:
 
             if not force_rewrite:
                 raise ResultOverWrite(
@@ -158,7 +156,7 @@ class Model:
 
             self.backup_results = deepcopy(self.results)
 
-            delattr(self, "results")
+            self.results = None
 
         # checks if the given solver is in the installed solver package
         if solver.upper() not in installed_solvers():
@@ -167,7 +165,7 @@ class Model:
                 f"Installed solvers on your system are {installed_solvers()}"
             )
 
-        model = BuildModel(sets=self._StrData)
+        model = BuildModel(model_data=self.__model_data)
 
         results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
@@ -175,12 +173,12 @@ class Model:
 
             results = set_DataFrame(
                 results=results,
-                regions=self._StrData.regions,
-                years=self._StrData.main_years,
-                time_fraction=self._StrData.time_steps,
-                glob_mapping=self._StrData.glob_mapping,
-                technologies=self._StrData.Technologies,
-                mode=self._StrData.mode,
+                regions=self.__settings.regions,
+                years=self.__settings.years,
+                time_fraction=self.__settings.time_steps,
+                glob_mapping=self.__settings.global_settings,
+                technologies=self.__settings.technologies,
+                mode=self.__settings.mode,
             )
 
             self.results = results
@@ -198,7 +196,7 @@ class Model:
             if True, will delete the file if alreadey exists and create a new one
         """
 
-        if not hasattr(self, "results"):
+        if self.results == None:
             raise WrongInputMode("model has not any results")
 
         if os.path.exists(path):
@@ -221,33 +219,33 @@ class Model:
             defines the path and the name of the excel file to be created.
         """
 
-        techs_property = {"tech_name": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_name"]),
+        techs_property = {"tech_name": list(self.settings.global_settings["Technologies_glob"]["Tech_name"]),
                 "tech_group": '',
                 "tech_color": '',
-                "tech_cap_unit": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_cap_unit"]),
-                "tech_production_unit": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_act_unit"]),}
+                "tech_cap_unit": list(self.settings.global_settings["Technologies_glob"]["Tech_cap_unit"]),
+                "tech_production_unit": list(self.settings.global_settings["Technologies_glob"]["Tech_act_unit"]),}
 
         techs_sheet = pd.DataFrame(techs_property,
-            index=self._StrData.glob_mapping["Technologies_glob"]["Technology"],
+            index=self.settings.global_settings["Technologies_glob"]["Technology"],
         )
 
-        fuels_property = {"fuel_name": list(self._StrData.glob_mapping["Carriers_glob"]["Carr_name"]),
+        fuels_property = {"fuel_name": list(self.settings.global_settings["Carriers_glob"]["Carr_name"]),
                 "fuel_group": '',
                 "fuel_color": '',
-                "fuel_unit": list(self._StrData.glob_mapping["Carriers_glob"]["Carr_unit"]),}
+                "fuel_unit": list(self.settings.global_settings["Carriers_glob"]["Carr_unit"]),}
 
         fuels_sheet = pd.DataFrame(fuels_property,
-            index=self._StrData.glob_mapping["Carriers_glob"]["Carrier"],
+            index=self.settings.global_settings["Carriers_glob"]["Carrier"],
         )
 
-        regions_property = {"region_name": list(self._StrData.glob_mapping["Regions"]["Region_name"]),
+        regions_property = {"region_name": list(self.settings.global_settings["Regions"]["Region_name"]),
                 "region_color": '',}
 
         regions_sheet = pd.DataFrame(regions_property,
-            index=self._StrData.glob_mapping["Regions"]["Region"],
+            index=self.settings.global_settings["Regions"]["Region"],
         )
 
-        emissions_sheet = self._StrData.glob_mapping['Emissions'].set_index(['Emission'],inplace=False)
+        emissions_sheet = self.settings.global_settings['Emissions'].set_index(['Emission'],inplace=False)
         emissions_sheet = pd.DataFrame(
             emissions_sheet.values,
             index = emissions_sheet.index,
@@ -274,15 +272,18 @@ class Model:
             "horizon= {}\n"
             "resolution= {}\n".format(
                 self.name,
-                self._StrData.mode,
-                self._StrData.regions,
-                self._StrData.Technologies,
-                self._StrData.main_years,
-                len(self._StrData.time_steps),
+                self.settings.mode,
+                self.settings.regions,
+                self.settings.technologies,
+                self.settings.years,
+                len(self.settings.time_steps),
             )
         )
 
         return to_print
+
+    def get_model_data(self):
+        return self.__model_data
 
     def __repr__(self):
         return self.__str__()
