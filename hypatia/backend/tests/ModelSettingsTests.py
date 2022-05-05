@@ -49,7 +49,7 @@ class TestModelSettings(unittest.TestCase):
             self.multi_node.regional_settings,
         )
 
-    def test_multi_node_planning_operation(self):
+    def test_multi_node_operation_settings(self):
         ModelSettings(
             ModelMode.Operation,
             self.multi_node.global_settings,
