@@ -523,3 +523,7 @@ def create_technology_columns(
     )
 
     return indexer
+
+
+def get_emission_types(glob_settings):
+    return glob_settings["Emissions"]["Emission"].values

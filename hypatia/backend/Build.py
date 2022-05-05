@@ -18,6 +18,7 @@ from hypatia.utility.utility import (
     annual_activity,
     get_regions_with_storage,
     storage_max_flow,
+    get_emission_types,
 )
 from hypatia.backend.constraints.ConstraintList import CONSTRAINTS
 import logging
@@ -38,8 +39,8 @@ RESULTS = [
     "totalcapacity",
     "cost_fix_tax",
     "cost_fix_sub",
-    "emission_cost",
-    "CO2_equivalent",
+    "emission_cost_by_type",
+    "emission_by_type",
     "demand",
 ]
 
@@ -186,10 +187,10 @@ class BuildModel:
                     self.inv_allregions += self.vars.cost_inv_fvalue[reg][ctgry]
 
                     if ctgry != "Transmission" and ctgry != "Storage":
-
-                        totalcost_regional += cp.sum(
-                            self.vars.emission_cost[reg][ctgry], axis=1
-                        )
+                        for emission_type in get_emission_types(self.model_data.settings.global_settings):
+                            totalcost_regional += cp.sum(
+                                self.vars.emission_cost_by_region[reg][emission_type][ctgry], axis=1
+                            )
 
             discount_factor = (
                 1 + self.model_data.regional_parameters[reg]["discount_rate"]["Annual Discount Rate"].values
@@ -222,10 +223,10 @@ class BuildModel:
                     )
 
                     if ctgry != "Transmission" and ctgry != "Storage":
-
-                        totalcost_regional += cp.sum(
-                            self.vars.emission_cost[reg][ctgry], axis=1
-                        )
+                        for emission_type in get_emission_types(self.model_data.settings.global_settings):
+                            totalcost_regional += cp.sum(
+                                self.vars.emission_cost_by_region[reg][emission_type][ctgry], axis=1
+                            )
 
             self.totalcost_allregions += totalcost_regional
 

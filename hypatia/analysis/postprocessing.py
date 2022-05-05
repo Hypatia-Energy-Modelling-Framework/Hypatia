@@ -40,10 +40,24 @@ RESULT_MAP = {
     "lines_decomisioning_cost": {"index": "years", "var": "results.cost_decom_line"},
 }
 
-
 import pandas as pd
 import numpy as np
+from hypatia.utility.utility import get_emission_types
 import os
+
+def get_result_map(glob_mapping):
+    result_map = RESULT_MAP.copy()
+    emission_types = get_emission_types(glob_mapping)
+    for emission_type in emission_types:
+        result_map["{}_emission_cost".format(emission_type)] = {
+            "index": "years",
+            "var": "results.emission_cost_by_type['{}']".format(emission_type)
+        }
+        result_map["{}_emission".format(emission_type)] = {
+            "index": "years",
+            "var": "results.emission_by_type['{}']".format(emission_type)
+        }
+    return result_map
 
 
 def dict_to_csv(Dict, path):
@@ -80,7 +94,7 @@ def set_DataFrame(
 
     vars_frames = {}
 
-    for item, info in RESULT_MAP.items():
+    for item, info in get_result_map(glob_mapping).items():
         try:
             var = eval(info["var"])
         except (KeyError, AttributeError):
