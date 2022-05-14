@@ -18,6 +18,7 @@ from hypatia.error_log.Exceptions import (
     WrongCarrierType,
     WrongNumberOfYears,
 )
+from hypatia.utility.constants import ModelMode
 
 
 def check_index(index, table_name, file_name, allowed_indices):
@@ -73,7 +74,7 @@ def check_table_name(
 
 def check_sheet_name(path, file_name, ids):
 
-    """Checks if the sheets in the parameter files have valid names when 
+    """Checks if the sheets in the parameter files have valid names when
     reading the data
     """
 
@@ -176,7 +177,7 @@ def check_years_mode_consistency(mode, main_years):
     mode
     """
 
-    if mode == "Operation":
+    if mode == ModelMode.Operation:
 
         if len(main_years) != 1:
 

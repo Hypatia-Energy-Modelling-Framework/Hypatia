@@ -58,6 +58,7 @@ class ModelSettings:
         self._validate_regional_settings()
 
     def _validate_global_settings(self):
+        check_years_mode_consistency(self.mode, self.years)
         for table_name, table in self.global_settings.items():
             check_table_name(
                 file_name="global",
