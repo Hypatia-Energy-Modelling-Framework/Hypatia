@@ -7,23 +7,23 @@ in nested dict of results.
 RESULT_MAP = {
     "production_by_tech": {
         "index": "year_slice",
-        "var": 'results.variables["productionbyTechnology"]',
+        "var": 'results.technology_prod',
     },
     "use_by_tech": {
         "index": "year_slice",
-        "var": 'results.variables["usebyTechnology"]',
+        "var": 'results.technology_use',
     },
     "variable_cost": {"index": "years", "var": "results.cost_variable",},
     "decommissioning_cost": {"index": "years", "var": "results.cost_decom",},
-    "new_capacity": {"index": "years", "var": 'results.variables["newcapacity"]',},
+    "new_capacity": {"index": "years", "var": 'results.new_capacity',},
     "decommissioned_capacity": {
         "index": "years",
         "var": "results.decommissioned_capacity",
     },
     "total_capacity": {"index": "years", "var": "results.totalcapacity",},
     "fix_cost": {"index": "years", "var": "results.cost_fix",},
-    "imports": {"index": "year_slice", "var": 'results.variables["line_import"]',},
-    "exports": {"index": "year_slice", "var": 'results.variables["line_export"]',},
+    "imports": {"index": "year_slice", "var": 'results.line_import',},
+    "exports": {"index": "year_slice", "var": 'results.line_export',},
     "investment_cost": {"index": "years", "var": "results.cost_inv",},
     "fix_tax_cost": {"index": "years", "var": "results.cost_fix_tax"},
     "fix_subsidies": {"index": "years", "var": "results.cost_fix_sub"},
@@ -85,8 +85,11 @@ def set_DataFrame(
             var = eval(info["var"])
         except (KeyError, AttributeError):
             continue
-        vars_frames[item] = {}
 
+        if var == None:
+            continue
+
+        vars_frames[item] = {}
         if ("line" in item) and (item != "lines_variable_cost"):
             for pair_reg, values in var.items():
 
