@@ -5,7 +5,7 @@ import copy
 from hypatia.backend.ModelSettings import ModelSettings
 from hypatia.backend.ModelData import ModelData
 from hypatia.utility.constants import ModelMode
-from hypatia.examples.ExampleSettings import (
+from hypatia.backend.tests.TestSettings import (
     Utopia2PlanningSingleNodeDN,
     Utopia2OperationMultiNode
 )

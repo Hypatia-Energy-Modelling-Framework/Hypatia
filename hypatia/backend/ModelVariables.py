@@ -3,6 +3,7 @@ from hypatia.utility.constants import ModelMode
 import cvxpy as cp
 import itertools as it
 from hypatia.utility.utility import *
+from collections import defaultdict
 
 class ModelVariables():
     def __init__(self, model_data: ModelData):
@@ -157,8 +158,6 @@ class ModelVariables():
         self.decommissioned_capacity = {}
         self.cost_decom = {}
         self.cost_variable = {}
-        self.CO2_equivalent = {}
-        self.emission_cost = {}
         self.production_annual = {}
 
         for reg in self.model_data.settings.regions:
@@ -597,31 +596,37 @@ class ModelVariables():
 
 
     def _calc_emission_variables(self):
-        self.CO2_equivalent = {}
-        self.emission_cost = {}
-        self.regional_emission = {}
+        self.emission_by_region = {}
+        self.emission_cost_by_region = {}
+        self.emission_by_type = {}
+        self.emission_cost_by_type = {}
+
         for reg in self.model_data.settings.regions:
-            CO2_equivalent_regional = {}
-            emission_cost_regional = {}
-            emission = np.zeros(
-                (len(self.model_data.settings.years) * len(self.model_data.settings.time_steps), 1)
-            )
+            emissions_regional = defaultdict(dict)
+            emission_cost_regional = defaultdict(dict)
             for key in self.model_data.settings.technologies[reg].keys():
                 if key == "Demand" or key == "Transmission" or key == "Storage":
                     continue
 
-                CO2_equivalent_regional[key] = cp.multiply(
-                    self.production_annual[reg][key],
-                    self.model_data.regional_parameters[reg]["specific_emission"].loc[:, key],
-                )
+                for emission_type in get_emission_types(self.model_data.settings.global_settings):
+                    emissions_regional[emission_type][key] = cp.multiply(
+                        self.production_annual[reg][key],
+                        self.model_data.regional_parameters[reg]["specific_emission"][emission_type].loc[:, key],
+                    )
 
-                emission_cost_regional[key] = cp.multiply(
-                    CO2_equivalent_regional[key],
-                    self.model_data.regional_parameters[reg]["carbon_tax"].loc[:, key],
-                )
+                    emission_cost_regional[emission_type][key] = cp.multiply(
+                        emissions_regional[emission_type][key],
+                        self.model_data.regional_parameters[reg]["emission_tax"][emission_type].loc[:, key],
+                    )
+            self.emission_by_region[reg] = emissions_regional
+            self.emission_cost_by_region[reg] = emission_cost_regional
 
-                emission += cp.sum(CO2_equivalent_regional[key], axis=1)
+        self.emission_by_type = self.flip_keys(self.emission_by_region)
+        self.emission_cost_by_type = self.flip_keys(self.emission_cost_by_region)
 
-            self.CO2_equivalent[reg] = CO2_equivalent_regional
-            self.emission_cost[reg] = emission_cost_regional
-            self.regional_emission[reg] = emission
+    def flip_keys(self, d):
+        result = defaultdict(dict)
+        for key, value in d.items():
+               for k, v in value.items():
+                    result[k][key] = v
+        return result

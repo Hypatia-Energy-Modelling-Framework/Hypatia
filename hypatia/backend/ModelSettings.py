@@ -25,7 +25,10 @@ from hypatia.error_log.Checks import (
     check_carrier_type,
     check_years_mode_consistency,
 )
-from hypatia.utility.utility import create_technology_columns
+from hypatia.utility.utility import (
+    create_technology_columns,
+    get_emission_types,
+)
 from hypatia.backend.constraints.ConstraintList import CONSTRAINTS
 
 class ModelSettings:
@@ -375,6 +378,18 @@ class ModelSettings:
                 additional_level=("Taxes or Subsidies", ["Tax", "Sub"])
             )
 
+            specific_emission_indexer = create_technology_columns(
+                self.technologies[reg],
+                ignored_tech_categories=["Demand"],
+                additional_level=("Emission Type",  get_emission_types(self.global_settings))
+            )
+
+            carbon_tax_indexer = create_technology_columns(
+                self.technologies[reg],
+                ignored_tech_categories=["Demand", "Storage", "Transmission"],
+                additional_level=("Emission Type",  get_emission_types(self.global_settings))
+            )
+
             regional_parameters_template[reg] = {
                 "tech_fixed_cost": {
                     "sheet_name": "F_OM",
@@ -404,13 +419,13 @@ class ModelSettings:
                     "sheet_name": "Specific_emission",
                     "value": 0,
                     "index": pd.Index(self.years, name="Years"),
-                    "columns": indexer_reg_drop2,
+                    "columns": specific_emission_indexer,
                 },
-                "carbon_tax": {
-                    "sheet_name": "Carbon_tax",
+                "emission_tax": {
+                    "sheet_name": "Emission_tax",
                     "value": 0,
                     "index": pd.Index(self.years, name="Years"),
-                    "columns": indexer_reg_drop2,
+                    "columns": carbon_tax_indexer,
                 },
                 "fix_taxsub": {
                     "sheet_name": "Fix_taxsub",
