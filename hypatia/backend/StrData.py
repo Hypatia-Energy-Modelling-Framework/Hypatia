@@ -59,7 +59,6 @@ class ReadSets:
     connection_sheet_ids:  dict
         A nested dictionary that defines the sheet names of the parameter file of
         the inter-regional links with their default values, indices and columns
-
     global_sheet_ids : dict
         A nested dictionary that defines the sheet names of the global parameter file
         with their default values, indices and columns
@@ -643,6 +642,7 @@ class ReadSets:
                     ),
                     "columns": indexer_reg[reg],
                 },
+                 
             }
 
             if self.mode == "Planning":
@@ -695,7 +695,15 @@ class ReadSets:
                                 ["Technical Life time"], name="Performance Parameter"
                             ),
                             "columns": indexer_reg[reg],
-                        },
+                            },
+                        "ReserveMargin_tech": {
+                            "value": 1,
+                            "index": pd.Index(
+                                ["Reserve Margin tech"], name="Performance Parameter"),
+                            "columns": indexer_reg[reg],
+                           },
+                            
+                
                         "Economic_lifetime": {
                             "value": 1,
                             "index": pd.Index(
@@ -709,7 +717,9 @@ class ReadSets:
                                 ["Interest Rate"], name="Performance Parameter"
                             ),
                             "columns": indexer_reg[reg],
+                            
                         },
+                        
                     }
                 )
 
@@ -1067,18 +1077,15 @@ class ReadSets:
 """
 A helper function used in ReadSets to initialize the column field
 of technology-specific parameter files
-
 Parameters
 ----------
 technologies_hierarchy : Dict[str => List[Str]]
     A dictionary defining the mapping between a technology category
     and a list of technologies belonging to that category.
     i.e. {"Supply": ["NG_extraction", "Geo_PP"]}
-
 ignored_tech_categories : List[str]
     A list of technology categories that should be excluded from
     the parameter's file columns
-
 additional_level : None/Touple(str, List[str])
     An additional top hierarchy level to be added to the columns.
     It is in the form (column name, column values).
