@@ -38,6 +38,7 @@ RESULTS = [
     "cost_fix",
     "cost_variable",
     "totalcapacity",
+    "totalcapacityinreserve",
     "cost_fix_tax",
     "cost_fix_sub",
     "emission_cost",
@@ -93,6 +94,7 @@ class BuildModel:
             self._constr_resource_tech_availability()
             self._constr_tech_efficiency()
             self._constr_prod_annual()
+            self._constr_prod()
             self._constr_emission_cap()
             self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
@@ -122,6 +124,7 @@ class BuildModel:
             self._constr_resource_tech_availability()
             self._constr_tech_efficiency()
             self._constr_prod_annual()
+            self._constr_prod()
             self._constr_emission_cap()
             self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
@@ -149,7 +152,7 @@ class BuildModel:
 
         objective = cp.Minimize(self.global_objective)
         problem = cp.Problem(objective, self.constr)
-        problem.solve(solver=solver, verbose=verbosity, **kwargs)
+        problem.solve(solver=solver, verbose=True, **kwargs)
 
         if problem.status == "optimal":
 
@@ -315,6 +318,7 @@ class BuildModel:
         self.salvage_inv = {}
         self.accumulated_newcapacity = {}
         self.totalcapacity = {}
+        self.totalcapacityinreserve = {}
         self.cost_fix = {}
         self.cost_fix_tax = {}
         self.cost_fix_sub = {}
@@ -334,6 +338,7 @@ class BuildModel:
             salvage_inv_regional = {}
             accumulated_newcapacity_regional = {}
             totalcapacity_regional = {}
+            totalcapacityinreserve_regional={}
             cost_fix_regional = {}
             cost_fix_tax_regional = {}
             cost_fix_Sub_regional = {}
@@ -380,6 +385,11 @@ class BuildModel:
                     accumulated_newcapacity_regional[key]
                     + self.sets.data[reg]["tech_residual_cap"].loc[:, key]
                 )
+                totalcapacityinreserve_regional[key] = (cp.multiply((
+                    accumulated_newcapacity_regional[key]
+                    + self.sets.data[reg]["tech_residual_cap"].loc[:, key])
+                    ,self.sets.data[reg]["ReserveMargin_tech"].loc[:,key]
+                ))
 
                 (
                     cost_fix_regional[key],
@@ -441,6 +451,7 @@ class BuildModel:
             self.cost_inv_sub[reg] = cost_inv_sub_regional
             self.salvage_inv[reg] = salvage_inv_regional
             self.totalcapacity[reg] = totalcapacity_regional
+            self.totalcapacityinreserve[reg] = totalcapacityinreserve_regional
             self.cost_fix[reg] = cost_fix_regional
             self.cost_fix_tax[reg] = cost_fix_tax_regional
             self.cost_fix_sub[reg] = cost_fix_Sub_regional
@@ -633,8 +644,6 @@ class BuildModel:
                 self.variables["productionbyTechnology"][reg]["Storage"],
                 self.sets.main_years,
                 self.sets.time_steps,
-                self.sets.data[reg]["storage_charge_efficiency"],
-                self.sets.data[reg]["storage_discharge_efficiency"],
             )
 
     def _balance_(self):
