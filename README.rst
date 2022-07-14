@@ -57,7 +57,7 @@ After activating the environment, you need to install **CVXPY, version 1.1.17**:
 
 .. code-block:: bash
 
-    conda install -c conda-forge cvxpy=1.1.17 
+    conda install -c conda-forge cvxpy=1.1.18 
 
 Then, you can use *pip* to install hypatia as follow:
 
