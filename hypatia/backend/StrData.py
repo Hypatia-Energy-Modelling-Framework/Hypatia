@@ -9,6 +9,7 @@ checking the errors in the definition of the sets and parameters
 import itertools as it
 from openpyxl import load_workbook
 import pandas as pd
+from copy import deepcopy
 from hypatia.error_log.Checks import (
     check_nan,
     check_index,
@@ -143,18 +144,75 @@ class ReadSets:
 
             self.time_steps = ["Annual"]
             self.timeslice_fraction = np.ones((1, 1))
+            
+            
+        # read the possible connections
+        
+        if len(self.regions) > 1: 
+            self.trade_line = {}
+            
+            for carr in glob_mapping["Carriers_glob"]["Carrier"]:
+            
+                possible_connections = pd.read_excel(
+                        r"{}/trade.xlsx".format(self.path),
+                        sheet_name=carr,
+                        index_col=[0],
+                        header=[0],)
+                
+                for reg in self.regions:
 
+                    for reg_ in self.regions:
+                        
+                        if possible_connections.loc[reg,reg_] == 1 and reg < reg_:
+                            
+                            if "{}-{}".format(reg,reg_) in self.trade_line.keys():
+                                
+                                self.trade_line["{}-{}".format(reg,reg_)].append(carr)
+
+                            else:
+                                self.trade_global["{}-{}".format(reg,reg_)] = [carr]
+                                
+        
+        # creating the import and export dict keys
+        
+                self.trade_regions = {}
+                
+                for reg in self.regions:
+                    
+                    traded_carriers = {}
+                    
+                    for line,carr_list in self.trade_line.items():
+                        
+                        if reg in line:
+                            
+                            for reg_ in self.regions:
+                                
+                                if line == "{}-{}".format(reg,reg_) or line == "{}-{}".format(reg_,reg):
+                                    
+                                    traded_carriers[reg_] = carr_list
+                                    
+                    self.trade_regions[reg] = traded_carriers
+                    
+                    
+                
+                trade_regions_copy = deepcopy(self.trade_regions)
+                for reg,value in trade_regions_copy.items():
+                    
+                    if len(value) == 0:
+                        
+                        self.trade_regions.pop(key,None)
+                                                          
         # possible connections among the regions
 
-        if len(self.regions) > 1:
-            lines_obj = it.permutations(self.regions, r=2)
+        # if len(self.regions) > 1:
+        #     lines_obj = it.permutations(self.regions, r=2)
 
-            self.lines_list = []
-            for item in lines_obj:
+        #     self.lines_list = []
+        #     for item in lines_obj:
 
-                if item[0] < item[1]:
+        #         if item[0] < item[1]:
 
-                    self.lines_list.append("{}-{}".format(item[0], item[1]))
+        #             self.lines_list.append("{}-{}".format(item[0], item[1]))
 
         mapping = {}
 
@@ -277,6 +335,7 @@ class ReadSets:
             Technologies[reg] = regional_tech
 
         self.Technologies = Technologies
+        
 
         self._create_input_data()
 
@@ -289,8 +348,16 @@ class ReadSets:
 
             # Create the columns of inter-regional links as a multi-index of the
             # pairs of regions and the transmitted carriers
-            indexer = pd.MultiIndex.from_product(
-                [self.lines_list, self.glob_mapping["Carriers_glob"]["Carrier"]],
+            lines_list = []
+            carrier_list = []
+            for connection in self.trade_global.keys():
+                for carr in self.trade_global[connection]:
+                    lines_list.append(connection)
+                    carrier_list.append(carr)
+                
+                 
+            indexer = pd.MultiIndex.from_arrays(
+                [lines_list, carrier_list],
                 names=["Line", "Transmitted Carrier"],
             )
 
