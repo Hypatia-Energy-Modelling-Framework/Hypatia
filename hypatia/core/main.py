@@ -172,7 +172,6 @@ class Model:
         results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
         if results is not None:
-
             results = set_DataFrame(
                 results=results,
                 regions=self._StrData.regions,
@@ -181,6 +180,7 @@ class Model:
                 glob_mapping=self._StrData.glob_mapping,
                 technologies=self._StrData.Technologies,
                 mode=self._StrData.mode,
+                trade_regions = self._StrData.trade_regions if self._StrData.multi_node else None
             )
 
             self.results = results
