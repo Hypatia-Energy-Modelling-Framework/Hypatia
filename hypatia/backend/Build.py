@@ -232,29 +232,53 @@ class BuildModel:
 
             technology_prod[reg] = regional_prod
             technology_use[reg] = regional_use
-
+        
+        for reg_ in self.sets.trade_regions.keys():
+            
             export_ = {}
             import_ = {}
-            for reg_ in self.sets.regions:
+            
+            for reg__,carr_list in self.sets.trade_regions[reg_].items():
+                
+                export_[reg__] = cp.Variable(
+                    shape = (
+                        len(self.sets.main_years) * len(self.sets.time_steps),
+                        len(carr_list)),
+                nonneg=True,
+                )
+                
+                import_[reg__] = cp.Variable(
+                    shape = (
+                        len(self.sets.main_years) * len(self.sets.time_steps),
+                        len(carr_list)),
+                nonneg=True,
+                )
+            
+            line_export[reg_] = export_
+            line_import[reg_] = import_
+    
+            # export_ = {}
+            # import_ = {}
+            # for reg_ in self.sets.regions:
 
-                if reg_ != reg:
-                    export_[reg_] = cp.Variable(
-                        shape=(
-                            len(self.sets.main_years) * len(self.sets.time_steps),
-                            len(self.sets.glob_mapping["Carriers_glob"].index),
-                        ),
-                        nonneg=True,
-                    )
-                    import_[reg_] = cp.Variable(
-                        shape=(
-                            len(self.sets.main_years) * len(self.sets.time_steps),
-                            len(self.sets.glob_mapping["Carriers_glob"].index),
-                        ),
-                        nonneg=True,
-                    )
+            #     if reg_ != reg:
+            #         export_[reg_] = cp.Variable(
+            #             shape=(
+            #                 len(self.sets.main_years) * len(self.sets.time_steps),
+            #                 len(self.sets.glob_mapping["Carriers_glob"].index),
+            #             ),
+            #             nonneg=True,
+            #         )
+            #         import_[reg_] = cp.Variable(
+            #             shape=(
+            #                 len(self.sets.main_years) * len(self.sets.time_steps),
+            #                 len(self.sets.glob_mapping["Carriers_glob"].index),
+            #             ),
+            #             nonneg=True,
+            #         )
 
-            line_export[reg] = export_
-            line_import[reg] = import_
+            # line_export[reg] = export_
+            # line_import[reg] = import_
 
         self.variables = {
             "productionbyTechnology": technology_prod,
@@ -289,12 +313,12 @@ class BuildModel:
 
             if len(self.sets.regions) > 1:
 
-                for line in self.sets.lines_list:
+                for line,carr_list in self.sets.trade_line.items():
 
                     line_newcapacity[line] = cp.Variable(
                         shape=(
                             len(self.sets.main_years),
-                            len(self.sets.glob_mapping["Carriers_glob"].index),
+                            len(carr_list),
                         ),
                         nonneg=True,
                     )
@@ -475,7 +499,7 @@ class BuildModel:
 
             self.line_accumulated_newcapacity[key] = line_newcap_accumulated(
                 self.variables["line_newcapacity"][key],
-                self.sets.glob_mapping["Carriers_glob"]["Carrier"],
+                self.sets.trade_line[key],
                 self.sets.main_years,
                 self.sets.trade_data["line_lifetime"].loc[:, key],
             )
@@ -492,7 +516,7 @@ class BuildModel:
 
             self.line_decommissioned_capacity[key] = line_decomcap(
                 self.variables["line_newcapacity"][key],
-                self.sets.glob_mapping["Carriers_glob"]["Carrier"],
+                self.sets.trade_line[key],
                 self.sets.main_years,
                 self.sets.trade_data["line_lifetime"].loc[:, key],
             )
@@ -505,10 +529,9 @@ class BuildModel:
         self.cost_variable_line = line_varcost(
             self.sets.trade_data["line_var_cost"],
             self.variables["line_import"],
-            self.sets.regions,
             self.sets.main_years,
             self.sets.time_steps,
-            self.sets.lines_list,
+            self.sets.trade_line.keys(),
         )
 
     def _calc_variable_operation(self):
@@ -597,23 +620,22 @@ class BuildModel:
 
         self.line_totalcapacity = {}
         self.cost_fix_line = {}
-        for key in self.sets.lines_list:
+        for line in self.sets.trade_line.keys():
 
-            self.line_totalcapacity[key] = (
-                self.sets.trade_data["line_residual_cap"].loc[:, key].values
+            self.line_totalcapacity[line] = (
+                self.sets.trade_data["line_residual_cap"].loc[:, line].values
             )
-            self.cost_fix_line[key] = cp.multiply(
-                self.sets.trade_data["line_fixed_cost"].loc[:, key].values,
-                self.line_totalcapacity[key],
+            self.cost_fix_line[line] = cp.multiply(
+                self.sets.trade_data["line_fixed_cost"].loc[:, line].values,
+                self.line_totalcapacity[line],
             )
 
         self.cost_variable_line = line_varcost(
             self.sets.trade_data["line_var_cost"],
             self.variables["line_import"],
-            self.sets.regions,
             self.sets.main_years,
             self.sets.time_steps,
-            self.sets.lines_list,
+            self.sets.trade_line.keys(),
         )
 
     def _calc_variable_storage_SOC(self):
@@ -739,65 +761,68 @@ class BuildModel:
                                     "productionbyTechnology"
                                 ][reg][key][:, indx]
 
-                if len(self.sets.regions) > 1:
+                if len(self.sets.regions) > 1 and \
+                    reg in self.sets.trade_regions.keys():
 
-                    for key in self.variables["line_import"][reg].keys():
+                    for key,carr_list in self.sets.trade_regions[reg].items():
+                        
+                        if carr in carr_list:
 
-                        if "{}-{}".format(reg, key) in self.sets.lines_list:
-
-                            line_eff = (
-                                pd.concat(
-                                    [
-                                        self.sets.trade_data["line_eff"][
-                                            ("{}-{}".format(reg, key), carr)
+                            if "{}-{}".format(reg, key) in self.sets.trade_line.keys():
+    
+                                line_eff = (
+                                    pd.concat(
+                                        [
+                                            self.sets.trade_data["line_eff"][
+                                                ("{}-{}".format(reg, key), carr)
+                                            ]
                                         ]
-                                    ]
-                                    * len(self.sets.time_steps)
+                                        * len(self.sets.time_steps)
+                                    )
+                                    .sort_index()
+                                    .values
                                 )
-                                .sort_index()
-                                .values
-                            )
-
-                        elif "{}-{}".format(key, reg) in self.sets.lines_list:
-
-                            line_eff = (
-                                pd.concat(
-                                    [
-                                        self.sets.trade_data["line_eff"][
-                                            ("{}-{}".format(key, reg), carr)
+    
+                            elif "{}-{}".format(key, reg) in self.sets.trade_line.keys():
+    
+                                line_eff = (
+                                    pd.concat(
+                                        [
+                                            self.sets.trade_data["line_eff"][
+                                                ("{}-{}".format(key, reg), carr)
+                                            ]
                                         ]
-                                    ]
-                                    * len(self.sets.time_steps)
+                                        * len(self.sets.time_steps)
+                                    )
+                                    .sort_index()
+                                    .values
                                 )
-                                .sort_index()
-                                .values
+    
+                            totalimportbycarrier_regional[carr] += cp.multiply(
+                                self.variables["line_import"][reg][key][
+                                    :,
+                                    self.sets.trade_regions[reg][key].index(carr),
+                                ],
+                                line_eff,
                             )
-
-                        totalimportbycarrier_regional[carr] += cp.multiply(
-                            self.variables["line_import"][reg][key][
+    
+                            totalexportbycarrier_regional[carr] += self.variables[
+                                "line_export"
+                            ][reg][key][
                                 :,
-                                list(
-                                    self.sets.glob_mapping["Carriers_glob"]["Carrier"]
-                                ).index(carr),
-                            ],
-                            line_eff,
-                        )
-
-                        totalexportbycarrier_regional[carr] += self.variables[
-                            "line_export"
-                        ][reg][key][
-                            :,
-                            list(
-                                self.sets.glob_mapping["Carriers_glob"]["Carrier"]
-                            ).index(carr),
-                        ]
+                                self.sets.trade_regions[reg][key].index(carr),
+                            ]
 
             self.totalusebycarrier[reg] = totalusebycarrier_regional
             self.totalprodbycarrier[reg] = totalprodbycarrier_regional
             self.totalimportbycarrier[reg] = totalimportbycarrier_regional
             self.totalexportbycarrier[reg] = totalexportbycarrier_regional
             self.totaldemandbycarrier[reg] = totaldemandbycarrier_regional
+                               
+                                
+                
 
+            
     def _constr_balance(self):
 
         """
@@ -827,7 +852,7 @@ class BuildModel:
         loss
         """
 
-        for reg in self.sets.regions:
+        for reg in self.variables["line_import"].keys():
 
             for key in self.variables["line_import"][reg].keys():
 
@@ -900,41 +925,41 @@ class BuildModel:
         capacity factor
         """
 
-        for reg in self.sets.regions:
+        for reg_ in self.sets.trade_regions.keys():
 
-            for key, value in self.variables["line_import"][reg].items():
+            for key, value in self.variables["line_import"][reg_].items():
 
                 for indx, year in enumerate(self.sets.main_years):
 
-                    if "{}-{}".format(reg, key) in self.sets.lines_list:
+                    if "{}-{}".format(reg_, key) in self.sets.trade_line.keys():
 
                         capacity_factor = (
                             self.sets.trade_data["line_capacity_factor"]
-                            .loc[year, ("{}-{}".format(reg, key), slice(None))]
+                            .loc[year, ("{}-{}".format(reg_, key), slice(None))]
                             .values
                         )
                         capacity_to_production = (
                             self.sets.trade_data["annualprod_per_unitcapacity"]
-                            .loc[:, ("{}-{}".format(reg, key), slice(None))]
+                            .loc[:, ("{}-{}".format(reg_, key), slice(None))]
                             .values
                         )
-                        capacity = self.line_totalcapacity["{}-{}".format(reg, key)][
+                        capacity = self.line_totalcapacity["{}-{}".format(reg_, key)][
                             indx : indx + 1, :
                         ]
 
-                    elif "{}-{}".format(key, reg) in self.sets.lines_list:
+                    elif "{}-{}".format(key, reg_) in self.sets.trade_line.keys():
 
                         capacity_factor = (
                             self.sets.trade_data["line_capacity_factor"]
-                            .loc[year, ("{}-{}".format(key, reg), slice(None))]
+                            .loc[year, ("{}-{}".format(key, reg_), slice(None))]
                             .values
                         )
                         capacity_to_production = (
                             self.sets.trade_data["annualprod_per_unitcapacity"]
-                            .loc[:, ("{}-{}".format(key, reg), slice(None))]
+                            .loc[:, ("{}-{}".format(key, reg_), slice(None))]
                             .values
                         )
-                        capacity = self.line_totalcapacity["{}-{}".format(key, reg)][
+                        capacity = self.line_totalcapacity["{}-{}".format(key, reg_)][
                             indx : indx + 1, :
                         ]
 
@@ -1407,7 +1432,7 @@ class BuildModel:
         years = -1 * np.arange(len(self.sets.main_years))
         self.totalcost_lines = np.zeros((len(self.sets.main_years), 1))
 
-        for line in self.sets.lines_list:
+        for line in self.sets.trade_line.keys():
 
             self.totalcost_lines += cp.sum(
                 self.cost_inv_line[line]
@@ -1416,9 +1441,9 @@ class BuildModel:
                 axis=1,
             )
 
-        for reg in self.sets.regions:
+        for reg_ in self.sets.trade_regions.keys():
 
-            for key, value in self.cost_variable_line[reg].items():
+            for key, value in self.cost_variable_line[reg_].items():
 
                 self.totalcost_lines += cp.sum(value, axis=1)
 
@@ -1442,13 +1467,13 @@ class BuildModel:
 
         self.totalcost_lines = np.zeros((len(self.sets.main_years), 1))
 
-        for line in self.sets.lines_list:
+        for line in self.sets.trade_line.keys():
 
             self.totalcost_lines += cp.sum(self.cost_fix_line[line], axis=1)
 
-        for reg in self.sets.regions:
+        for reg_ in self.sets.trade_regions.keys():
 
-            for key, value in self.cost_variable_line[reg].items():
+            for key, value in self.cost_variable_line[reg_].items():
 
                 self.totalcost_lines += cp.sum(value, axis=1)
 

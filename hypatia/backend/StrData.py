@@ -170,7 +170,7 @@ class ReadSets:
                                 self.trade_line["{}-{}".format(reg,reg_)].append(carr)
 
                             else:
-                                self.trade_global["{}-{}".format(reg,reg_)] = [carr]
+                                self.trade_line["{}-{}".format(reg,reg_)] = [carr]
                                 
         
         # creating the import and export dict keys
@@ -350,8 +350,8 @@ class ReadSets:
             # pairs of regions and the transmitted carriers
             lines_list = []
             carrier_list = []
-            for connection in self.trade_global.keys():
-                for carr in self.trade_global[connection]:
+            for connection in self.trade_line.keys():
+                for carr in self.trade_line[connection]:
                     lines_list.append(connection)
                     carrier_list.append(carr)
                 

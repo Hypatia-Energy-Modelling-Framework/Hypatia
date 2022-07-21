@@ -327,7 +327,7 @@ def annual_activity(activity, main_years, timeslices):
 
 
 def line_varcost(
-    specific_varcost, line_import, regions, main_years, time_slices, lines_list
+    specific_varcost, line_import, main_years, time_slices, lines
 ):
 
     """
@@ -336,7 +336,7 @@ def line_varcost(
 
     variablecost_line = {}
 
-    for reg in regions:
+    for reg in line_import.keys():
 
         variablecost_line_regional = {}
 
@@ -344,13 +344,13 @@ def line_varcost(
 
             line_import_anunual = annual_activity(value, main_years, time_slices)
 
-            if "{}-{}".format(reg, key) in lines_list:
+            if "{}-{}".format(reg, key) in lines:
 
                 specific_varcost_line = specific_varcost.loc[
                     :, "{}-{}".format(reg, key)
                 ]
 
-            elif "{}-{}".format(reg, key) in lines_list:
+            elif "{}-{}".format(reg, key) in lines:
 
                 specific_varcost_line = specific_varcost.loc[
                     :, "{}-{}".format(key, reg)
