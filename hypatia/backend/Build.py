@@ -492,10 +492,10 @@ class BuildModel:
 
         for key in self.variables["line_newcapacity"].keys():
 
-            self.cost_inv_line[key] = cp.multiply(
+            self.cost_inv_line[key] = cp.multiply(cp.multiply(
                 self.sets.trade_data["line_inv"].loc[:, key].values,
                 self.variables["line_newcapacity"][key],
-            )
+            ), self.sets.trade_data["line_length"].loc[:,key].values)
 
             self.line_accumulated_newcapacity[key] = line_newcap_accumulated(
                 self.variables["line_newcapacity"][key],
@@ -509,10 +509,10 @@ class BuildModel:
                 + self.sets.trade_data["line_residual_cap"].loc[:, key].values
             )
 
-            self.cost_fix_line[key] = cp.multiply(
+            self.cost_fix_line[key] = cp.multiply(cp.multiply(
                 self.sets.trade_data["line_fixed_cost"].loc[:, key].values,
                 self.line_totalcapacity[key],
-            )
+            ), self.sets.trade_data["line_length"].loc[:,key].values)
 
             self.line_decommissioned_capacity[key] = line_decomcap(
                 self.variables["line_newcapacity"][key],
@@ -521,10 +521,10 @@ class BuildModel:
                 self.sets.trade_data["line_lifetime"].loc[:, key],
             )
 
-            self.cost_decom_line[key] = cp.multiply(
+            self.cost_decom_line[key] = cp.multiply(cp.multiply(
                 self.sets.trade_data["line_decom_cost"].loc[:, key].values,
                 self.line_decommissioned_capacity[key],
-            )
+            ), self.sets.trade_data["line_length"].loc[:,key].values)
 
         self.cost_variable_line = line_varcost(
             self.sets.trade_data["line_var_cost"],
@@ -625,10 +625,10 @@ class BuildModel:
             self.line_totalcapacity[line] = (
                 self.sets.trade_data["line_residual_cap"].loc[:, line].values
             )
-            self.cost_fix_line[line] = cp.multiply(
+            self.cost_fix_line[line] = cp.multiply(cp.multiply(
                 self.sets.trade_data["line_fixed_cost"].loc[:, line].values,
                 self.line_totalcapacity[line],
-            )
+            ), self.sets.trade_data["line_length"].loc[:,line].values)
 
         self.cost_variable_line = line_varcost(
             self.sets.trade_data["line_var_cost"],
@@ -769,41 +769,63 @@ class BuildModel:
                         if carr in carr_list:
 
                             if "{}-{}".format(reg, key) in self.sets.trade_line.keys():
+                                
+                                line_eff = 1 - self.sets.trade_data["line_length"][
+                                    [("{}-{}".format(reg, key), carr)]].values* (1 -
+                                                 self.sets.trade_data["line_eff"][
+                                                     [("{}-{}".format(reg, key), carr)]])
+                                
+                                line_eff_modified = pd.concat([line_eff] * 
+                                                               len(self.sets.time_steps)).sort_index().values
+                                
+
+                                                                           
+                                                                         
     
-                                line_eff = (
-                                    pd.concat(
-                                        [
-                                            self.sets.trade_data["line_eff"][
-                                                ("{}-{}".format(reg, key), carr)
-                                            ]
-                                        ]
-                                        * len(self.sets.time_steps)
-                                    )
-                                    .sort_index()
-                                    .values
-                                )
+                                # line_eff = (
+                                #     pd.concat(
+                                #         [
+                                #             self.sets.trade_data["line_eff"][
+                                #                 ("{}-{}".format(reg, key), carr)
+                                #             ]
+                                #         ]
+                                #         * len(self.sets.time_steps)
+                                #     )
+                                #     .sort_index()
+                                #     .values
+                                # )
     
                             elif "{}-{}".format(key, reg) in self.sets.trade_line.keys():
+                                
+                                line_eff = 1 - self.sets.trade_data["line_length"][
+                                    [("{}-{}".format(key, reg), carr)]].values * (1 -
+                                                 self.sets.trade_data["line_eff"][
+                                                     [("{}-{}".format(key, reg), carr)]])
+                                
+                                line_eff_modified = pd.concat([line_eff] * 
+                                                               len(self.sets.time_steps)).sort_index().values
+                            
+                            line_eff_modified.shape = (len(self.sets.main_years) * len(self.sets.time_steps),)
     
-                                line_eff = (
-                                    pd.concat(
-                                        [
-                                            self.sets.trade_data["line_eff"][
-                                                ("{}-{}".format(key, reg), carr)
-                                            ]
-                                        ]
-                                        * len(self.sets.time_steps)
-                                    )
-                                    .sort_index()
-                                    .values
-                                )
+                                # line_eff = (
+                                #     pd.concat(
+                                #         [
+                                #             self.sets.trade_data["line_eff"][
+                                #                 ("{}-{}".format(key, reg), carr)
+                                #             ]
+                                #         ]
+                                #         * len(self.sets.time_steps)
+                                #     )
+                                #     .sort_index()
+                                #     .values
+                                # )
     
                             totalimportbycarrier_regional[carr] += cp.multiply(
                                 self.variables["line_import"][reg][key][
                                     :,
                                     self.sets.trade_regions[reg][key].index(carr),
                                 ],
-                                line_eff,
+                                line_eff_modified,
                             )
     
                             totalexportbycarrier_regional[carr] += self.variables[

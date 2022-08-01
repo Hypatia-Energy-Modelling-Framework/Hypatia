@@ -34,6 +34,7 @@ from hypatia.utility.constants import (
 from hypatia.utility.constants import (list_connection_operation, list_connection_planning,
  take_regional_sheets, take_trade_ids, take_ids, take_global_ids)
 
+from hypatia.utility.utility import vicenty
 MODES = ["Planning", "Operation"]
 
 
@@ -171,6 +172,23 @@ class ReadSets:
 
                             else:
                                 self.trade_line["{}-{}".format(reg,reg_)] = [carr]
+                                
+                                
+        # calculating the distance among two node (the default length of the connections)
+            self.distance = {}
+            for reg in self.regions:
+                
+                for reg_ in self.regions:
+                    
+                    if "{}-{}".format(reg,reg_) in self.trade_line.keys():
+                        
+                        loc1 = tuple(self.glob_mapping["Regions"].loc[
+                            self.glob_mapping["Regions"]["Region"] == reg][["Lat","Long"]].iloc[0])
+                        
+                        loc2 = tuple(self.glob_mapping["Regions"].loc[
+                            self.glob_mapping["Regions"]["Region"] == reg_][["Lat","Long"]].iloc[0])
+                        
+                        self.distance["{}-{}".format(reg,reg_)] = vicenty(loc1,loc2)
                                 
         
         # creating the import and export dict keys
@@ -350,10 +368,12 @@ class ReadSets:
             # pairs of regions and the transmitted carriers
             lines_list = []
             carrier_list = []
+            distance_list = []
             for connection in self.trade_line.keys():
                 for carr in self.trade_line[connection]:
                     lines_list.append(connection)
                     carrier_list.append(carr)
+                    distance_list.append(self.distance[connection])
                 
                  
             indexer = pd.MultiIndex.from_arrays(
@@ -391,6 +411,13 @@ class ReadSets:
                     "value": 1,
                     "index": pd.Index(
                         ["AnnualProd_Per_UnitCapacity"], name="Performance Parameter"
+                    ),
+                    "columns": indexer,
+                },
+                "Line_length": {
+                    "value": [distance_list],
+                    "index": pd.Index(
+                        ["Distance"], name="Performance Parameter"
                     ),
                     "columns": indexer,
                 },

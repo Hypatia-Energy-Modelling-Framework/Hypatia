@@ -7,12 +7,12 @@ parameter filese
 # Sorted connection parameter sheets
 
 list_connection_operation = ["V_OM","F_OM","Line_efficiency",
-"AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line"]
+"AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line","Line_length"]
 
 list_connection_planning = ["V_OM","F_OM","INV","Decom_cost",
 "Line_Economic_life","Interest_rate","Line_lifetime","Line_efficiency",
 "AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line",
-"Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
+"Line_length","Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
 
 
 # Sorted regional parameter sheets
@@ -99,6 +99,12 @@ def take_trade_ids(mode):
         },
         "annualprod_per_unitcapacity": {
             "sheet_name": "AnnualProd_perunit_capacity",
+            "index_col": 0,
+            "header": [0, 1],
+        },
+        
+        "line_length": {
+            "sheet_name": "Line_length",
             "index_col": 0,
             "header": [0, 1],
         },
@@ -415,7 +421,7 @@ def take_ids(regions, technologies, mode):
 # Constants of input set tables
 
 global_set_ids = {
-    "Regions": ["Region", "Region_name"],
+    "Regions": ["Region", "Region_name", "Lat", "Long"],
     "Years": ["Year", "Year_name"],
     "Timesteps": ["Timeslice", "Timeslice_name", "Timeslice_fraction"],
     "Time_horizon": ["Start", "End"],
