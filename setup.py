@@ -39,4 +39,3 @@ setup(
     ],
 )
 
-print("ciao")
