@@ -38,3 +38,5 @@ setup(
         "Topic :: Scientific/Engineering",
     ],
 )
+
+print("ciao")
