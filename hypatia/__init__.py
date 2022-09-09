@@ -48,6 +48,7 @@ Package dependencies:
 """
 
 from hypatia.core.main import Model
+from hypatia.core.sensitivity import Sensitivity
 from hypatia.error_log import Exceptions
 from hypatia.analysis.plots import Plotter
 from hypatia.examples.load_examples import load_example, download_example
