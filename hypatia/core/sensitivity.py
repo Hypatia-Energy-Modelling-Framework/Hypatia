@@ -22,12 +22,17 @@ def create_tuples(par_col:str):
     parts = par_col.split("(")[-1].split(")")[0].split(",")
     return tuple(parts)
 
+def create_list(regions:str):
+    
+    parts = regions.split("[")[-1].split("]")[0].split(",")
+    return list(parts)
+
 class Parameter:
 
-    def __init__(self,model,name:str,parameter:str,region:str,parameter_col:Tuple[str],bound:List[float]):
+    def __init__(self,model,name:str,parameter:str,regions:List[str],parameter_col:Tuple[str],bound:List[float]):
         
         self._sets = model._StrData
-        self.region = region
+        self.regions = regions
         self.parameter = parameter
         self.parameter_col = parameter_col
         self.bound = bound
@@ -35,16 +40,17 @@ class Parameter:
 
 
     @property
-    def region(self):
-        return self._region
+    def regions(self):
+        return self._regions
 
 
-    @region.setter
-    def region(self,var):
-        if var not in self._sets.regions:
-            raise ValueError()
+    @regions.setter
+    def regions(self,var):
+        for reg in var:
+            if reg not in self._sets.regions:
+                raise ValueError()
 
-        self._region = var
+        self._regions = var
 
 
     @property 
@@ -53,15 +59,15 @@ class Parameter:
 
     @parameter.setter
     def parameter(self,par):
-        parameter_list = take_regional_sheets(
+        parameter_dict = take_regional_sheets(
             mode = self._sets.mode,
             technologies= self._sets.Technologies,
-            regions = [self.region]
-            )[self.region]
+            regions = self.regions
+            )
 
-
-        if par not in parameter_list:
-            raise ValueError()
+        for reg in self.regions:
+            if par not in parameter_dict[reg]:
+                raise ValueError()
 
         self._parameter = par
 
@@ -103,7 +109,7 @@ class Sensitivity:
                 Parameter(
                     model = self._model,
                     parameter = info.loc["parameter"],
-                    region = info.loc["region"],
+                    regions = create_list(info.loc["regions"]),
                     parameter_col = create_tuples(info.loc["parameter_col"]),
                     bound = eval(info.loc["bound"]),
                     name = self._get_parameter_name()
@@ -146,7 +152,9 @@ class Sensitivity:
             for col,parameter in enumerate(self._parameters):
                 
                 db_parameter = sheets_to_ids[parameter.parameter]
-                new_model._StrData.data[parameter.region][db_parameter].loc[:,parameter.parameter_col]*= 1 + row.loc[parameter.name]
+                
+                for reg in parameter.regions:
+                    new_model._StrData.data[reg][db_parameter].loc[:,parameter.parameter_col]*= 1 + row.loc[parameter.name]
                 
             new_model.run(solver=solver,force_rewrite=force_rewrite)
             new_model.to_csv(path='{}/results_{}'.format(path,row_num))

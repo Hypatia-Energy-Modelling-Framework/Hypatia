@@ -152,7 +152,7 @@ class Plotter:
 
         hourly_resolution : boolean
             if True, hourly plots will be available else hourly plots cant be used
-
+            
         """
 
         if isinstance(results, str):
