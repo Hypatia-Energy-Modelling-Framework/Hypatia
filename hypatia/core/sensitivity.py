@@ -4,6 +4,7 @@ from SALib.sample import saltelli,morris
 import copy
 from typing import Tuple,List,Optional
 from hypatia.utility.constants import take_regional_sheets, take_ids, sheets_to_ids
+from hypatia.analysis.postprocessing import dict_to_csv
 import pandas as pd
 
 SENS_METHODS = {
@@ -154,7 +155,12 @@ class Sensitivity:
                 db_parameter = sheets_to_ids[parameter.parameter]
                 
                 for reg in parameter.regions:
-                    new_model._StrData.data[reg][db_parameter].loc[:,parameter.parameter_col]*= 1 + row.loc[parameter.name]
+                    new_model._StrData.data[reg][db_parameter].loc[:,parameter.parameter_col] =\
+                        self._model._StrData.data[reg][db_parameter].loc[:,parameter.parameter_col] * (1 + row.loc[parameter.name])
+        
+            dict_to_csv(new_model._StrData.data, '{}/samp_{}'.format(path, row_num))
+                    
+            
                 
             new_model.run(solver=solver,force_rewrite=force_rewrite)
             new_model.to_csv(path='{}/results_{}'.format(path,row_num))
