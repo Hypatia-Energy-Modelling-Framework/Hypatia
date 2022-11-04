@@ -7,6 +7,7 @@ This module contains the utility functions from cerating the optimization proble
 import cvxpy as cp
 import numpy as np
 import pandas as pd
+import math as mt
 
 
 def stack(a, b, axis=0):
@@ -21,7 +22,7 @@ def stack(a, b, axis=0):
         return cp.hstack([a, b])
 
 
-def newcap_accumulated(newcap, techs, main_years, tlft):
+def newcap_accumulated(newcap, techs, main_years, tlft,period_step):
 
     """
     Calculates the accumulated new capacity of each technology in each 
@@ -37,7 +38,7 @@ def newcap_accumulated(newcap, techs, main_years, tlft):
         for year in main_years:
             for year0 in main_years:
 
-                age = main_years.index(year) - main_years.index(year0)
+                age = (main_years.index(year) - main_years.index(year0))*period_step
 
                 if age >= 0 and age < tlft[tech].values:
 
@@ -102,7 +103,7 @@ def _calc_production_overall(
     return production_overall
 
 
-def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft):
+def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft, period_step):
 
     """
     Calculates the accumulated new capacity of each inter-regional link in each 
@@ -118,7 +119,7 @@ def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft):
         for year in main_years:
             for year0 in main_years:
 
-                age = main_years.index(year) - main_years.index(year0)
+                age = (main_years.index(year) - main_years.index(year0))*period_step
 
                 if age >= 0 and age < line_tlft[carrier].values:
 
@@ -133,7 +134,7 @@ def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft):
     return line_newcap_accumulated
 
 
-def decomcap(newcap, techs, main_years, tlft):
+def decomcap(newcap, techs, main_years, tlft, period_step):
 
     """
     Calculates the annual decomissioned capacity of each technology in each
@@ -150,7 +151,7 @@ def decomcap(newcap, techs, main_years, tlft):
             try:
 
                 decom_matrix.loc[
-                    (tech, main_years[int(indx + tlft[tech].values)]), (tech, year)
+                    (tech, main_years[mt.ceil(indx + (tlft[tech].values)/period_step)]), (tech, year)
                 ] = 1
 
             except:
@@ -161,7 +162,7 @@ def decomcap(newcap, techs, main_years, tlft):
     return decomcap
 
 
-def line_decomcap(line_newcap, carriers, main_years, line_tlft):
+def line_decomcap(line_newcap, carriers, main_years, line_tlft, period_step):
 
     """
     Calculates the annual decomissioned capacity of each inter-regional link in each
@@ -178,7 +179,7 @@ def line_decomcap(line_newcap, carriers, main_years, line_tlft):
 
             try:
                 decom_matrix_line.loc[
-                    (carrier, main_years[main_years.index(year) + line_tlft[carrier]]),
+                    (carrier, main_years[mt.ceil(main_years.index(year) + (line_tlft[carrier])/period_step)]),
                     (carrier, year),
                 ] = 1
 
@@ -366,7 +367,7 @@ def line_varcost(
 
 
 def salvage_factor(
-    main_years, technologies, tlft, interest_rate, discount_rate, economiclife
+    main_years, technologies, tlft, interest_rate, discount_rate, economiclife, period_step
 ):
 
     """
@@ -379,7 +380,7 @@ def salvage_factor(
 
     rates_factor = pd.DataFrame(0, index=main_years, columns=technologies)
 
-    EOH = len(main_years) - 1
+    EOH = main_years.index(main_years[-1])*period_step
 
     for tech in technologies:
 
@@ -395,11 +396,11 @@ def salvage_factor(
 
         for indx, year in enumerate(main_years):
 
-            if indx + tlft[tech].values > EOH:
+            if indx*period_step + tlft[tech].values > EOH:
 
                 salvage_factor_0.loc[year, tech] = (
                     (1 + discount_rate.loc[year, :].values)
-                    ** (tlft[tech].values - EOH - 1 + indx)
+                    ** (tlft[tech].values - EOH - 1 + indx*period_step)
                     - 1
                 ) / ((1 + discount_rate.loc[year, :].values) ** tlft[tech].values - 1)
 
@@ -435,6 +436,40 @@ def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time
         cp.multiply(cp.cumsum(flow_out),(np.ones((discharge_efficiency_reshape.shape))/discharge_efficiency_reshape.values))
 
     return state_of_charge
+
+# def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency,timeslices):
+
+#     """
+#     Calculates the state of charge of the storage 
+#     """
+
+#     charge_efficiency_reshape = pd.concat(
+#     [charge_efficiency]
+#     * len(time_steps)
+#     ).sort_index()
+
+#     discharge_efficiency_reshape = pd.concat(
+#     [discharge_efficiency]
+#     * len(time_steps)
+#     ).sort_index()
+
+#     initial_storage_concat = pd.concat(
+#         [initial_storage] * len(time_steps)
+#     ).sort_index()
+
+#     state_of_charge = cp.multiply(cp.cumsum(flow_in[0 : len(timeslices), :]),
+#                                   charge_efficiency_reshape.loc[(main_years[0], slice(None)),:]) + initial_storage_concat.loc[(main_years[0], slice(None)),:] -\
+#         cp.multiply(cp.cumsum(flow_out[0 : len(timeslices), :]), (np.ones((discharge_efficiency_reshape.loc[(main_years[0], slice(None)),:].shape))/discharge_efficiency_reshape.loc[(main_years[0], slice(None)),:].values))
+        
+#     for indx, year in enumerate(main_years[1:]):
+
+#         state_of_charge_rest = cp.multiply(cp.cumsum(flow_in[(indx + 1) * len(timeslices) : (indx + 2) * len(timeslices), :]),
+#                                       charge_efficiency_reshape.loc[(main_years[indx+1], slice(None)),:]) + initial_storage_concat.loc[(main_years[indx+1], slice(None)),:] -\
+#             cp.multiply(cp.cumsum(flow_out[(indx + 1) * len(timeslices) : (indx + 2) * len(timeslices), :]), (np.ones((discharge_efficiency_reshape.loc[(main_years[indx+1], slice(None)),:].shape))/discharge_efficiency_reshape.loc[(main_years[indx+1], slice(None)),:].values))
+#         state_of_charge = stack(state_of_charge, state_of_charge_rest)
+                                
+
+#     return state_of_charge
 
 
 def get_regions_with_storage(sets):

@@ -50,6 +50,9 @@ class ReadSets:
         
     path:
         The path of the set files given by the user
+
+    period_step:
+        The number of the modelling years in each period
         
     glob_mapping : dict
         A dictionary of the global set tables given by the user in the global.xlsx file
@@ -80,10 +83,11 @@ class ReadSets:
         A nested dictionary for storing the regional data
     """
 
-    def __init__(self, path, mode="Planning"):
+    def __init__(self, path, mode="Planning", period_step = 1):
 
         self.mode = mode
         self.path = path
+        self.period_step = period_step
 
         self._init_by_xlsx()
 

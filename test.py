@@ -11,12 +11,16 @@ Created on Fri Aug 19 15:45:44 2022
 from hypatia import Model,Plotter,Sensitivity
 #%%
 Belgium = Model(
-    path = 'test/final_case/sets', 
-    mode = 'Planning' 
+    path = 'test/snapshot_code_test/sets', 
+    mode = 'Planning',
+    period_step=10,
 )
 #%%
+# Belgium.create_data_excels(
+#     path = 'test/snapshot_code_test/parameters' )
+#%%
 Belgium.read_input_data(
-    path = 'test/final_case/parameters'
+    path = 'test/snapshot_code_test/parameters'
 )
 #%%
 Belgium.run(

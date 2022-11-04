@@ -233,29 +233,56 @@ class BuildModel:
             technology_prod[reg] = regional_prod
             technology_use[reg] = regional_use
         
-        for reg_ in self.sets.trade_regions.keys():
+        if len(self.sets.regions) == 1:
             
-            export_ = {}
-            import_ = {}
+            for reg in self.sets.regions:
+                export_ = {}
+                import_ = {}
+                for reg_ in self.sets.regions:
+    
+                    if reg_ != reg:
+                        export_[reg_] = cp.Variable(
+                            shape=(
+                                len(self.sets.main_years) * len(self.sets.time_steps),
+                                len(self.sets.glob_mapping["Carriers_glob"].index),
+                            ),
+                            nonneg=True,
+                        )
+                        import_[reg_] = cp.Variable(
+                            shape=(
+                                len(self.sets.main_years) * len(self.sets.time_steps),
+                                len(self.sets.glob_mapping["Carriers_glob"].index),
+                            ),
+                            nonneg=True,
+                        )
+    
+                line_export[reg] = export_
+                line_import[reg] = import_
             
-            for reg__,carr_list in self.sets.trade_regions[reg_].items():
+        else: 
+            for reg_ in self.sets.trade_regions.keys():
                 
-                export_[reg__] = cp.Variable(
-                    shape = (
-                        len(self.sets.main_years) * len(self.sets.time_steps),
-                        len(carr_list)),
-                nonneg=True,
-                )
+                export_ = {}
+                import_ = {}
                 
-                import_[reg__] = cp.Variable(
-                    shape = (
-                        len(self.sets.main_years) * len(self.sets.time_steps),
-                        len(carr_list)),
-                nonneg=True,
-                )
-            
-            line_export[reg_] = export_
-            line_import[reg_] = import_
+                for reg__,carr_list in self.sets.trade_regions[reg_].items():
+                    
+                    export_[reg__] = cp.Variable(
+                        shape = (
+                            len(self.sets.main_years) * len(self.sets.time_steps),
+                            len(carr_list)),
+                    nonneg=True,
+                    )
+                    
+                    import_[reg__] = cp.Variable(
+                        shape = (
+                            len(self.sets.main_years) * len(self.sets.time_steps),
+                            len(carr_list)),
+                    nonneg=True,
+                    )
+                
+                line_export[reg_] = export_
+                line_import[reg_] = import_
     
             # export_ = {}
             # import_ = {}
@@ -389,6 +416,7 @@ class BuildModel:
                         self.sets.data[reg]["interest_rate"].loc[:, key],
                         self.sets.data[reg]["discount_rate"],
                         self.sets.data[reg]["economic_lifetime"].loc[:, key],
+                        self.sets.period_step
                     ),
                     cost_inv_regional[key],
                 )
@@ -398,6 +426,7 @@ class BuildModel:
                     self.sets.Technologies[reg][key],
                     self.sets.main_years,
                     self.sets.data[reg]["tech_lifetime"].loc[:, key],
+                    self.sets.period_step,
                 )
 
                 totalcapacity_regional[key] = (
@@ -421,6 +450,7 @@ class BuildModel:
                     self.sets.Technologies[reg][key],
                     self.sets.main_years,
                     self.sets.data[reg]["tech_lifetime"].loc[:, key],
+                    self.sets.period_step,
                 )
 
                 cost_decom_regional[key] = cp.multiply(
@@ -502,6 +532,7 @@ class BuildModel:
                 self.sets.trade_line[key],
                 self.sets.main_years,
                 self.sets.trade_data["line_lifetime"].loc[:, key],
+                self.sets.period_step,
             )
 
             self.line_totalcapacity[key] = (
@@ -519,6 +550,7 @@ class BuildModel:
                 self.sets.trade_line[key],
                 self.sets.main_years,
                 self.sets.trade_data["line_lifetime"].loc[:, key],
+                self.sets.period_step,
             )
 
             self.cost_decom_line[key] = cp.multiply(cp.multiply(
@@ -1277,6 +1309,16 @@ class BuildModel:
             global_emission_cap.shape = self.global_emission.shape
 
             self.constr.append(global_emission_cap - self.global_emission >= 0)
+            
+    
+    def _constr_storage_cyclic_boundary(self):
+        
+        for reg in get_regions_with_storage(self.sets):
+            for indx, year in enumerate(self.sets.main_years):
+                
+                self.storage_SOC[reg][indx*len(self.sets.time_steps),:] -\
+                    self.storage_SOC[reg][(indx+1)* len(self.sets.time_steps),:] == 0
+
 
     def _constr_storage_max_min_charge(self):
 
@@ -1376,7 +1418,7 @@ class BuildModel:
 
         self.totalcost_allregions = np.zeros((len(self.sets.main_years), 1))
         self.inv_allregions = 0
-        years = -1 * np.arange(len(self.sets.main_years))
+        years = -1 * np.arange(len(self.sets.main_years))*self.sets.period_step
 
         for reg in self.sets.regions:
 
@@ -1451,7 +1493,7 @@ class BuildModel:
         planning mode
         """
 
-        years = -1 * np.arange(len(self.sets.main_years))
+        years = -1 * np.arange(len(self.sets.main_years))*self.sets.period_step
         self.totalcost_lines = np.zeros((len(self.sets.main_years), 1))
 
         for line in self.sets.trade_line.keys():
