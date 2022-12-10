@@ -684,11 +684,6 @@ class ReadSets:
                     "index": pd.Index(self.main_years, name="Years"),
                     "columns": indexer_reg[reg],
                 },
-                "V_OM": {
-                    "value": 0,
-                    "index": pd.Index(self.main_years, name="Years"),
-                    "columns": indexer_reg[reg],
-                },
                 "Residual_capacity": {
                     "value": 0,
                     "index": pd.Index(self.main_years, name="Years"),
@@ -877,6 +872,16 @@ class ReadSets:
                             ),
                             "columns": self.Technologies[reg]["Demand"],
                         },
+                        
+                        "V_OM": {
+                            "value": 0,
+                            "index": pd.MultiIndex.from_product(
+                                [self.main_years, self.time_steps],
+                                names=["Years", "Timesteps"],
+                                ),
+                            "columns": indexer_reg[reg],
+                        },
+
                         "capacity_factor_resource": {
                             "value": 1,
                             "index": pd.MultiIndex.from_product(
@@ -940,6 +945,15 @@ class ReadSets:
                                 names=["Years", "Timesteps"],
                             ),
                             "columns": self.Technologies[reg]["Demand"],
+                        },
+                        
+                        "V_OM": {
+                            "value": 0,
+                            "index": pd.MultiIndex.from_arrays(
+                                [self.main_years, self.main_years],
+                                names=["Years", "Timesteps"],
+                            ),
+                            "columns": indexer_reg[reg],
                         },
                         "capacity_factor_resource": {
                             "value": 1,

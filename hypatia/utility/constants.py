@@ -234,7 +234,7 @@ def take_ids(regions, technologies, mode):
     for reg in regions:
         regional_data_ids[reg] = {
             "tech_fixed_cost": {"sheet_name": "F_OM", "index_col": 0, "header": [0, 1]},
-            "tech_var_cost": {"sheet_name": "V_OM", "index_col": 0, "header": [0, 1]},
+            "tech_var_cost": {"sheet_name": "V_OM", "index_col": [0,1], "header": [0, 1]},
             "tech_residual_cap": {
                 "sheet_name": "Residual_capacity",
                 "index_col": 0,

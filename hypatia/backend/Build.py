@@ -87,16 +87,16 @@ class BuildModel:
 
             self._calc_variable_planning()
             self._balance_()
-            self._constr_totalcapacity_regional()
-            self._constr_newcapacity_regional()
+            # self._constr_totalcapacity_regional()
+            # self._constr_newcapacity_regional()
             self._constr_balance()
             self._constr_resource_tech_availability()
             self._constr_tech_efficiency()
-            self._constr_prod_annual()
+            # self._constr_prod_annual()
             self._constr_emission_cap()
             self._calc_variable_storage_SOC()
-            self._constr_storage_max_min_charge()
-            self._constr_storage_max_flow_in_out()
+            # self._constr_storage_max_min_charge()
+            # self._constr_storage_max_flow_in_out()
             self._set_regional_objective_planning()
 
             if len(self.sets.regions) == 1:
@@ -105,12 +105,12 @@ class BuildModel:
             elif len(self.sets.regions) > 1:
 
                 self._calc_variable_planning_line()
-                self._constr_totalcapacity_line()
-                self._constr_totalcapacity_overall()
-                self._constr_newcapacity_overall()
+                # self._constr_totalcapacity_line()
+                # self._constr_totalcapacity_overall()
+                # self._constr_newcapacity_overall()
                 self._constr_line_availability()
                 self._constr_trade_balance()
-                self._constr_prod_annual_overall()
+                # self._constr_prod_annual_overall()
                 self._set_lines_objective_planning()
                 self._set_final_objective_multinode()
 
@@ -372,6 +372,7 @@ class BuildModel:
         self.decommissioned_capacity = {}
         self.cost_decom = {}
         self.cost_variable = {}
+        self.cost_variable_annual = {}
         self.CO2_equivalent = {}
         self.emission_cost = {}
         self.production_annual = {}
@@ -391,6 +392,7 @@ class BuildModel:
             decomcapacity_regional = {}
             cost_decom_regional = {}
             cost_variable_regional = {}
+            cost_variable_annual_regional = {}
             CO2_equivalent_regional = {}
             emission_cost_regional = {}
             production_annual_regional = {}
@@ -464,10 +466,20 @@ class BuildModel:
                     self.sets.time_steps,
                 )
 
+                # cost_variable_regional[key] = cp.multiply(
+                #     production_annual_regional[key],
+                #     self.sets.data[reg]["tech_var_cost"].loc[:, key],
+                # )
+                
                 cost_variable_regional[key] = cp.multiply(
-                    production_annual_regional[key],
+                    self.variables["productionbyTechnology"][reg][key],
                     self.sets.data[reg]["tech_var_cost"].loc[:, key],
                 )
+
+                cost_variable_annual_regional[key] = annual_activity(
+                    cost_variable_regional[key],
+                    self.sets.main_years,
+                    self.sets.time_steps,)
 
                 if key != "Transmission" and key != "Storage":
 
@@ -501,6 +513,7 @@ class BuildModel:
             self.decommissioned_capacity[reg] = decomcapacity_regional
             self.cost_decom[reg] = cost_decom_regional
             self.cost_variable[reg] = cost_variable_regional
+            self.cost_variable_annual[reg] = cost_variable_annual_regional
             self.CO2_equivalent[reg] = CO2_equivalent_regional
             self.emission_cost[reg] = emission_cost_regional
             self.cost_inv_fvalue[reg] = cost_fvalue_regional
@@ -578,6 +591,7 @@ class BuildModel:
         self.cost_fix_tax = {}
         self.cost_fix_sub = {}
         self.cost_variable = {}
+        self.cost_varibale_annual = {}
         self.CO2_equivalent = {}
         self.emission_cost = {}
         self.production_annual = {}
@@ -588,6 +602,7 @@ class BuildModel:
             cost_fix_tax_regional = {}
             cost_fix_Sub_regional = {}
             cost_variable_regional = {}
+            cost_variable_annual_regional = {}
             CO2_equivalent_regional = {}
             emission_cost_regional = {}
             production_annual_regional = {}
@@ -617,10 +632,20 @@ class BuildModel:
                         self.sets.time_steps,
                     )
 
+                    # cost_variable_regional[key] = cp.multiply(
+                    #     production_annual_regional[key],
+                    #     self.sets.data[reg]["tech_var_cost"].loc[:, key],
+                    # )
+
                     cost_variable_regional[key] = cp.multiply(
-                        production_annual_regional[key],
+                        self.variables["productionbyTechnology"][reg][key],
                         self.sets.data[reg]["tech_var_cost"].loc[:, key],
                     )
+
+                    cost_variable_annual_regional[key] = annual_activity(
+                        cost_variable_regional[key],
+                        self.sets.main_years,
+                        self.sets.time_steps,)
 
                     if key != "Transmission" and key != "Storage":
 
@@ -639,6 +664,7 @@ class BuildModel:
             self.cost_fix_tax[reg] = cost_fix_tax_regional
             self.cost_fix_sub[reg] = cost_fix_Sub_regional
             self.cost_variable[reg] = cost_variable_regional
+            self.cost_variable_annual[reg] = cost_variable_annual_regional
             self.CO2_equivalent[reg] = CO2_equivalent_regional
             self.emission_cost[reg] = emission_cost_regional
             self.production_annual[reg] = production_annual_regional
@@ -896,7 +922,7 @@ class BuildModel:
                     - self.totalusebycarrier[reg][carr]
                     - self.totalexportbycarrier[reg][carr]
                     - self.totaldemandbycarrier[reg][carr]
-                    == 0
+                    >= 0
                 )
 
     def _constr_trade_balance(self):
@@ -1428,17 +1454,31 @@ class BuildModel:
 
                 if ctgry != "Demand":
 
+                    # totalcost_regional += cp.sum(
+                    #     self.cost_inv_tax[reg][ctgry]
+                    #     - self.cost_inv_sub[reg][ctgry]
+                    #     + self.cost_fix[reg][ctgry]
+                    #     + self.cost_fix_tax[reg][ctgry]
+                    #     - self.cost_fix_sub[reg][ctgry]
+                    #     + self.cost_variable[reg][ctgry]
+                    #     + self.cost_decom[reg][ctgry]
+                    #     - self.salvage_inv[reg][ctgry],
+                    #     axis=1,
+                    # )
+                    
                     totalcost_regional += cp.sum(
                         self.cost_inv_tax[reg][ctgry]
                         - self.cost_inv_sub[reg][ctgry]
                         + self.cost_fix[reg][ctgry]
                         + self.cost_fix_tax[reg][ctgry]
                         - self.cost_fix_sub[reg][ctgry]
-                        + self.cost_variable[reg][ctgry]
+                        + self.cost_variable_annual[reg][ctgry]
                         + self.cost_decom[reg][ctgry]
                         - self.salvage_inv[reg][ctgry],
                         axis=1,
                     )
+                    
+                    
 
                     self.inv_allregions += self.cost_inv_fvalue[reg][ctgry]
 
@@ -1471,12 +1511,20 @@ class BuildModel:
 
                 if ctgry != "Demand":
 
+                    # totalcost_regional += cp.sum(
+                    #     self.cost_fix[reg][ctgry]
+                    #     + self.cost_fix_tax[reg][ctgry]
+                    #     - self.cost_fix_sub[reg][ctgry]
+                    #     + self.cost_variable[reg][ctgry]
+                    # )
+                    
                     totalcost_regional += cp.sum(
                         self.cost_fix[reg][ctgry]
                         + self.cost_fix_tax[reg][ctgry]
                         - self.cost_fix_sub[reg][ctgry]
-                        + self.cost_variable[reg][ctgry]
+                        + self.cost_variable_annual[reg][ctgry]
                     )
+                    
 
                     if ctgry != "Transmission" and ctgry != "Storage":
 
