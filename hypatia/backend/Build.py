@@ -97,6 +97,7 @@ class BuildModel:
             self._calc_variable_storage_SOC()
             # self._constr_storage_max_min_charge()
             # self._constr_storage_max_flow_in_out()
+            self._constr_storage_cyclic_boundary()
             self._set_regional_objective_planning()
 
             if len(self.sets.regions) == 1:
@@ -124,6 +125,7 @@ class BuildModel:
             self._constr_prod_annual()
             self._constr_emission_cap()
             self._calc_variable_storage_SOC()
+            self._constr_storage_cyclic_boundary()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
             self._set_regional_objective_operation()
@@ -500,6 +502,7 @@ class BuildModel:
                     self.sets.Technologies[reg][key],
                     self.sets.main_years,
                     self.sets.data[reg]["discount_rate"],
+                    self.sets.period_step
                 )
 
             self.cost_inv[reg] = cost_inv_regional
@@ -1342,8 +1345,8 @@ class BuildModel:
         for reg in get_regions_with_storage(self.sets):
             for indx, year in enumerate(self.sets.main_years):
                 
-                self.storage_SOC[reg][indx*len(self.sets.time_steps),:] -\
-                    self.storage_SOC[reg][(indx+1)* len(self.sets.time_steps),:] == 0
+                self.constr.append(self.storage_SOC[reg][indx*len(self.sets.time_steps),:] -\
+                    self.storage_SOC[reg][(indx+1)* len(self.sets.time_steps)-1,:] == 0)
 
 
     def _constr_storage_max_min_charge(self):
@@ -1453,6 +1456,7 @@ class BuildModel:
             for ctgry in self.sets.Technologies[reg].keys():
 
                 if ctgry != "Demand":
+                    
 
                     # totalcost_regional += cp.sum(
                     #     self.cost_inv_tax[reg][ctgry]

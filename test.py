@@ -25,11 +25,15 @@ Belgium.read_input_data(
 )
 #%%
 Belgium.run(
-    solver = 'scipy',
+    solver = 'gurobi',
     verbosity = True,
+    force_rewrite=True,
 )
 #%%
-# Belgium.to_csv(path='test/final_case/results_baseline')
+Belgium.to_csv(path='test/snapshot_code_test/results2', force_rewrite=True)
+#%%
+## checking the other results of the unit test
+battery_SOC = Belgium.model.storage_SOC['reg1'].value
 #%%
 sensitivity_1 = Sensitivity(
     model = Belgium,

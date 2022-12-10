@@ -216,6 +216,7 @@ def invcosts_annuity(
     technologies,
     main_years,
     discount_rate,
+    period_step,
 ):
 
     """
@@ -241,7 +242,7 @@ def invcosts_annuity(
 
             inv_fvalue_annual_discounted = 0
             for future_year in range(
-                y_indx + 1, y_indx + economiclife.loc["Economic Life time", tech] + 1
+                y_indx * period_step + 1, y_indx * period_step + economiclife.loc["Economic Life time", tech] + 1
             ):
 
                 annuity = (
