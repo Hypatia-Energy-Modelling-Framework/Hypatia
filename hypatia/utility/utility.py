@@ -20,11 +20,37 @@ def stack(a, b, axis=0):
     elif axis == 1:
         return cp.hstack([a, b])
 
+def shift_new_cap(newcap,techs, toc, years):
+    
+    new_capacity = []
+    for indx, tech in enumerate(techs):
+        shift = cp.reshape(newcap[:-toc.iloc[:,indx].values[0],indx], 
+                            (newcap[:-toc.iloc[:,indx].values[0],indx].shape[0],1))
+        non_var = np.zeros((toc.iloc[:,indx].values[0],1))
+        new_capacity.append(cp.vstack([non_var,shift]))
+    real_new_capacity_regional =cp.hstack(new_capacity)
+    
+    
+    return real_new_capacity_regional
+
+def shift_new_line_cap(newlinecap,carrier, toc, years):
+    
+    line_new_capacity = []
+    for indx, carr in enumerate(carrier):
+        shift_line = cp.reshape(newlinecap[:-toc.iloc[:,indx].values[0],indx], 
+                            (newlinecap[:-toc.iloc[:,indx].values[0],indx].shape[0],1))
+        non_var = np.zeros((toc.iloc[:,indx].values[0],1))
+        line_new_capacity.append(cp.vstack([non_var,shift_line]))
+    real_new_line_capacity =cp.hstack(line_new_capacity)
+    
+    
+    return real_new_line_capacity
+
 
 def newcap_accumulated(newcap, techs, main_years, tlft):
 
     """
-    Calculates the accumulated new capacity of each technology in each 
+    Calculates the accumulated new capacity of each technology in each
     year of the model horizon based on the useful technical lifetime
     """
 
@@ -42,9 +68,10 @@ def newcap_accumulated(newcap, techs, main_years, tlft):
                 if age >= 0 and age < tlft[tech].values:
 
                     exist.loc[(tech, year), (tech, year0)] = 1
-
+    
     accumulated_newcap_reshape = exist.values @ newcap_reshape
-    accumulated_newcap = cp.reshape(accumulated_newcap_reshape, newcap.shape)
+    accumulated_newcap = cp.reshape(accumulated_newcap_reshape, newcap.shape)  
+
 
     return accumulated_newcap
 
@@ -54,7 +81,7 @@ def _calc_variable_overall(
 ):
 
     """
-    Calculates the aggregated annual total or new capacity of each technology 
+    Calculates the aggregated annual total or new capacity of each technology
     over all the regions
     """
 
@@ -80,7 +107,7 @@ def _calc_production_overall(
 ):
 
     """
-    Calculates the aggregated annual production of each technology 
+    Calculates the aggregated annual production of each technology
     over all the regions
     """
 
@@ -105,7 +132,7 @@ def _calc_production_overall(
 def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft):
 
     """
-    Calculates the accumulated new capacity of each inter-regional link in each 
+    Calculates the accumulated new capacity of each inter-regional link in each
     year the model horizon based on the useful technical lifetime
     """
 
@@ -137,7 +164,7 @@ def decomcap(newcap, techs, main_years, tlft):
 
     """
     Calculates the annual decomissioned capacity of each technology in each
-    year of the time horizon based on life time of the new capacities 
+    year of the time horizon based on life time of the new capacities
     installed in the vintage years
     """
     index = pd.MultiIndex.from_product([techs, main_years])
@@ -165,7 +192,7 @@ def line_decomcap(line_newcap, carriers, main_years, line_tlft):
 
     """
     Calculates the annual decomissioned capacity of each inter-regional link in each
-    year of the time horizon based on life time of the new capacities 
+    year of the time horizon based on life time of the new capacities
     installed in the vintage years
     """
 
@@ -371,7 +398,7 @@ def salvage_factor(
 
     """
     Calculates the salvage factor of the investment cost for the capacities
-    that remain after the end of the time horizon to avoid the end of the horizon 
+    that remain after the end of the time horizon to avoid the end of the horizon
     effect
     """
 
@@ -412,10 +439,10 @@ def salvage_factor(
     return salvage_factor_mod
 
 
-def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency):
+def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency, BESS_total_capacity):
 
     """
-    Calculates the state of charge of the storage 
+    Calculates the state of charge of the storage
     """
     charge_efficiency_reshape = pd.concat(
     [charge_efficiency]
@@ -426,12 +453,30 @@ def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time
     [discharge_efficiency]
     * len(time_steps)
     ).sort_index()
+    
+    BESS_cap = []
+    for _ in range(len(main_years)*len(time_steps)):
+        BESS_cap.append(cp.multiply(
+            BESS_total_capacity[ 0 : 1, :],
+            initial_storage.values))
+    initial_storage_concat = cp.vstack(BESS_cap)
+    
+    # initial_storage_concat = pd.concat(
+    #     [initial_storage] * len(time_steps) * len(main_years)
+    # )
+    
+    # BESS_capacity = []
+    # for indx, year in enumerate(main_years):
+    #     BESS_yearly_capacity = []
+    #     for _ in enumerate(time_steps):
+    #         BESS_yearly_capacity.append(BESS_total_capacity[indx : indx + 1, :])
+    #     BESS_yearly_capacity = cp.vstack(BESS_yearly_capacity)
+    #     BESS_capacity.append(BESS_yearly_capacity)
+    # BESS_capacity_total = cp.vstack(BESS_capacity)
+    
+    # print(np.shape(BESS_capacity_total))
 
-    initial_storage_concat = pd.concat(
-        [initial_storage] * len(time_steps) * len(main_years)
-    )
-
-    state_of_charge = cp.multiply(cp.cumsum(flow_in),charge_efficiency_reshape) + initial_storage_concat - \
+    state_of_charge = cp.multiply(cp.cumsum(flow_in),charge_efficiency_reshape) + initial_storage_concat  - \
         cp.multiply(cp.cumsum(flow_out),(np.ones((discharge_efficiency_reshape.shape))/discharge_efficiency_reshape.values))
 
     return state_of_charge
@@ -445,7 +490,7 @@ def get_regions_with_storage(sets):
 
     for reg in sets.regions:
 
-        if "Storage" in sets.Technologies[reg]:
+        if "Storage" in sets.technologies[reg]:
 
             yield reg
 
@@ -454,7 +499,7 @@ def storage_max_flow(
     storage_totalcapacity, time, storage_capacity_factor, timeslice_fraction
 ):
     """
-    Calculates the maximum allowed inflow and ouflow of storage technologies 
+    Calculates the maximum allowed inflow and ouflow of storage technologies
     based on the charge/discharge time and the total nominal capacity
     """
 
@@ -462,6 +507,68 @@ def storage_max_flow(
         storage_totalcapacity, storage_capacity_factor
     )
 
-    max_flow = cp.multiply(storage_capacity_available, timeslice_fraction) * 8760 / time
+    max_flow = cp.multiply(storage_capacity_available, timeslice_fraction) * 8760 / time # dim = (timesteps, n_storage_tech)
 
     return max_flow
+
+
+"""
+A helper function used in ReadSets to initialize the column field
+of technology-specific parameter files
+
+Parameters
+----------
+technologies_hierarchy : Dict[str => List[Str]]
+    A dictionary defining the mapping between a technology category
+    and a list of technologies belonging to that category.
+    i.e. {"Supply": ["NG_extraction", "Geo_PP"]}
+
+ignored_tech_categories : List[str]
+    A list of technology categories that should be excluded from
+    the parameter's file columns
+
+additional_level : None/Touple(str, List[str])
+    An additional top hierarchy level to be added to the columns.
+    It is in the form (column name, column values).
+    i.e. ("Taxes or Subsidies", ["Tax", "Sub"])
+"""
+def create_technology_columns(
+    technologies_hierarchy,
+    ignored_tech_categories=["Demand"],
+    additional_level=None,
+):
+    tuples = []
+    names = ["Tech_category", "Technology"]
+    for tech_category, technologies in technologies_hierarchy.items():
+        for technology in technologies:
+            tuples.append((tech_category, technology))
+
+    # Remove technologies of ignored categories
+    for ignored_tech_category in ignored_tech_categories:
+        if ignored_tech_category in technologies_hierarchy.keys():
+            tuples = [t for t in tuples if t[0] != ignored_tech_category]
+
+    # Add an additional top level if it was specified
+    if additional_level != None:
+        additional_level_name = additional_level[0]
+        additional_level_values = additional_level[1]
+
+        names.insert(0, additional_level_name)
+
+        new_tuples = []
+        for additional_level_value in additional_level_values:
+            for t in tuples:
+                l = list(t)
+                l.insert(0, additional_level_value)
+                new_tuples.append(tuple(l))
+        tuples = new_tuples
+
+    indexer = pd.MultiIndex.from_tuples(
+        tuples, names=names
+    )
+
+    return indexer
+
+
+def get_emission_types(glob_settings):
+    return glob_settings["Emissions"]["Emission"].values
