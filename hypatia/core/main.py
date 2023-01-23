@@ -11,17 +11,24 @@ from hypatia.error_log.Exceptions import (
     ResultOverWrite,
     SolverNotFound,
 )
-
-from hypatia.backend.StrData import ReadSets
+from hypatia.utility.excel import (
+    read_settings,
+    write_parameters_files,
+    read_parameters,
+)
+from hypatia.utility.constants import ModelMode
 from hypatia.backend.Build import BuildModel
 from copy import deepcopy
-from hypatia.analysis.postprocessing import (
-    set_DataFrame,
-    dict_to_csv,
-)
+from hypatia.postprocessing.PostProcessingList import POSTPROCESSING_MODULES
+import itertools
 import os
 import shutil
 import pandas as pd
+import numpy as np
+from datetime import (
+    datetime,
+    timedelta
+)
 
 import logging
 
@@ -35,6 +42,8 @@ class Model:
     """
 
     def __init__(self, path, mode, name="unknown"):
+        
+        print("\n ------------------- NEW RUN ------------------- \n")
 
         """Initializes a Hypatia model by passing the optimization mode and
         the path of the structural input files
@@ -56,8 +65,12 @@ class Model:
             Defines the name of the model.
         """
 
-        self._StrData = ReadSets(path=path, mode=mode,)
-
+        assert mode in ["Planning", "Operation"], "Invalid Operation"
+        model_mode = ModelMode.Planning if mode == "Planning" else ModelMode.Operation
+        self.results = None
+        self.backup_results = None
+        self.__settings = read_settings(path=path, mode=model_mode)
+        self.__model_data = None
         self.name = name
 
     def create_data_excels(self, path, force_rewrite=False):
@@ -82,17 +95,7 @@ class Model:
             the same file already exists. In case, you need to over-write,
             force_rewrite = True will do it
         """
-        if os.path.exists(path):
-            if not force_rewrite:
-                raise ResultOverWrite(
-                    f"Folder {path} already exists. To over write"
-                    f" the parameter files, use force_rewrite=True."
-                )
-            else:
-                shutil.rmtree(path)
-
-        os.mkdir(path)
-        self._StrData._write_input_excel(path)
+        write_parameters_files(self.__settings, path, force_rewrite=force_rewrite)
 
     def read_input_data(self, path):
 
@@ -108,7 +111,7 @@ class Model:
 
         """
 
-        self._StrData._read_data(path)
+        self.__model_data = read_parameters(self.__settings, path)
 
     def run(self, solver, verbosity=True, force_rewrite=False, **kwargs):
 
@@ -139,7 +142,7 @@ class Model:
         """
 
         # checks if the input parameters are imported to the model
-        if not hasattr(self._StrData, "data"):
+        if self.__model_data == None:
 
             raise DataNotImported(
                 "No data is imported to the model. Use " "'read_input_data' function."
@@ -147,7 +150,7 @@ class Model:
 
         # checks if the model is already solved when force_rewrite is false
         # and takes a backup of previous results if force_rewrite is true
-        if hasattr(self, "results"):
+        if self.results != None:
 
             if not force_rewrite:
                 raise ResultOverWrite(
@@ -158,7 +161,7 @@ class Model:
 
             self.backup_results = deepcopy(self.results)
 
-            delattr(self, "results")
+            self.results = None
 
         # checks if the given solver is in the installed solver package
         if solver.upper() not in installed_solvers():
@@ -167,25 +170,14 @@ class Model:
                 f"Installed solvers on your system are {installed_solvers()}"
             )
 
-        model = BuildModel(sets=self._StrData)
+        model = BuildModel(model_data=self.__model_data)
 
         results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
         if results is not None:
-
-            results = set_DataFrame(
-                results=results,
-                regions=self._StrData.regions,
-                years=self._StrData.main_years,
-                time_fraction=self._StrData.time_steps,
-                glob_mapping=self._StrData.glob_mapping,
-                technologies=self._StrData.Technologies,
-                mode=self._StrData.mode,
-            )
-
             self.results = results
 
-    def to_csv(self, path, force_rewrite=False):
+    def to_csv(self, path, postprocessing_module="default", force_rewrite=False):
         """Exports the results of the model to csv files with nested folders
 
         Parameters
@@ -198,7 +190,7 @@ class Model:
             if True, will delete the file if alreadey exists and create a new one
         """
 
-        if not hasattr(self, "results"):
+        if self.results == None:
             raise WrongInputMode("model has not any results")
 
         if os.path.exists(path):
@@ -209,8 +201,16 @@ class Model:
                 )
         else:
             os.mkdir(path)
+        self.__model_data.settings
 
-        dict_to_csv(self.results, path)
+        if postprocessing_module in POSTPROCESSING_MODULES.keys():
+            POSTPROCESSING_MODULES[postprocessing_module](
+                self.__model_data,
+                self.results
+            ).write_processed_results(path)
+        else:
+            raise Exception("Post processing module do not exist")
+
 
     def create_config_file(self, path):
         """Creates a config excel file for plots
@@ -221,33 +221,33 @@ class Model:
             defines the path and the name of the excel file to be created.
         """
 
-        techs_property = {"tech_name": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_name"]),
+        techs_property = {"tech_name": list(self.settings.global_settings["Technologies_glob"]["Tech_name"]),
                 "tech_group": '',
                 "tech_color": '',
-                "tech_cap_unit": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_cap_unit"]),
-                "tech_production_unit": list(self._StrData.glob_mapping["Technologies_glob"]["Tech_act_unit"]),}
+                "tech_cap_unit": list(self.settings.global_settings["Technologies_glob"]["Tech_cap_unit"]),
+                "tech_production_unit": list(self.settings.global_settings["Technologies_glob"]["Tech_act_unit"]),}
 
         techs_sheet = pd.DataFrame(techs_property,
-            index=self._StrData.glob_mapping["Technologies_glob"]["Technology"],
+            index=self.settings.global_settings["Technologies_glob"]["Technology"],
         )
 
-        fuels_property = {"fuel_name": list(self._StrData.glob_mapping["Carriers_glob"]["Carr_name"]),
+        fuels_property = {"fuel_name": list(self.settings.global_settings["Carriers_glob"]["Carr_name"]),
                 "fuel_group": '',
                 "fuel_color": '',
-                "fuel_unit": list(self._StrData.glob_mapping["Carriers_glob"]["Carr_unit"]),}
+                "fuel_unit": list(self.settings.global_settings["Carriers_glob"]["Carr_unit"]),}
 
         fuels_sheet = pd.DataFrame(fuels_property,
-            index=self._StrData.glob_mapping["Carriers_glob"]["Carrier"],
+            index=self.settings.global_settings["Carriers_glob"]["Carrier"],
         )
 
-        regions_property = {"region_name": list(self._StrData.glob_mapping["Regions"]["Region_name"]),
+        regions_property = {"region_name": list(self.settings.global_settings["Regions"]["Region_name"]),
                 "region_color": '',}
 
         regions_sheet = pd.DataFrame(regions_property,
-            index=self._StrData.glob_mapping["Regions"]["Region"],
+            index=self.settings.global_settings["Regions"]["Region"],
         )
 
-        emissions_sheet = self._StrData.glob_mapping['Emissions'].set_index(['Emission'],inplace=False)
+        emissions_sheet = self.settings.global_settings['Emissions'].set_index(['Emission'],inplace=False)
         emissions_sheet = pd.DataFrame(
             emissions_sheet.values,
             index = emissions_sheet.index,
@@ -265,6 +265,150 @@ class Model:
             ]:
                 eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
 
+    def create_aggregation_config_file(self, path):
+        """Creates a config for defining aggregation. Used only during the Italy2020 project (will not be merged to main)
+
+        Parameters
+        ----------
+        path : str
+            defines the path and the name of the excel file to be created.
+        """
+
+        techs_property = {
+            "tech_name": list(self.__settings.global_settings["Technologies_glob"]["Tech_name"]),
+            "tech_cap_unit": list(self.__settings.global_settings["Technologies_glob"]["Tech_cap_unit"]),
+            "tech_production_unit": list(self.__settings.global_settings["Technologies_glob"]["Tech_act_unit"]),
+            "aggregation_0":  list(self.__settings.global_settings["Technologies_glob"]["Tech_category"])
+        }
+
+        techs_sheet = pd.DataFrame(techs_property,
+            index=self.__settings.global_settings["Technologies_glob"]["Technology"],
+        )
+
+        carriers_property = {
+            "carrier_name": list(self.__settings.global_settings["Carriers_glob"]["Carr_name"]),
+            "carrier_unit": list(self.__settings.global_settings["Carriers_glob"]["Carr_unit"]),
+            "aggregation_0": list(self.__settings.global_settings["Carriers_glob"]["Carr_type"]),
+        }
+
+        carriers_sheet = pd.DataFrame(carriers_property,
+            index=self.__settings.global_settings["Carriers_glob"]["Carrier"],
+        )
+
+        regions_property = {
+            "region_name": list(self.__settings.global_settings["Regions"]["Region_name"]),
+            "aggregation_0": '',
+        }
+
+        regions_sheet = pd.DataFrame(regions_property,
+            index=self.__settings.global_settings["Regions"]["Region"],
+        )
+
+        emissions_sheet = self.__settings.global_settings['Emissions'].set_index(['Emission'],inplace=False)
+        emissions_sheet = pd.DataFrame(
+            emissions_sheet.values,
+            index = emissions_sheet.index,
+            columns = ['emission_name','emission_unit']
+        )
+        emissions_sheet.index.name = 'Emission'
+
+        costs_to_cost_name = {
+            "investment_cost": "Investment Cost",
+            "fixed_cost": "Fixed Cost",
+            "emission_cost": "Emission Cost",
+            "variable_cost": "Variable Cost",
+            "fix_tax_cost": "Fixed Tax Cost",
+            "fix_sub_cost": "Fixed Subsidy Cost",
+            "decommissioning_cost": "Decommissioning Cost"
+        }
+        cost_property = {
+            "cost_name": costs_to_cost_name.values(),
+            "unit": 'EUR',
+            "aggregation_0": '',
+        }
+
+        cost_sheet = pd.DataFrame(cost_property,
+            index=pd.Index(
+                costs_to_cost_name.keys(),
+                name="Cost"
+            ),
+        )
+
+        years = self.__settings.years
+        time_steps = self.__settings.time_steps
+        year_to_year_name = {
+            row.Year:row.Year_name for _, row in self.__settings.global_settings["Years"].iterrows()
+        }
+        time_fractions = {
+            row.Timeslice:row.Timeslice_fraction for _, row in self.__settings.global_settings["Timesteps"].iterrows()
+        }
+        datetimes = list(
+            map(
+                lambda row: datetime.strptime(str(year_to_year_name[row[0]]), '%Y') +
+                    timedelta(minutes=(525600  * time_fractions[int(row[1])] * (int(row[1]) - 1))),
+                list(itertools.product(*[years,time_steps]))
+            )
+        )
+        time_property = {
+            "year": list(
+                map(
+                    lambda datetime: datetime.strftime("%Y"),
+                    datetimes,
+                )
+            ),
+            "month": list(
+                map(
+                    lambda datetime: datetime.strftime("%B"),
+                    datetimes,
+                )
+            ),
+            "day": list(
+                map(
+                    lambda datetime: datetime.strftime("%A"),
+                    datetimes,
+                )
+            ),
+            "hour": list(
+                map(
+                    lambda datetime: datetime.strftime("%H"),
+                    datetimes,
+                )
+            ),
+        }
+        datetime_sheet = pd.DataFrame(
+            time_property,
+            index=pd.Index(
+                map(lambda datetime: str(datetime), datetimes),
+                name="Datetime"
+            ),
+        )
+
+        year_sheet = pd.DataFrame(
+            np.unique(time_property["year"]), 
+            columns=["Years"],
+        )
+        
+        timesteps_property = {
+            "timesteps": list(self.__settings.global_settings["Timesteps"]["Timeslice"])
+            }
+        
+        timesteps_sheet = pd.DataFrame(timesteps_property,
+                index=self.__settings.global_settings["Timesteps"]["Timeslice"]
+        )
+
+        with pd.ExcelWriter(path) as file:
+            for sheet in [
+                "techs_sheet",
+                "carriers_sheet",
+                "regions_sheet",
+                "emissions_sheet",
+                "cost_sheet",
+                "datetime_sheet",
+                "year_sheet",
+                "timesteps_sheet"
+            ]:
+                eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
+
     def __str__(self):
         to_print = (
             "name = {}\n"
@@ -274,15 +418,18 @@ class Model:
             "horizon= {}\n"
             "resolution= {}\n".format(
                 self.name,
-                self._StrData.mode,
-                self._StrData.regions,
-                self._StrData.Technologies,
-                self._StrData.main_years,
-                len(self._StrData.time_steps),
+                self.settings.mode,
+                self.settings.regions,
+                self.settings.technologies,
+                self.settings.years,
+                len(self.settings.time_steps),
             )
         )
 
         return to_print
+
+    def get_model_data(self):
+        return self.__model_data
 
     def __repr__(self):
         return self.__str__()
