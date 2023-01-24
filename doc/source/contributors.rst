@@ -4,7 +4,8 @@ Contributors
 
 **Hypatia** was initially developed within `SESAM group <http://sesam.polimi.it/>`_ in the Department of Energy Engineering at Politecnico di Milano.
 This framework is currently contributed also by `EnergyVille <https://www.energyville.be/>`_ which is an energy R&D innovation hub as a collaboration between
-Belgian research partners KU Leuven, VITO, imec and UHasselt in the fields of sustainable energy and intelligent energy systems.
+Belgian research partners `KU Leuven <https://www.kuleuven.be/english/kuleuven/>`_, `VITO <https://vito.be/en/>`_, `imec <https://www.imec-int.com/en/>`_
+and `UHasselt <https://www.uhasselt.be/en>`_ in the fields of sustainable energy and intelligent energy systems.
 
 
 * `Negar Namazifard  <https://www.linkedin.com/in/negarnamazifard/>`_ : Code development, Coda maintenance & Functional design
