@@ -8,7 +8,6 @@ to analyze various energy transition scnerios based on different policies such
 as coal phase out, carbon taxes, renewable incetives and other national and
 international pledges for the possible future energy systems.
 
-Developed by `SESAM Group, Department of Energy, Politecnico di Milano <http://sesam.polimi.it/>`_
 
 Contents
 =============

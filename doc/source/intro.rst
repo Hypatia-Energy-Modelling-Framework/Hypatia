@@ -1,8 +1,4 @@
 
-.. image:: https://raw.githubusercontent.com/SESAM-Polimi/MARIO/767d2c0e9e42ae0b6acf7c3a1cc379d7bcd367fa/doc/source/_static/images/polimi.svg
-   :width: 200
-   :align: right
-   
 #######################################
 Introduction
 #######################################
