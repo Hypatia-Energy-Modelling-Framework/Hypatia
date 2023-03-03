@@ -7,12 +7,12 @@ parameter filese
 # Sorted connection parameter sheets
 
 list_connection_operation = ["V_OM","F_OM","Line_efficiency",
-"AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line"]
+"AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line","Line_length"]
 
 list_connection_planning = ["V_OM","F_OM","INV","Decom_cost",
 "Line_Economic_life","Interest_rate","Line_lifetime","Line_efficiency",
 "AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line",
-"Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
+"Line_length","Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
 
 
 # Sorted regional parameter sheets
@@ -99,6 +99,12 @@ def take_trade_ids(mode):
         },
         "annualprod_per_unitcapacity": {
             "sheet_name": "AnnualProd_perunit_capacity",
+            "index_col": 0,
+            "header": [0, 1],
+        },
+        
+        "line_length": {
+            "sheet_name": "Line_length",
             "index_col": 0,
             "header": [0, 1],
         },
@@ -228,7 +234,7 @@ def take_ids(regions, technologies, mode):
     for reg in regions:
         regional_data_ids[reg] = {
             "tech_fixed_cost": {"sheet_name": "F_OM", "index_col": 0, "header": [0, 1]},
-            "tech_var_cost": {"sheet_name": "V_OM", "index_col": 0, "header": [0, 1]},
+            "tech_var_cost": {"sheet_name": "V_OM", "index_col": [0,1], "header": [0, 1]},
             "tech_residual_cap": {
                 "sheet_name": "Residual_capacity",
                 "index_col": 0,
@@ -412,10 +418,51 @@ def take_ids(regions, technologies, mode):
     return regional_data_ids
 
 
+# Mapping sheets to model ids
+
+sheets_to_ids = {
+    "V_OM": "tech_var_cost",
+    "F_OM": "tech_fixed_cost",
+    "INV": "tech_inv",
+    "Decom_cost": "tech_decom_cost",
+    "Economic_lifetime": "economic_lifetime",
+    "Interest_rate": "interest_rate",
+    "Discount_rate": "discount_rate",
+    "Tech_lifetime": "tech_lifetime",
+    "Tech_efficiency": "tech_efficiency",
+    "AnnualProd_perunit_capacity": "annualprod_per_unitcapacity",
+    "Residual_capacity": "tech_residual_cap",
+    "Capacity_factor_tech": "tech_capacity_factor",
+    "capacity_factor_resource": "res_capacity_factor",
+    "Specific_emission": "specific_emission",
+    "Investment_taxsub": "inv_taxsub",
+    "Fix_taxsub": "fix_taxsub",
+    "Carbon_tax": "carbon_tax",
+    "Min_newcap": "tech_min_newcap",
+    "Max_newcap": "tech_max_newcap",
+    "Min_totalcap": "tech_mintotcap",
+    "Max_totalcap": "tech_maxtotcap",
+    "Min_production": "tech_min_production",
+    "Max_production": "tech_max_production",
+    "Min_production_h": "tech_min_production_h",
+    "Max_production_h": "tech_max_production_h",
+    "Emission_cap_annual": "emission_cap_annual",
+    "Demand": "demand",
+    "Carrier_ratio_in": "carrier_ratio_in",
+    "Carrier_ratio_out": "carrier_ratio_out",
+    "Storage_initial_SOC": "storage_initial_SOC",
+    "Storage_min_SOC": "storage_min_SOC",
+    "Storage_charge_efficiency": "storage_charge_efficiency",
+    "Storage_discharge_efficiency": "storage_discharge_efficiency",
+    "Storage_charge_time": "storage_charge_time",
+    "Storage_discharge_time": "storage_discharge_time",
+    }
+
+
 # Constants of input set tables
 
 global_set_ids = {
-    "Regions": ["Region", "Region_name"],
+    "Regions": ["Region", "Region_name", "Lat", "Long"],
     "Years": ["Year", "Year_name"],
     "Timesteps": ["Timeslice", "Timeslice_name", "Timeslice_fraction"],
     "Time_horizon": ["Start", "End"],

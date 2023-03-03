@@ -69,7 +69,7 @@ def year_slice_index(
 
 
 def set_DataFrame(
-    results, regions, years, time_fraction, glob_mapping, technologies, mode
+    results, regions, years, time_fraction, glob_mapping, technologies, mode,trade_regions
 ):
     """Creates pd.DataFrame from results"""
 
@@ -97,7 +97,8 @@ def set_DataFrame(
                 else:
                     values = values.value
 
-                columns = glob_mapping["Carriers_glob"]["Carrier"]
+                reg1,reg2 = pair_reg.split("-")
+                columns = trade_regions[reg1][reg2]
 
                 vars_frames[item][pair_reg] = pd.DataFrame(
                     data=values, index=eval(info["index"]), columns=columns,
@@ -108,10 +109,11 @@ def set_DataFrame(
                 vars_frames[item][region] = {}
 
                 for _type, values in var[region].items():
+
                     if (item == "use_by_tech") and (_type == "supply"):
                         continue
                     if item in ["imports", "exports", "lines_variable_cost"]:
-                        columns = glob_mapping["Carriers_glob"]["Carrier"]
+                        columns = trade_regions[region][_type]#glob_mapping["Carriers_glob"]["Carrier"]
                     else:
                         columns = technologies[region][_type]
                     if isinstance(values, np.ndarray):
@@ -120,6 +122,7 @@ def set_DataFrame(
                         values = values.values
                     else:
                         values = values.value
+
                     frame = pd.DataFrame(
                         data=values, index=eval(info["index"]), columns=columns,
                     )

@@ -144,3 +144,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+negar_test.py
+negar_congestion_test.py

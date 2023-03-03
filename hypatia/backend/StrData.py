@@ -9,6 +9,7 @@ checking the errors in the definition of the sets and parameters
 import itertools as it
 from openpyxl import load_workbook
 import pandas as pd
+from copy import deepcopy
 from hypatia.error_log.Checks import (
     check_nan,
     check_index,
@@ -33,6 +34,7 @@ from hypatia.utility.constants import (
 from hypatia.utility.constants import (list_connection_operation, list_connection_planning,
  take_regional_sheets, take_trade_ids, take_ids, take_global_ids)
 
+from hypatia.utility.utility import vicenty
 MODES = ["Planning", "Operation"]
 
 
@@ -48,6 +50,9 @@ class ReadSets:
         
     path:
         The path of the set files given by the user
+
+    period_step:
+        The number of the modelling years in each period
         
     glob_mapping : dict
         A dictionary of the global set tables given by the user in the global.xlsx file
@@ -78,10 +83,11 @@ class ReadSets:
         A nested dictionary for storing the regional data
     """
 
-    def __init__(self, path, mode="Planning"):
+    def __init__(self, path, mode="Planning", period_step = 1):
 
         self.mode = mode
         self.path = path
+        self.period_step = period_step
 
         self._init_by_xlsx()
 
@@ -143,18 +149,92 @@ class ReadSets:
 
             self.time_steps = ["Annual"]
             self.timeslice_fraction = np.ones((1, 1))
+            
+            
+        # read the possible connections
+        
+        if len(self.regions) > 1: 
+            self.trade_line = {}
+            
+            for carr in glob_mapping["Carriers_glob"]["Carrier"]:
+            
+                possible_connections = pd.read_excel(
+                        r"{}/trade.xlsx".format(self.path),
+                        sheet_name=carr,
+                        index_col=[0],
+                        header=[0],)
+                
+                for reg in self.regions:
 
+                    for reg_ in self.regions:
+                        
+                        if possible_connections.loc[reg,reg_] == 1 and reg < reg_:
+                            
+                            if "{}-{}".format(reg,reg_) in self.trade_line.keys():
+                                
+                                self.trade_line["{}-{}".format(reg,reg_)].append(carr)
+
+                            else:
+                                self.trade_line["{}-{}".format(reg,reg_)] = [carr]
+                                
+                                
+        # calculating the distance among two node (the default length of the connections)
+            self.distance = {}
+            for reg in self.regions:
+                
+                for reg_ in self.regions:
+                    
+                    if "{}-{}".format(reg,reg_) in self.trade_line.keys():
+                        
+                        loc1 = tuple(self.glob_mapping["Regions"].loc[
+                            self.glob_mapping["Regions"]["Region"] == reg][["Lat","Long"]].iloc[0])
+                        
+                        loc2 = tuple(self.glob_mapping["Regions"].loc[
+                            self.glob_mapping["Regions"]["Region"] == reg_][["Lat","Long"]].iloc[0])
+                        
+                        self.distance["{}-{}".format(reg,reg_)] = vicenty(loc1,loc2)
+                                
+        
+        # creating the import and export dict keys
+        
+                self.trade_regions = {}
+                
+                for reg in self.regions:
+                    
+                    traded_carriers = {}
+                    
+                    for line,carr_list in self.trade_line.items():
+                        
+                        if reg in line:
+                            
+                            for reg_ in self.regions:
+                                
+                                if line == "{}-{}".format(reg,reg_) or line == "{}-{}".format(reg_,reg):
+                                    
+                                    traded_carriers[reg_] = carr_list
+                                    
+                    self.trade_regions[reg] = traded_carriers
+                    
+                    
+                
+                trade_regions_copy = deepcopy(self.trade_regions)
+                for reg,value in trade_regions_copy.items():
+                    
+                    if len(value) == 0:
+                        
+                        self.trade_regions.pop(key,None)
+                                                          
         # possible connections among the regions
 
-        if len(self.regions) > 1:
-            lines_obj = it.permutations(self.regions, r=2)
+        # if len(self.regions) > 1:
+        #     lines_obj = it.permutations(self.regions, r=2)
 
-            self.lines_list = []
-            for item in lines_obj:
+        #     self.lines_list = []
+        #     for item in lines_obj:
 
-                if item[0] < item[1]:
+        #         if item[0] < item[1]:
 
-                    self.lines_list.append("{}-{}".format(item[0], item[1]))
+        #             self.lines_list.append("{}-{}".format(item[0], item[1]))
 
         mapping = {}
 
@@ -277,6 +357,7 @@ class ReadSets:
             Technologies[reg] = regional_tech
 
         self.Technologies = Technologies
+        
 
         self._create_input_data()
 
@@ -289,8 +370,18 @@ class ReadSets:
 
             # Create the columns of inter-regional links as a multi-index of the
             # pairs of regions and the transmitted carriers
-            indexer = pd.MultiIndex.from_product(
-                [self.lines_list, self.glob_mapping["Carriers_glob"]["Carrier"]],
+            lines_list = []
+            carrier_list = []
+            distance_list = []
+            for connection in self.trade_line.keys():
+                for carr in self.trade_line[connection]:
+                    lines_list.append(connection)
+                    carrier_list.append(carr)
+                    distance_list.append(self.distance[connection])
+                
+                 
+            indexer = pd.MultiIndex.from_arrays(
+                [lines_list, carrier_list],
                 names=["Line", "Transmitted Carrier"],
             )
 
@@ -324,6 +415,13 @@ class ReadSets:
                     "value": 1,
                     "index": pd.Index(
                         ["AnnualProd_Per_UnitCapacity"], name="Performance Parameter"
+                    ),
+                    "columns": indexer,
+                },
+                "Line_length": {
+                    "value": [distance_list],
+                    "index": pd.Index(
+                        ["Distance"], name="Performance Parameter"
                     ),
                     "columns": indexer,
                 },
@@ -586,11 +684,6 @@ class ReadSets:
                     "index": pd.Index(self.main_years, name="Years"),
                     "columns": indexer_reg[reg],
                 },
-                "V_OM": {
-                    "value": 0,
-                    "index": pd.Index(self.main_years, name="Years"),
-                    "columns": indexer_reg[reg],
-                },
                 "Residual_capacity": {
                     "value": 0,
                     "index": pd.Index(self.main_years, name="Years"),
@@ -779,6 +872,16 @@ class ReadSets:
                             ),
                             "columns": self.Technologies[reg]["Demand"],
                         },
+                        
+                        "V_OM": {
+                            "value": 0,
+                            "index": pd.MultiIndex.from_product(
+                                [self.main_years, self.time_steps],
+                                names=["Years", "Timesteps"],
+                                ),
+                            "columns": indexer_reg[reg],
+                        },
+
                         "capacity_factor_resource": {
                             "value": 1,
                             "index": pd.MultiIndex.from_product(
@@ -842,6 +945,15 @@ class ReadSets:
                                 names=["Years", "Timesteps"],
                             ),
                             "columns": self.Technologies[reg]["Demand"],
+                        },
+                        
+                        "V_OM": {
+                            "value": 0,
+                            "index": pd.MultiIndex.from_arrays(
+                                [self.main_years, self.main_years],
+                                names=["Years", "Timesteps"],
+                            ),
+                            "columns": indexer_reg[reg],
                         },
                         "capacity_factor_resource": {
                             "value": 1,

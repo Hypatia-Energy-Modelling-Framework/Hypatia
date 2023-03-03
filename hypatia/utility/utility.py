@@ -7,6 +7,7 @@ This module contains the utility functions from cerating the optimization proble
 import cvxpy as cp
 import numpy as np
 import pandas as pd
+import math as mt
 
 
 def stack(a, b, axis=0):
@@ -21,7 +22,7 @@ def stack(a, b, axis=0):
         return cp.hstack([a, b])
 
 
-def newcap_accumulated(newcap, techs, main_years, tlft):
+def newcap_accumulated(newcap, techs, main_years, tlft,period_step):
 
     """
     Calculates the accumulated new capacity of each technology in each 
@@ -37,7 +38,7 @@ def newcap_accumulated(newcap, techs, main_years, tlft):
         for year in main_years:
             for year0 in main_years:
 
-                age = main_years.index(year) - main_years.index(year0)
+                age = (main_years.index(year) - main_years.index(year0))*period_step
 
                 if age >= 0 and age < tlft[tech].values:
 
@@ -102,7 +103,7 @@ def _calc_production_overall(
     return production_overall
 
 
-def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft):
+def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft, period_step):
 
     """
     Calculates the accumulated new capacity of each inter-regional link in each 
@@ -118,7 +119,7 @@ def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft):
         for year in main_years:
             for year0 in main_years:
 
-                age = main_years.index(year) - main_years.index(year0)
+                age = (main_years.index(year) - main_years.index(year0))*period_step
 
                 if age >= 0 and age < line_tlft[carrier].values:
 
@@ -133,7 +134,7 @@ def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft):
     return line_newcap_accumulated
 
 
-def decomcap(newcap, techs, main_years, tlft):
+def decomcap(newcap, techs, main_years, tlft, period_step):
 
     """
     Calculates the annual decomissioned capacity of each technology in each
@@ -150,7 +151,7 @@ def decomcap(newcap, techs, main_years, tlft):
             try:
 
                 decom_matrix.loc[
-                    (tech, main_years[int(indx + tlft[tech].values)]), (tech, year)
+                    (tech, main_years[mt.ceil(indx + (tlft[tech].values)/period_step)]), (tech, year)
                 ] = 1
 
             except:
@@ -161,7 +162,7 @@ def decomcap(newcap, techs, main_years, tlft):
     return decomcap
 
 
-def line_decomcap(line_newcap, carriers, main_years, line_tlft):
+def line_decomcap(line_newcap, carriers, main_years, line_tlft, period_step):
 
     """
     Calculates the annual decomissioned capacity of each inter-regional link in each
@@ -178,7 +179,7 @@ def line_decomcap(line_newcap, carriers, main_years, line_tlft):
 
             try:
                 decom_matrix_line.loc[
-                    (carrier, main_years[main_years.index(year) + line_tlft[carrier]]),
+                    (carrier, main_years[mt.ceil(main_years.index(year) + (line_tlft[carrier])/period_step)]),
                     (carrier, year),
                 ] = 1
 
@@ -215,6 +216,7 @@ def invcosts_annuity(
     technologies,
     main_years,
     discount_rate,
+    period_step,
 ):
 
     """
@@ -240,7 +242,7 @@ def invcosts_annuity(
 
             inv_fvalue_annual_discounted = 0
             for future_year in range(
-                y_indx + 1, y_indx + economiclife.loc["Economic Life time", tech] + 1
+                y_indx * period_step + 1, y_indx * period_step + economiclife.loc["Economic Life time", tech] + 1
             ):
 
                 annuity = (
@@ -327,7 +329,7 @@ def annual_activity(activity, main_years, timeslices):
 
 
 def line_varcost(
-    specific_varcost, line_import, regions, main_years, time_slices, lines_list
+    specific_varcost, line_import, main_years, time_slices, lines
 ):
 
     """
@@ -336,7 +338,7 @@ def line_varcost(
 
     variablecost_line = {}
 
-    for reg in regions:
+    for reg in line_import.keys():
 
         variablecost_line_regional = {}
 
@@ -344,13 +346,13 @@ def line_varcost(
 
             line_import_anunual = annual_activity(value, main_years, time_slices)
 
-            if "{}-{}".format(reg, key) in lines_list:
+            if "{}-{}".format(reg, key) in lines:
 
                 specific_varcost_line = specific_varcost.loc[
                     :, "{}-{}".format(reg, key)
                 ]
 
-            elif "{}-{}".format(reg, key) in lines_list:
+            elif "{}-{}".format(reg, key) in lines:
 
                 specific_varcost_line = specific_varcost.loc[
                     :, "{}-{}".format(key, reg)
@@ -366,7 +368,7 @@ def line_varcost(
 
 
 def salvage_factor(
-    main_years, technologies, tlft, interest_rate, discount_rate, economiclife
+    main_years, technologies, tlft, interest_rate, discount_rate, economiclife, period_step
 ):
 
     """
@@ -379,7 +381,7 @@ def salvage_factor(
 
     rates_factor = pd.DataFrame(0, index=main_years, columns=technologies)
 
-    EOH = len(main_years) - 1
+    EOH = main_years.index(main_years[-1])*period_step
 
     for tech in technologies:
 
@@ -395,11 +397,11 @@ def salvage_factor(
 
         for indx, year in enumerate(main_years):
 
-            if indx + tlft[tech].values > EOH:
+            if indx*period_step + tlft[tech].values > EOH:
 
                 salvage_factor_0.loc[year, tech] = (
                     (1 + discount_rate.loc[year, :].values)
-                    ** (tlft[tech].values - EOH - 1 + indx)
+                    ** (tlft[tech].values - EOH - 1 + indx*period_step)
                     - 1
                 ) / ((1 + discount_rate.loc[year, :].values) ** tlft[tech].values - 1)
 
@@ -436,6 +438,40 @@ def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time
 
     return state_of_charge
 
+# def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency,timeslices):
+
+#     """
+#     Calculates the state of charge of the storage 
+#     """
+
+#     charge_efficiency_reshape = pd.concat(
+#     [charge_efficiency]
+#     * len(time_steps)
+#     ).sort_index()
+
+#     discharge_efficiency_reshape = pd.concat(
+#     [discharge_efficiency]
+#     * len(time_steps)
+#     ).sort_index()
+
+#     initial_storage_concat = pd.concat(
+#         [initial_storage] * len(time_steps)
+#     ).sort_index()
+
+#     state_of_charge = cp.multiply(cp.cumsum(flow_in[0 : len(timeslices), :]),
+#                                   charge_efficiency_reshape.loc[(main_years[0], slice(None)),:]) + initial_storage_concat.loc[(main_years[0], slice(None)),:] -\
+#         cp.multiply(cp.cumsum(flow_out[0 : len(timeslices), :]), (np.ones((discharge_efficiency_reshape.loc[(main_years[0], slice(None)),:].shape))/discharge_efficiency_reshape.loc[(main_years[0], slice(None)),:].values))
+        
+#     for indx, year in enumerate(main_years[1:]):
+
+#         state_of_charge_rest = cp.multiply(cp.cumsum(flow_in[(indx + 1) * len(timeslices) : (indx + 2) * len(timeslices), :]),
+#                                       charge_efficiency_reshape.loc[(main_years[indx+1], slice(None)),:]) + initial_storage_concat.loc[(main_years[indx+1], slice(None)),:] -\
+#             cp.multiply(cp.cumsum(flow_out[(indx + 1) * len(timeslices) : (indx + 2) * len(timeslices), :]), (np.ones((discharge_efficiency_reshape.loc[(main_years[indx+1], slice(None)),:].shape))/discharge_efficiency_reshape.loc[(main_years[indx+1], slice(None)),:].values))
+#         state_of_charge = stack(state_of_charge, state_of_charge_rest)
+                                
+
+#     return state_of_charge
+
 
 def get_regions_with_storage(sets):
 
@@ -465,3 +501,73 @@ def storage_max_flow(
     max_flow = cp.multiply(storage_capacity_available, timeslice_fraction) * 8760 / time
 
     return max_flow
+
+
+def vicenty(coord1,coord2):
+    
+    """
+    Vincenty's inverse method formula to calculate the distance in meters
+    between two points on the surface of a spheroid (WGS84).
+    inspired by Calliope, modified from https://github.com/maurycyp/vincenty
+    """
+    a = 6378137  # equitorial radius in meters
+    f = 1 / 298.257223563  # flattening from sphere to oblate spheroid
+    b = a * (1 - f)  # polar radius in meters
+
+    max_iter = 200
+    thresh = 1e-12
+
+    # short-circuit coincident points
+    if coord1[0] == coord2[0] and coord1[1] == coord2[1]:
+        return 0
+    U1 = np.arctan((1-f)*np.tan(np.radians(coord1[0])))
+    U2 = np.arctan((1 - f) * np.tan(np.radians(coord2[0])))
+    L = np.radians(coord2[1] - coord1[1])
+    Lambda = L
+    
+    sinU1 = np.sin(U1)
+    cosU1 = np.cos(U1)
+    sinU2 = np.sin(U2)
+    cosU2 = np.cos(U2)
+    
+    for iteration in range(max_iter):
+        sinLambda = np.sin(Lambda)
+        cosLambda = np.cos(Lambda)
+        sinSigma = np.sqrt((cosU2 * sinLambda) ** 2 +
+                             (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) ** 2)
+        if sinSigma == 0:
+            return 0.0  # coincident points
+        cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda
+        sigma = np.arctan2(sinSigma, cosSigma)
+        sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma
+        cosSqAlpha = 1 - sinAlpha ** 2
+        
+        try:
+            cos2SigmaM = cosSigma - 2 * sinU1 * sinU2 / cosSqAlpha
+        except ZeroDivisionError:
+            cos2SigmaM = 0
+            
+        C = f / 16 * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha))
+        LambdaPrev = Lambda
+        Lambda = L + (1 - C) * f * sinAlpha * (
+            sigma + C * sinSigma * (
+                cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM ** 2))
+        )
+
+        if abs(Lambda - LambdaPrev) < thresh:
+            break  # successful convergence
+    else:
+        return None  # failure to converge
+    uSq = cosSqAlpha * (a ** 2 - b ** 2) / (b ** 2)
+    A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)))
+    B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)))
+    deltaSigma = B * sinSigma * (cos2SigmaM + B / 4 * (cosSigma *
+                 (-1 + 2 * cos2SigmaM ** 2) - B / 6 * cos2SigmaM *
+                 (-3 + 4 * sinSigma ** 2) * (-3 + 4 * cos2SigmaM ** 2)))
+    D = b * A * (sigma - deltaSigma)
+
+    return round(D)
+    
+    
+    
+    

@@ -34,7 +34,7 @@ class Model:
     A Hypatia Model
     """
 
-    def __init__(self, path, mode, name="unknown"):
+    def __init__(self, path, mode, name="unknown", period_step=1):
 
         """Initializes a Hypatia model by passing the optimization mode and
         the path of the structural input files
@@ -56,7 +56,7 @@ class Model:
             Defines the name of the model.
         """
 
-        self._StrData = ReadSets(path=path, mode=mode,)
+        self._StrData = ReadSets(path=path, mode=mode, period_step=period_step)
 
         self.name = name
 
@@ -172,7 +172,6 @@ class Model:
         results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
         if results is not None:
-
             results = set_DataFrame(
                 results=results,
                 regions=self._StrData.regions,
@@ -181,6 +180,7 @@ class Model:
                 glob_mapping=self._StrData.glob_mapping,
                 technologies=self._StrData.Technologies,
                 mode=self._StrData.mode,
+                trade_regions = self._StrData.trade_regions if self._StrData.multi_node else None
             )
 
             self.results = results
