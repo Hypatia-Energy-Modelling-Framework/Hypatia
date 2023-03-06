@@ -103,13 +103,13 @@ def _calc_production_overall(
     return production_overall
 
 
-def line_newcap_accumulated(line_newcap, carriers, main_years, line_tlft, period_step):
+def line_newcap_accumulated(line_lumpy_inv, line_cap, carriers, main_years, line_tlft, period_step):
 
     """
     Calculates the accumulated new capacity of each inter-regional link in each 
     year the model horizon based on the useful technical lifetime
     """
-
+    line_newcap = cp.multiply(line_lumpy_inv,line_cap) # we need to check if this woon't give us a size error (one-row vector multiplied to the matrix)
     index_line = pd.MultiIndex.from_product([carriers, main_years])
     exist_line = pd.DataFrame(0, index=index_line, columns=index_line)
 
@@ -162,14 +162,14 @@ def decomcap(newcap, techs, main_years, tlft, period_step):
     return decomcap
 
 
-def line_decomcap(line_newcap, carriers, main_years, line_tlft, period_step):
+def line_decomcap(line_lumpy_inv, line_cap, carriers, main_years, line_tlft, period_step):
 
     """
     Calculates the annual decomissioned capacity of each inter-regional link in each
     year of the time horizon based on life time of the new capacities 
     installed in the vintage years
     """
-
+    line_newcap = cp.multiply(line_lumpy_inv,line_cap)
     index_line = pd.MultiIndex.from_product([carriers, main_years])
     decom_matrix_line = pd.DataFrame(0, index=index_line, columns=index_line)
     line_newcap_reshape = cp.reshape(line_newcap, (len(main_years) * len(carriers), 1))

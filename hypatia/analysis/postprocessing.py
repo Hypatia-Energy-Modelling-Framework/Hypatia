@@ -13,7 +13,7 @@ RESULT_MAP = {
         "index": "year_slice",
         "var": 'results.variables["usebyTechnology"]',
     },
-    "variable_cost": {"index": "years", "var": "results.cost_variable",},
+    "variable_cost": {"index": "year_slice", "var": "results.cost_variable",},
     "decommissioning_cost": {"index": "years", "var": "results.cost_decom",},
     "new_capacity": {"index": "years", "var": 'results.variables["newcapacity"]',},
     "decommissioned_capacity": {

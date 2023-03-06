@@ -12,7 +12,7 @@ list_connection_operation = ["V_OM","F_OM","Line_efficiency",
 list_connection_planning = ["V_OM","F_OM","INV","Decom_cost",
 "Line_Economic_life","Interest_rate","Line_lifetime","Line_efficiency",
 "AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line",
-"Line_length","Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
+"Line_length","Min_lumpycap","Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
 
 
 # Sorted regional parameter sheets
@@ -115,6 +115,9 @@ def take_trade_ids(mode):
         trade_data_ids.update(
             {
                 "line_inv": {"sheet_name": "INV", "index_col": 0, "header": [0, 1]},
+            
+                "line_lumpycap" : {"sheet_name": "Min_lumpycap", "index_col": 0, "header": [0,1]},
+                
                 "line_decom_cost": {
                     "sheet_name": "Decom_cost",
                     "index_col": 0,

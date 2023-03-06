@@ -475,6 +475,11 @@ class ReadSets:
                             "index": pd.Index(self.main_years, name="Years"),
                             "columns": indexer,
                         },
+                        "Min_lumpycap": {
+                            "value": 0,
+                            "index": pd.Index(self.main_years, name="Years"),
+                            "columns": indexer,
+                        },
                         "Decom_cost": {
                             "value": 0,
                             "index": pd.Index(self.main_years, name="Years"),

@@ -205,7 +205,8 @@ class BuildModel:
         technology_prod = {}
         technology_use = {}
         new_capacity = {}
-        line_newcapacity = {}
+        #line_newcapacity = {}
+        line_lumpy_investment = {}
         line_import = {}
         line_export = {}
 
@@ -344,15 +345,24 @@ class BuildModel:
 
                 for line,carr_list in self.sets.trade_line.items():
 
-                    line_newcapacity[line] = cp.Variable(
+                    # line_newcapacity[line] = cp.Variable(
+                    #     shape=(
+                    #         len(self.sets.main_years),
+                    #         len(carr_list),
+                    #     ),
+                    #     nonneg=True,
+                    # )
+                    
+                    line_lumpy_investment[line] = cp.Variable(
                         shape=(
                             len(self.sets.main_years),
                             len(carr_list),
                         ),
-                        nonneg=True,
+                        boolean = True,
                     )
 
-                self.variables.update({"line_newcapacity": line_newcapacity})
+
+                self.variables.update({"line_lumpy_investment": line_lumpy_investment})
 
     def _calc_variable_planning(self):
 
@@ -536,21 +546,34 @@ class BuildModel:
         self.line_decommissioned_capacity = {}
         self.cost_decom_line = {}
 
-        for key in self.variables["line_newcapacity"].keys():
+        for key in self.variables["line_lumpy_investment"].keys():
 
+            # self.cost_inv_line[key] = cp.multiply(cp.multiply(
+            #     self.sets.trade_data["line_inv"].loc[:, key].values,
+            #     self.variables["line_newcapacity"][key],
+            # ), self.sets.trade_data["line_length"].loc[:,key].values)
+            
             self.cost_inv_line[key] = cp.multiply(cp.multiply(
                 self.sets.trade_data["line_inv"].loc[:, key].values,
-                self.variables["line_newcapacity"][key],
+                self.variables["line_lumpy_investment"][key],
             ), self.sets.trade_data["line_length"].loc[:,key].values)
 
+            # self.line_accumulated_newcapacity[key] = line_newcap_accumulated(
+            #     self.variables["line_newcapacity"][key],
+            #     self.sets.trade_line[key],
+            #     self.sets.main_years,
+            #     self.sets.trade_data["line_lifetime"].loc[:, key],
+            #     self.sets.period_step,
+            # )
+
             self.line_accumulated_newcapacity[key] = line_newcap_accumulated(
-                self.variables["line_newcapacity"][key],
+                self.variables["line_lumpy_investment"][key],
+                self.sets.trade_data["line_lumpycap"].loc[:, key],
                 self.sets.trade_line[key],
                 self.sets.main_years,
                 self.sets.trade_data["line_lifetime"].loc[:, key],
                 self.sets.period_step,
             )
-
             self.line_totalcapacity[key] = (
                 self.line_accumulated_newcapacity[key]
                 + self.sets.trade_data["line_residual_cap"].loc[:, key].values
@@ -559,10 +582,11 @@ class BuildModel:
             self.cost_fix_line[key] = cp.multiply(cp.multiply(
                 self.sets.trade_data["line_fixed_cost"].loc[:, key].values,
                 self.line_totalcapacity[key],
-            ), self.sets.trade_data["line_length"].loc[:,key].values)
+            ), self.sets.trade_data["line_length"].loc[:,key].values) # We can still define the operating cost of the pipe and compressor per unit capacity of the pipe
 
             self.line_decommissioned_capacity[key] = line_decomcap(
-                self.variables["line_newcapacity"][key],
+                self.variables["line_lumpy_investment"][key],
+                self.sets.trade_data["line_lumpycap"].loc[:, key],
                 self.sets.trade_line[key],
                 self.sets.main_years,
                 self.sets.trade_data["line_lifetime"].loc[:, key],
