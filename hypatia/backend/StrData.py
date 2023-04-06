@@ -31,7 +31,7 @@ from hypatia.utility.constants import (
     technology_categories,
     carrier_types,
 )
-from hypatia.utility.constants import (list_connection_operation, list_connection_planning,
+from hypatia.utility.constants import (list_connection,
  take_regional_sheets, take_trade_ids, take_ids, take_global_ids)
 
 from hypatia.utility.utility import vicenty
@@ -154,6 +154,7 @@ class ReadSets:
         # read the possible connections
         
         if len(self.regions) > 1: 
+            self.sizes = list(self.glob_mapping["Connection_sizes"]["Size_name"])
             self.trade_line = {}
             
             for carr in glob_mapping["Carriers_glob"]["Carrier"]:
@@ -386,11 +387,6 @@ class ReadSets:
             )
 
             self.connection_sheet_ids = {
-                "F_OM": {
-                    "value": 0,
-                    "index": pd.Index(self.main_years, name="Years"),
-                    "columns": indexer,
-                },
                 "V_OM": {
                     "value": 0,
                     "index": pd.Index(self.main_years, name="Years"),
@@ -426,6 +422,16 @@ class ReadSets:
                     "columns": indexer,
                 },
             }
+            
+            
+            for size in self.sizes:
+                
+                self.connection_sheet_ids.update(
+                    {"F_OM_{}".format(size): {
+                        "value": 0,
+                        "index": pd.Index(self.main_years, name="Years"),
+                        "columns": indexer,
+                    }})
 
             self.global_sheet_ids = {
                 "Max_production_global": {
@@ -462,7 +468,8 @@ class ReadSets:
                     "columns": ["Global Emission Cap"],
                 },
             }
-
+            
+            list_connection_operation = list_connection(mode = "Operation", sizes = self.sizes)
             connections_operation_sorted = sorted(self.connection_sheet_ids.items(), key=lambda pair: list_connection_operation.index(pair[0]))
             self.connection_sheet_ids_sorted = dict(connections_operation_sorted)
 
@@ -470,16 +477,6 @@ class ReadSets:
 
                 self.connection_sheet_ids.update(
                     {
-                        "INV": {
-                            "value": 0,
-                            "index": pd.Index(self.main_years, name="Years"),
-                            "columns": indexer,
-                        },
-                        "Min_lumpycap": {
-                            "value": 0,
-                            "index": pd.Index(self.main_years, name="Years"),
-                            "columns": indexer,
-                        },
                         "Decom_cost": {
                             "value": 0,
                             "index": pd.Index(self.main_years, name="Years"),
@@ -528,6 +525,28 @@ class ReadSets:
                         },
                     }
                 )
+                
+                for size in self.sizes:
+                    
+                    self.connection_sheet_ids.update(
+                        {
+                            "F_OM_{}".format(size): {
+                                "value": 0,
+                                "index": pd.Index(self.main_years, name="Years"),
+                                "columns": indexer,
+                                },
+                            "INV_{}".format(size): {
+                            "value": 0,
+                            "index": pd.Index(self.main_years, name="Years"),
+                            "columns": indexer,
+                        },
+                        "Min_integer_cap_{}".format(size): {
+                            "value": 0,
+                            "index": pd.Index(self.main_years, name="Years"),
+                            "columns": indexer,
+                        }})
+                    
+                list_connection_planning = list_connection(mode = "Planning", sizes = self.sizes)   
                 connections_planning_sorted = sorted(self.connection_sheet_ids.items(), key=lambda pair: list_connection_planning.index(pair[0]))
                 self.connection_sheet_ids_sorted = dict(connections_planning_sorted)
 
@@ -1060,7 +1079,7 @@ class ReadSets:
 
         if len(self.regions) > 1:
 
-            trade_data_ids = take_trade_ids(mode=self.mode)
+            trade_data_ids = take_trade_ids(mode=self.mode,sizes=self.sizes)
             global_data_ids = take_global_ids(mode=self.mode)
             check_sheet_name(path, "parameters_connections", trade_data_ids)
             check_sheet_name(path, "parameters_global", global_data_ids)
