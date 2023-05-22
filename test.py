@@ -7,17 +7,17 @@ Created on Mon Mar  6 11:37:41 2023
 
 from hypatia import Model,Plotter, Sensitivity
 #%%
-milp_test = Model(
-    path = 'test/connection_MILP/sets', 
+offshore_test = Model(
+    path = 'test/yeees/central_offshore/sets', 
     mode = 'Planning', period_step = 15)
 #%%
-##milp_test.create_data_excels(path = 'test/connection_MILP/parameters')
+#offshore_test.create_data_excels(path = 'test/yeees/central_offshore/parameters_update')
 #%%
-milp_test.read_input_data(
-    path = 'test/connection_MILP/parameters'
+offshore_test.read_input_data(
+    path = 'test/yeees/central_offshore/parameters'
 )
 #%%
-milp_test.run(solver = "gurobi", verbosity= True)
+offshore_test.run(solver = "gurobi", verbosity= True, force_rewrite=True, Method=3)
 #%%
-milp_test.to_csv(path="test/connection_MILP/results")
+offshore_test.to_csv(path="test/yeees/central_offshore/results")
 #%%

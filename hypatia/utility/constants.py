@@ -6,13 +6,43 @@ parameter filese
 
 # Sorted connection parameter sheets
 
-list_connection_operation = ["V_OM","F_OM","Line_efficiency",
-"AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line","Line_length"]
+def list_connection(mode,sizes):
+    
+    if mode == "Operation":
+        
+        list_connection = ["V_OM", "Line_efficiency",
+                           "AnnualProd_perunit_capacity", "Residual_capacity", "Capacity_factor_line", "Line_length"]
+        
+        for size in sizes:
+            
+            list_connection.append("F_OM_{}".format(size)
+                )
+            
+    
+    if mode == "Planning":
+        
+        list_connection = ["V_OM","Decom_cost",
+        "Line_Economic_life","Interest_rate","Line_lifetime","Line_efficiency",
+        "AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line",
+        "Line_length","Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
+            
+        
+        for size in sizes:
+            
+            list_connection.append("F_OM_{}".format(size))
+            list_connection.append("INV_{}".format(size))
+            list_connection.append("Min_integer_cap_{}".format(size))
+                             
+            
+    return list_connection
+            
+# list_connection_operation = ["V_OM","F_OM","Line_efficiency",
+# "AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line","Line_length"]
 
-list_connection_planning = ["V_OM","F_OM","INV","Decom_cost",
-"Line_Economic_life","Interest_rate","Line_lifetime","Line_efficiency",
-"AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line",
-"Line_length","Min_lumpycap","Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
+# list_connection_planning = ["V_OM","F_OM","INV","Decom_cost",
+# "Line_Economic_life","Interest_rate","Line_lifetime","Line_efficiency",
+# "AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line",
+# "Line_length","Min_integer_cap","Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
 
 
 # Sorted regional parameter sheets
@@ -77,14 +107,13 @@ def take_regional_sheets(mode,technologies,regions):
 
 # Constants of connections data
 
-def take_trade_ids(mode):
+def take_trade_ids(mode,sizes):
     """
     Creates a dictionary for storing the information of the parameter sheets of 
     inter-regional link data based on the given mode
     """
 
     trade_data_ids = {
-        "line_fixed_cost": {"sheet_name": "F_OM", "index_col": 0, "header": [0, 1]},
         "line_var_cost": {"sheet_name": "V_OM", "index_col": 0, "header": [0, 1]},
         "line_residual_cap": {
             "sheet_name": "Residual_capacity",
@@ -109,16 +138,17 @@ def take_trade_ids(mode):
             "header": [0, 1],
         },
     }
+    
+    for size in sizes:
+        
+        trade_data_ids.update(
+            {"line_fixed_cost_{}".format(size): {"sheet_name": "F_OM_{}".format(size), "index_col": 0, "header": [0, 1]}
+                })
 
     if mode == "Planning":
 
         trade_data_ids.update(
-            {
-                "line_inv": {"sheet_name": "INV", "index_col": 0, "header": [0, 1]},
-            
-                "line_lumpycap" : {"sheet_name": "Min_lumpycap", "index_col": 0, "header": [0,1]},
-                
-                "line_decom_cost": {
+            {"line_decom_cost": {
                     "sheet_name": "Decom_cost",
                     "index_col": 0,
                     "header": [0, 1],
@@ -160,6 +190,13 @@ def take_trade_ids(mode):
                 },
             }
         )
+        
+        for size in sizes:
+            
+            trade_data_ids.update({"line_inv_{}".format(size): {"sheet_name": "INV_{}".format(size), "index_col": 0, "header": [0, 1]},
+                        
+                            "line_integer_cap_{}".format(size) : {"sheet_name": "Min_integer_cap_{}".format(size), "index_col": 0, "header": [0,1]},
+                })
 
     return trade_data_ids
 
@@ -472,7 +509,8 @@ global_set_ids = {
     "Carriers_glob": ["Carrier", "Carr_name", "Carr_type", "Carr_unit"],
     "Technologies_glob": ["Technology", "Tech_name", "Tech_category",
     "Tech_cap_unit", "Tech_act_unit"],
-    "Emissions": ["Emission", "Emission_name", "Emission_unit"]
+    "Emissions": ["Emission", "Emission_name", "Emission_unit"],
+    "Connection_sizes": ["Size_number", "Size_name"]
 }
 
 
