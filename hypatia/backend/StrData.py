@@ -876,6 +876,20 @@ class ReadSets:
                                 self.Technologies[reg]["Storage"], name="Technology"
                             ),
                         },
+                        "Storage_max_discharge": {
+                            "value": 1e10,
+                            "index": ["max discharge flow of the storage technology"],
+                            "columns": pd.Index(
+                                self.Technologies[reg]["Storage"], name="Technology"
+                            ),
+                        },
+                        "Storage_max_charge": {
+                            "value": 1e10,
+                            "index": ["max charge flow of the storage technology"],
+                            "columns": pd.Index(
+                                self.Technologies[reg]["Storage"], name="Technology"
+                            ),
+                        },
                     }
                 )
 

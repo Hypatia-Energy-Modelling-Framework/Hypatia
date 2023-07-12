@@ -49,7 +49,7 @@ def list_connection(mode,sizes):
 
 storage_sheets = ["Storage_initial_SOC","Storage_min_SOC",
 "Storage_charge_efficiency","Storage_discharge_efficiency",
-"Storage_charge_time","Storage_discharge_time"]
+"Storage_charge_time","Storage_discharge_time", "Storage_max_charge", "Storage_max_discharge"]
 
 conversion_plus_sheets = ["Carrier_ratio_in","Carrier_ratio_out"]
 
@@ -452,6 +452,16 @@ def take_ids(regions, technologies, mode):
                         "index_col": 0,
                         "header": 0,
                     },
+                    "storage_max_discharge": {
+                        "sheet_name": "Storage_max_discharge",
+                        "index_col": 0,
+                        "header": 0,
+                    },
+                    "storage_max_charge": {
+                        "sheet_name": "Storage_max_charge",
+                        "index_col": 0,
+                        "header": 0,
+                    },
                 }
             )
 
@@ -496,6 +506,8 @@ sheets_to_ids = {
     "Storage_discharge_efficiency": "storage_discharge_efficiency",
     "Storage_charge_time": "storage_charge_time",
     "Storage_discharge_time": "storage_discharge_time",
+    "Storage_max_charge": "storage_max_charge",
+    "Storage_max_discharge": "storage_max_discharge",
     }
 
 

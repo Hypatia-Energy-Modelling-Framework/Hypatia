@@ -167,9 +167,9 @@ class Model:
                 f"Installed solvers on your system are {installed_solvers()}"
             )
 
-        model = BuildModel(sets=self._StrData)
+        self.model = BuildModel(sets=self._StrData)
 
-        results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
+        results = self.model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
         if results is not None:
             results = set_DataFrame(
