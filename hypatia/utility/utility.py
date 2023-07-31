@@ -403,8 +403,7 @@ def salvage_factor(
 
     """
     Calculates the salvage factor of the investment cost for the capacities
-    that remain after the end of the time horizon to avoid the end of the horizon 
-    effect
+    that remain after the end of the time horizon 
     """
 
     salvage_factor_0 = pd.DataFrame(0, index=main_years, columns=technologies)
@@ -431,9 +430,9 @@ def salvage_factor(
 
                 salvage_factor_0.loc[year, tech] = (
                     (1 + discount_rate.loc[year, :].values)
-                    ** (tlft[tech].values - EOH - 1 + indx*period_step)
-                    - 1
-                ) / ((1 + discount_rate.loc[year, :].values) ** tlft[tech].values - 1)
+                    ** (tlft[tech].values - EOH - 1 + indx*period_step) - 1
+                    
+                ) / ((1 + discount_rate.loc[year, :].values) ** tlft[tech].values -1 )
 
     salvage_factor_mod = pd.DataFrame(
         salvage_factor_0.values * rates_factor.values,
@@ -444,6 +443,50 @@ def salvage_factor(
     return salvage_factor_mod
 
 
+def salvage_factor_line(
+    main_years, carriers , tlft, interest_rate, discount_rate, economiclife, period_step
+):
+
+    """
+    Calculates the salvage factor of the investment cost for the capacities
+    that remain after the end of the time horizon
+    """
+
+    salvage_factor_0_line = pd.DataFrame(0, index=main_years, columns=carriers)
+
+    rates_factor_line = pd.DataFrame(0, index=main_years, columns=carriers)
+
+    EOH = main_years.index(main_years[-1])*period_step
+
+    for  carrier in carriers:
+
+        technical_factor_line = (1 - 1 / (1 + interest_rate[carrier].values)) / (
+            1 - 1 / ((1 + interest_rate[carrier].values) ** economiclife[carrier].values)
+        )
+
+        social_factor_line = (
+            1 - 1 / ((1 + discount_rate.values) ** economiclife[carrier].values)
+        ) / (1 - 1 / (1 + discount_rate.values))
+
+        rates_factor_line.loc[:, carrier] = technical_factor_line * social_factor_line
+
+        for indx, year in enumerate(main_years):
+
+            if indx*period_step + tlft[carrier].values > EOH:
+
+                salvage_factor_0_line.loc[year, carrier] = (
+                    (1 + discount_rate.loc[year, :].values)
+                    ** (tlft[carrier].values - EOH - 1 + indx*period_step)
+                    -1
+                ) / ((1 + discount_rate.loc[year, :].values) ** tlft[carrier].values - 1)
+
+    salvage_factor_mod_line = pd.DataFrame(
+    salvage_factor_0_line.values * rates_factor_line.values,
+    index=main_years,
+    columns=carriers,
+    )
+
+    return salvage_factor_mod_line
 def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency):
 
     """

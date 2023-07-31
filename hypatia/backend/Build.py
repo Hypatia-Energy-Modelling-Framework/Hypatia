@@ -12,6 +12,7 @@ from hypatia.utility.utility import (
     invcosts,
     invcosts_annuity,
     salvage_factor,
+    salvage_factor_line,
     newcap_accumulated,
     line_newcap_accumulated,
     line_newcap_lump_accumulated,
@@ -95,6 +96,7 @@ class BuildModel:
             self._constr_resource_tech_availability()
             self._constr_tech_efficiency()
             # self._constr_prod_annual()
+            self._constr_prod()
             self._constr_emission_cap()
             self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
@@ -125,6 +127,7 @@ class BuildModel:
             self._constr_resource_tech_availability()
             self._constr_tech_efficiency()
             self._constr_prod_annual()
+            self._constr_prod()
             self._constr_emission_cap()
             self._calc_variable_storage_SOC()
             self._constr_storage_cyclic_boundary()
@@ -601,6 +604,7 @@ class BuildModel:
         """
 
         self.cost_inv_line = {}
+        self.salvage_inv_line = {}
         self.line_accumulated_newcapacity = {}
         self.line_accumulated_lump_newcapacity = {}
         self.line_totalcapacity = {}
@@ -661,6 +665,8 @@ class BuildModel:
                         self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line]),
                         self.sets.trade_data["line_length"].loc[:,line].values)
             
+
+            
             self.cost_fix_line[line] = cp.multiply(cp.multiply(self.sets.trade_data["line_fixed_cost_{}".format(self.sets.sizes[0])].loc[:,line].values ,
                         self.line_accumulated_lump_newcapacity[self.sets.sizes[0]][line]),
                         self.sets.trade_data["line_length"].loc[:,line].values)
@@ -674,7 +680,19 @@ class BuildModel:
                 self.cost_fix_line[line] += cp.multiply(cp.multiply(self.sets.trade_data["line_fixed_cost_{}".format(size)].loc[:,line].values ,
                             self.variables["line_newcapacity_lump"][size][line]),
                             self.sets.trade_data["line_length"].loc[:,line].values)
-
+                
+            self.salvage_inv_line[line] = cp.multiply(
+                salvage_factor_line(
+                    self.sets.main_years,
+                    carr_list,
+                    self.sets.trade_data["line_lifetime"].loc[:, line],
+                    self.sets.trade_data["interest_rate"].loc[:, line],
+                    self.sets.global_data["global_discount_rate"],
+                    self.sets.trade_data["line_economic_lifetime"].loc[:, line],
+                    self.sets.period_step
+                ),
+                self.cost_inv_line[line],
+                )
 
 
         self.cost_variable_line = line_varcost(
@@ -1568,6 +1586,7 @@ class BuildModel:
         for reg in self.sets.regions:
 
             totalcost_regional = np.zeros((len(self.sets.main_years), 1))
+            #total_salvage_regional = np.zeros((len(self.sets.main_years), 1))
 
             for ctgry in self.sets.Technologies[reg].keys():
 
@@ -1599,6 +1618,9 @@ class BuildModel:
                     )
                     
                     
+                    #total_salvage_regional += cp.sum(self.salvage_inv[reg][ctgry], axis =1)
+                    
+                    
 
                     self.inv_allregions += self.cost_inv_fvalue[reg][ctgry]
 
@@ -1615,7 +1637,7 @@ class BuildModel:
             totalcost_regional_discounted = cp.multiply(
                 totalcost_regional, np.power(discount_factor, years)
             )
-            self.totalcost_allregions += totalcost_regional_discounted
+            self.totalcost_allregions += totalcost_regional_discounted 
 
     def _set_regional_objective_operation(self):
 
@@ -1663,15 +1685,20 @@ class BuildModel:
 
         years = -1 * np.arange(len(self.sets.main_years))*self.sets.period_step
         self.totalcost_lines = np.zeros((len(self.sets.main_years), 1))
+        #self.total_salvage_line = np.zeros((len(self.sets.main_years), 1))
 
         for line in self.sets.trade_line.keys():
 
             self.totalcost_lines += cp.sum(
                 self.cost_inv_line[line]
                 + self.cost_fix_line[line]
-                + self.cost_decom_line[line],
+                + self.cost_decom_line[line]
+                - self.salvage_inv_line[line],
                 axis=1,
             )
+            
+            
+            #self.total_salvage_line += cp.sum(self.salvage_inv_line[line],axis=1)
 
         for reg_ in self.sets.trade_regions.keys():
 
@@ -1735,10 +1762,8 @@ class BuildModel:
 
         if self.sets.mode == "Planning":
 
-            self.global_objective = (
-                cp.sum(self.totalcost_lines_discounted + self.totalcost_allregions)
-                + self.inv_allregions
-            )
+            self.global_objective = cp.sum(self.totalcost_lines_discounted + self.totalcost_allregions, axis=0) + self.inv_allregions
+
 
         elif self.sets.mode == "Operation":
 
