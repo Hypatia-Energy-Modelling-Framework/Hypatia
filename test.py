@@ -8,20 +8,24 @@ Created on Mon Mar  6 11:37:41 2023
 from hypatia import Model,Plotter, Sensitivity
 #%%
 test = Model(
-    path = 'test/yeees_modified/blue_hydrogen/sets', 
-    mode = 'Planning', period_step = 5)
+    path = 'test/test_storage/sets', 
+    mode = 'Planning', period_step = 15)
 #%%
-test.create_data_excels(path = 'test/yeees_modified/blue_hydrogen/parameters')
+#test.create_data_excels(path = 'test/yeees_modified/ammonia_import/parameters')
 #%%
 test.read_input_data(
     path = 'test/test_storage/parameters'
 )
 #%%
+#import gurobipy
+
+#env = gurobipy.Env()
+#env.setParam("LogFile","log.log")
 test.run(solver = "gurobi", verbosity= True)
 #%%
-test.to_csv(path="test/yeees_modified/central_offshore_H2/results")
+test.to_csv(path="test/yeees_modified/ammonia_import/results")
 #%%
-import pandas as pd
+#import pandas as pd
 #%%
 #salvage_line_new = offshore_test.model.salvage_inv_line
 #%%
@@ -39,3 +43,6 @@ import pandas as pd
 #with pd.ExcelWriter(
     #r"test/test_storage/discharge.xlsx") as writer:
     #discharge.to_excel(writer)
+
+
+

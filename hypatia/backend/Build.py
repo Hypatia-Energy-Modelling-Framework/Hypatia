@@ -97,11 +97,11 @@ class BuildModel:
             self._constr_tech_efficiency()
             # self._constr_prod_annual()
             self._constr_prod()
-            self._constr_emission_cap()
+            #self._constr_emission_cap()
             self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
-            self._constr_storage_cyclic_boundary()
+            #self._constr_storage_cyclic_boundary()
             self._set_regional_objective_planning()
 
             if len(self.sets.regions) == 1:
@@ -1561,17 +1561,17 @@ class BuildModel:
                     >= 0
                 )
 
-                self.constr.append(
-                    self.sets.data[reg]["storage_max_discharge"].values
-                    - self.variables["productionbyTechnology"][reg]["Storage"]
-                    >= 0
-                )
+                # self.constr.append(
+                #     self.sets.data[reg]["storage_max_discharge"].values
+                #     - self.variables["productionbyTechnology"][reg]["Storage"]
+                #     >= 0
+                # )
                 
-                self.constr.append(
-                    self.sets.data[reg]["storage_max_charge"].values
-                    - self.variables["usebyTechnology"][reg]["Storage"]
-                    >= 0
-                )
+                # self.constr.append(
+                #     self.sets.data[reg]["storage_max_charge"].values
+                #     - self.variables["usebyTechnology"][reg]["Storage"]
+                #     >= 0
+                # )
                 
     def _set_regional_objective_planning(self):
 

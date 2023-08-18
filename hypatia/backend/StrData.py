@@ -857,7 +857,7 @@ class ReadSets:
                         },
                         "Storage_initial_SOC": {
                             "value": 0,
-                            "index": ["Initial State of Charge"],
+                            "index": pd.Index(self.main_years, name="Years"),
                             "columns": pd.Index(
                                 self.Technologies[reg]["Storage"], name="Technology"
                             ),
