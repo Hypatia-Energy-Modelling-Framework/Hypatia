@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath("../../.."))
 
 
 project = "hypatia"
-copyright = "2021, SESAM, Politecnico di Milano.\n Developed by: Hypatia team"
+copyright = "Negar Namazifard"
 author = "Negar Namazifard"
 
 # The full version, including alpha/beta/rc tags
