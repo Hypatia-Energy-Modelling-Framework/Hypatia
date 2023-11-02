@@ -51,7 +51,7 @@ def take_regional_sheets(mode,technologies,regions):
         if mode == "Planning":
 
             regional_sheets[reg] = ["V_OM","F_OM","INV","Decom_cost",
-            "Economic_lifetime","Interest_rate","Discount_rate","Tech_lifetime",
+            "Economic_lifetime","Interest_rate","Discount_rate","Tech_lifetime","ReserveMargin_tech",
             "Tech_efficiency","AnnualProd_perunit_capacity","Residual_capacity",
             "Capacity_factor_tech","capacity_factor_resource","Specific_emission",
             "Investment_taxsub","Fix_taxsub", "Carbon_tax","Min_newcap",
@@ -75,7 +75,6 @@ def take_regional_sheets(mode,technologies,regions):
     return regional_sheets
 
 
-# Constants of connections data
 
 def take_trade_ids(mode):
     """
@@ -154,7 +153,6 @@ def take_trade_ids(mode):
 
     return trade_data_ids
 
-# Constants of parameters_glob data
 
 def take_global_ids(mode):
     """
@@ -332,6 +330,11 @@ def take_ids(regions, technologies, mode):
                         "index_col": 0,
                         "header": [0, 1],
                     },
+                    "ReserveMargin_tech": {
+                        "sheet_name": "ReserveMargin_tech",
+                        "index_col": 0,
+                        "header": [0, 1],
+                    },
                     "economic_lifetime": {
                         "sheet_name": "Economic_lifetime",
                         "index_col": 0,
@@ -419,10 +422,8 @@ global_set_ids = {
     "Years": ["Year", "Year_name"],
     "Timesteps": ["Timeslice", "Timeslice_name", "Timeslice_fraction"],
     "Time_horizon": ["Start", "End"],
-    "Carriers_glob": ["Carrier", "Carr_name", "Carr_type", "Carr_unit"],
-    "Technologies_glob": ["Technology", "Tech_name", "Tech_category",
-    "Tech_cap_unit", "Tech_act_unit"],
-    "Emissions": ["Emission", "Emission_name", "Emission_unit"]
+    "Carriers_glob": ["Carrier", "Carr_name", "Carr_type"],
+    "Technologies_glob": ["Technology", "Tech_name", "Tech_category"],
 }
 
 
