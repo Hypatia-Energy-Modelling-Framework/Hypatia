@@ -5,16 +5,18 @@ Created on Mon Mar  6 11:37:41 2023
 @author: NAMAZIFN
 """
 
+
 from hypatia import Model,Plotter, Sensitivity
+
 #%%
 test = Model(
-    path = 'test/test_storage/sets', 
-    mode = 'Planning', period_step = 15)
+    path = 'test/Belgian_case/tests/test_single_binary/central_offshore_offshore_final_v3/sets', 
+    mode = 'Planning', period_step = 10)
 #%%
-#test.create_data_excels(path = 'test/yeees_modified/ammonia_import/parameters')
+test.create_data_excels(path = 'test/Belgian_case/tests/test_single_binary/central_offshore_offshore_final_v3/parameters_new')
 #%%
 test.read_input_data(
-    path = 'test/test_storage/parameters'
+    path = 'test/yeees_final_v2/blue_hydrogen_final_mod/parameters'
 )
 #%%
 #import gurobipy
@@ -23,7 +25,7 @@ test.read_input_data(
 #env.setParam("LogFile","log.log")
 test.run(solver = "gurobi", verbosity= True)
 #%%
-test.to_csv(path="test/yeees_modified/ammonia_import/results")
+test.to_csv(path="test/yeees_final_v2/blue_hydrogen_final_mod/results",sep=";")
 #%%
 #import pandas as pd
 #%%
@@ -44,5 +46,63 @@ test.to_csv(path="test/yeees_modified/ammonia_import/results")
     #r"test/test_storage/discharge.xlsx") as writer:
     #discharge.to_excel(writer)
 
+#%%
+import pandas as pd
+import os
+def dict_to_csv(Dict, path):
+    """Writes nested dicts  to csv"""
 
+    for key, value in Dict.items():
+        if isinstance(value, pd.DataFrame):
+            value.to_csv(f"{path}//{key}.csv",sep=",")
+        else:
+            new_path = f"{path}//{key}"
+            os.makedirs(new_path, exist_ok=True)
+            dict_to_csv(value, new_path)
+            #%%
+cost = test.results["variable_cost"]["reg1"]["Conversion"]
+#%%
+test.to_csv()
+#%%
+test._StrData.data["reg1"]["interest_rate"]
+
+#%%
+rate = 0.05
+step = 5
+import numpy as np
+import pandas as pd
+
+
+
+def var_cost(df,rate,step):
+    df = df.groupby(level=0).sum()
+    years = df.index.tolist()
+    Y = -1 * np.arange(len(years))*step
+    discount = np.power(1+rate, Y)
+    
+    
+    
+    res = pd.DataFrame(index=df.index,columns=df.columns)
+    
+    for idx,col in df.iteritems():
+        res.loc[col.index,idx] = col.values * discount
+    
+    return res
+#%%
+
+a = var_cost(cost,0.05,5)
+
+
+#%%
+
+main_path = r"C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia\test\yeees_modified\blue_hydrogen\results_"
+
+reg_var = [
+    "variable_cost",
+    "fix_cost",
+    ]
+
+line_var = [
+    ""
+    ]
 

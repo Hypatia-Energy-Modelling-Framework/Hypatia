@@ -1001,22 +1001,22 @@ class ReadSets:
                             ),
                             "columns": indexer_reg_drop1[reg],
                         },
-                        "Max_production_h": {
-                            "value": 1e20,
-                            "index": pd.MultiIndex.from_product(
-                                [self.main_years, self.main_years],
-                                names=["Years", "Timesteps"],
-                            ),
-                            "columns": indexer_reg_drop2[reg],
-                        },
-                        "Min_production_h": {
-                            "value": 0,
-                            "index": pd.MultiIndex.from_product(
-                                [self.main_years, self.main_years],
-                                names=["Years", "Timesteps"],
-                            ),
-                            "columns": indexer_reg_drop2[reg],
-                        },
+                        # "Max_production_h": {
+                        #     "value": 1e20,
+                        #     "index": pd.MultiIndex.from_product(
+                        #         [self.main_years, self.main_years],
+                        #         names=["Years", "Timesteps"],
+                        #     ),
+                        #     "columns": indexer_reg_drop2[reg],
+                        # },
+                        # "Min_production_h": {
+                        #     "value": 0,
+                        #     "index": pd.MultiIndex.from_product(
+                        #         [self.main_years, self.main_years],
+                        #         names=["Years", "Timesteps"],
+                        #     ),
+                        #     "columns": indexer_reg_drop2[reg],
+                        # },
                     }
                 )
 

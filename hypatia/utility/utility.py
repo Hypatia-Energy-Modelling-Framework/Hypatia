@@ -264,7 +264,7 @@ def invcosts_annuity(
     depreciation = pd.DataFrame(
         depreciation, index=["Depreciation_rate"], columns=technologies
     )
-
+    # EOH = main_years.index(main_years[-1])*period_step
     inv_fvalue_total = 0
     for tech_indx, tech in enumerate(technologies):
         inv_fvalue_discounted = 0
@@ -274,7 +274,9 @@ def invcosts_annuity(
             for future_year in range(
                 y_indx * period_step + 1, y_indx * period_step + economiclife.loc["Economic Life time", tech] + 1
             ):
-
+            # for future_year in range(
+            #     y_indx * period_step , EOH+1
+            # ):
                 annuity = (
                     cost_inv_present[y_indx, tech_indx]
                     * depreciation.loc["Depreciation_rate", tech]

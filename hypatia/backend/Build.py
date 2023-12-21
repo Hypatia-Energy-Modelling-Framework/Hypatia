@@ -96,7 +96,7 @@ class BuildModel:
             self._constr_resource_tech_availability()
             self._constr_tech_efficiency()
             # self._constr_prod_annual()
-            self._constr_prod()
+            #self._constr_prod()
             #self._constr_emission_cap()
             self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()

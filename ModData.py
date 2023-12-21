@@ -9,12 +9,13 @@ Created on Wed Aug  9 16:23:48 2023
 from hypatia import Model,Plotter, Sensitivity
 
 test = Model(
-    path = 'test/yeees_modified/decentral_onshore_market/sets', 
+    path = 'test/yeees_modified/ammonia_import/sets', 
     mode = 'Planning', period_step = 5)
+
 #%%
 import pandas as pd
-path = "test/yeees_modified/decentral_onshore_market/parameters"
-path2 = "test/yeees_modified/decentral_onshore_market_snapshot/parameters"
+path = "test/yeees_modified/ammonia_import/parameters"
+path2 = "test/yeees_modified/ammonia_import_snapshot_AD/parameters"
 
 #%%
 
@@ -538,7 +539,7 @@ for key, value in trade_data_ids.items():
 
 ## Writing the parameter_connection file
 with pd.ExcelWriter(
-    r"{}/parameters_connections_.xlsx".format(path2)
+    r"{}/parameters_connections.xlsx".format(path2)
 ) as writer:
 
     for key, value in connection_data_new.items():
@@ -568,7 +569,7 @@ for key, value in global_data_ids.items():
 ## Writing the parameter_global file
 
 with pd.ExcelWriter(
-    r"{}/parameters_global_.xlsx".format(path2)
+    r"{}/parameters_global.xlsx".format(path2)
 ) as writer:
 
     for key, value in global_data_new.items():

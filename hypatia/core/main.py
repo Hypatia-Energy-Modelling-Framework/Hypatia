@@ -185,7 +185,7 @@ class Model:
 
             self.results = results
 
-    def to_csv(self, path, force_rewrite=False):
+    def to_csv(self, path, force_rewrite=False,sep=","):
         """Exports the results of the model to csv files with nested folders
 
         Parameters
@@ -210,7 +210,7 @@ class Model:
         else:
             os.mkdir(path)
 
-        dict_to_csv(self.results, path)
+        dict_to_csv(self.results, path,sep)
 
     def create_config_file(self, path):
         """Creates a config excel file for plots

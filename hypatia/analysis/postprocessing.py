@@ -46,16 +46,16 @@ import numpy as np
 import os
 
 
-def dict_to_csv(Dict, path):
+def dict_to_csv(Dict, path,sep):
     """Writes nested dicts  to csv"""
 
     for key, value in Dict.items():
         if isinstance(value, pd.DataFrame):
-            value.to_csv(f"{path}//{key}.csv")
+            value.to_csv(f"{path}//{key}.csv",sep=sep)
         else:
             new_path = f"{path}//{key}"
             os.makedirs(new_path, exist_ok=True)
-            dict_to_csv(value, new_path)
+            dict_to_csv(value, new_path,sep)
 
 
 def year_slice_index(
