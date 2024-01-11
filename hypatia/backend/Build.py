@@ -87,7 +87,7 @@ class BuildModel:
         # calling the methods based on the defined mode by the user
         if self.sets.mode == "Planning":
             
-            self._constr_line_integer_size()
+            #self._constr_line_integer_size()
             self._calc_variable_planning()
             self._balance_()
             # self._constr_totalcapacity_regional()
@@ -346,87 +346,23 @@ class BuildModel:
 
             self.variables.update({"newcapacity": new_capacity})
 
+
+                
             if len(self.sets.regions) > 1:
-                
-                line_newcapacity_lump ={}
-                
-                for size in self.sets.sizes:
-                    line_newcapacity_lump[size] = {}
-                    for line,carr_list in self.sets.trade_line.items():
-                    
-                        line_newcapacity_lump[size][line] = cp.Variable(
-                            shape=(
-                                len(self.sets.main_years),
-                                len(carr_list),
-                            ),
-                            boolean =True,
-                            )
-                    # line_lumpy_investment[line] = cp.Variable(
-                    #     shape=(
-                    #         len(self.sets.main_years),
-                    #         len(carr_list),
-                    #     ),
-                    #     boolean = True,
-                    # )
 
+                for line,carr_list in self.sets.trade_line.items():
 
-                #self.variables.update({"line_lumpy_investment": line_lumpy_investment})
-                self.variables.update({"line_newcapacity_lump": line_newcapacity_lump})
-                
-   
-    
-    
-    
-    
-    def _constr_line_integer_size(self):
-        
-        """
-        Ensures that only one inter-regional link size can be installed
-        in each year and the line new capacity is integer multiply of the 
-        specific lines
-        """
-        
-        
-        self.line_newcapacity = {}
-        line_integer_size = {}
-        
-        for line, carr_list in self.sets.trade_line.items():
-            self.line_newcapacity[line] = cp.multiply(self.sets.trade_data["line_integer_cap_{}".format(self.sets.sizes[0])].loc[:,line].values ,
-            self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line])
-            line_integer_size[line] = self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line]
-            for indx in range(1,len(self.sets.sizes)):     
-                line_integer_size[line] += self.variables["line_newcapacity_lump"][self.sets.sizes[indx]][line]
-                self.line_newcapacity[line] += cp.multiply(self.sets.trade_data["line_integer_cap_{}".format(self.sets.sizes[indx])].loc[:,line].values ,
-                self.variables["line_newcapacity_lump"][self.sets.sizes[indx]][line])
-                
-            self.constr.append(line_integer_size[line] <= 1)
+                    line_newcapacity[line] = cp.Variable(
+                        shape=(
+                            len(self.sets.main_years),
+                            len(carr_list),
+                        ),
+                        nonneg=True,
+                    )
 
-        
-        # self.line_newcapacity = {}
-        # for line,carr_list in self.sets.trade_line.items():
-        #     self.line_newcapacity[line] = np.zeros((len(self.sets.main_years),len(carr_list)), dtype = object)
-        #     for indx, year in enumerate(self.sets.main_years):
+                self.variables.update({"line_newcapacity": line_newcapacity})
                 
-        #         self.constr.append(self.variables["line_newcapacity_s1"][line][indx:indx+1,:] +\
-        #                            self.variables["line_newcapacity_s2"][line][indx:indx+1,:] == 1)
-        #         self.line_newcapacity[line][indx:indx+1,:] += \
-        #             cp.multiply(self.sets.trade_data["line_integer_cap"].loc[self.sets.sizes[0],line].values ,
-        #                         self.variables["line_newcapacity_s1"][line][indx:indx+1,:]) +\
-        #                 cp.multiply(self.sets.trade_data["line_integer_cap"].loc[self.sets.sizes[1],line].values ,
-        #                             self.variables["line_newcapacity_s2"][line][indx:indx+1,:])
-                          
-                
-                # if self.variables["line_newcapacity_s1"][line][indx:indx+1,:] == 0 :
-                #     self.line_newcapacity[line][indx:indx+1,:] = \
-                #         cp.multiply(self.sets.trade_data.loc[self.sets.size[0],line].values ,
-                #                     self.variables["line_newcapacity_s1"][line][indx:indx+1,:])
-                # else:
-                    
-                #     self.constr.append(self.variables["line_newcapacity_s2"][line][indx:indx+1,:] >= 0)
-                #     self.line_newcapacity[line][indx:indx+1,:] = \
-                #         cp.multiply(self.sets.trade_data.loc[self.sets.size[1],line].values ,
-                #                     self.variables["line_newcapacity_s2"][line][indx:indx+1,:])
-                    
+
                     
     def _calc_variable_planning(self):
 
@@ -606,34 +542,39 @@ class BuildModel:
         self.cost_inv_line = {}
         self.salvage_inv_line = {}
         self.line_accumulated_newcapacity = {}
-        self.line_accumulated_lump_newcapacity = {}
+       # self.line_accumulated_lump_newcapacity = {}
         self.line_totalcapacity = {}
         self.cost_fix_line = {}
         self.line_decommissioned_capacity = {}
         self.cost_decom_line = {}
         
         
-        for size in self.sets.sizes:
-            line_accumulated_lump_newcapacity_size = {}
-            for line,carr_list in self.sets.trade_line.items():
+        # for size in self.sets.sizes:
+        #     line_accumulated_lump_newcapacity_size = {}
+        #     for line,carr_list in self.sets.trade_line.items():
                 
-                line_accumulated_lump_newcapacity_size[line] = line_newcap_lump_accumulated(
-                    self.variables["line_newcapacity_lump"][size][line],
-                    self.sets.trade_line[line],
-                    self.sets.main_years,
-                    self.sets.trade_data["line_lifetime"].loc[:, line],
-                    self.sets.period_step,)
+        #         line_accumulated_lump_newcapacity_size[line] = line_newcap_lump_accumulated(
+        #             self.variables["line_newcapacity_lump"][size][line],
+        #             self.sets.trade_line[line],
+        #             self.sets.main_years,
+        #             self.sets.trade_data["line_lifetime"].loc[:, line],
+        #             self.sets.period_step,)
                 
             
-            self.line_accumulated_lump_newcapacity[size] = line_accumulated_lump_newcapacity_size
+        #     self.line_accumulated_lump_newcapacity[size] = line_accumulated_lump_newcapacity_size
             
             
 
         for line,carr_list in self.sets.trade_line.items():
+            
+            self.cost_inv_line[line] = cp.multiply(cp.multiply(
+                self.sets.trade_data["line_inv"].loc[:, line].values,
+                self.variables["line_newcapacity"][line],
+            ), self.sets.trade_data["line_length"].loc[:,line].values)
         
             
             self.line_accumulated_newcapacity[line] = line_newcap_accumulated(
-                self.line_newcapacity[line],
+                self.variables["line_newcapacity"][line],
                 self.sets.trade_line[line],
                 self.sets.main_years,
                 self.sets.trade_data["line_lifetime"].loc[:, line],
@@ -646,8 +587,13 @@ class BuildModel:
                 + self.sets.trade_data["line_residual_cap"].loc[:, line].values
             )
             
+            self.cost_fix_line[line] = cp.multiply(cp.multiply(
+                self.sets.trade_data["line_fixed_cost"].loc[:, line].values,
+                self.line_totalcapacity[line],
+            ), self.sets.trade_data["line_length"].loc[:,line].values)
+            
             self.line_decommissioned_capacity[line] = line_decomcap(
-                self.line_newcapacity[line],
+                self.variables["line_newcapacity"][line],
                 self.sets.trade_line[line],
                 self.sets.main_years,
                 self.sets.trade_data["line_lifetime"].loc[:, line],
@@ -659,27 +605,7 @@ class BuildModel:
                 self.line_decommissioned_capacity[line],
             ), self.sets.trade_data["line_length"].loc[:,line].values)
                 
-                
-            
-            self.cost_inv_line[line] = cp.multiply(cp.multiply(self.sets.trade_data["line_inv_{}".format(self.sets.sizes[0])].loc[:,line].values ,
-                        self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line]),
-                        self.sets.trade_data["line_length"].loc[:,line].values)
-            
 
-            
-            self.cost_fix_line[line] = cp.multiply(cp.multiply(self.sets.trade_data["line_fixed_cost_{}".format(self.sets.sizes[0])].loc[:,line].values ,
-                        self.line_accumulated_lump_newcapacity[self.sets.sizes[0]][line]),
-                        self.sets.trade_data["line_length"].loc[:,line].values)
-            
-            for size in self.sets.sizes:
-                
-                self.cost_inv_line[line] += cp.multiply(cp.multiply(self.sets.trade_data["line_inv_{}".format(size)].loc[:,line].values ,
-                            self.variables["line_newcapacity_lump"][size][line]),
-                            self.sets.trade_data["line_length"].loc[:,line].values)
-                
-                self.cost_fix_line[line] += cp.multiply(cp.multiply(self.sets.trade_data["line_fixed_cost_{}".format(size)].loc[:,line].values ,
-                            self.variables["line_newcapacity_lump"][size][line]),
-                            self.sets.trade_data["line_length"].loc[:,line].values)
                 
             self.salvage_inv_line[line] = cp.multiply(
                 salvage_factor_line(
