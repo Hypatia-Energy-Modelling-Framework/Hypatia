@@ -513,7 +513,7 @@ def salvage_factor_line(
 
 #     return state_of_charge
 
-def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency):
+def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency,timeslice_fraction):
 
     """
     Calculates the state of charge of the storage 
@@ -533,15 +533,16 @@ def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time
         [initial_storage] * len(time_steps)
     ).sort_index()
 
-    state_of_charge = cp.multiply(cp.cumsum(flow_in[0 : len(time_steps), :]),
+    state_of_charge = cp.multiply(cp.cumsum(cp.multiply(flow_in[0 : len(time_steps), :], timeslice_fraction)),
                                   charge_efficiency_reshape.loc[main_years[0],:]) + initial_storage_concat.loc[main_years[0],:] -\
-        cp.multiply(cp.cumsum(flow_out[0 : len(time_steps), :]), (np.ones((discharge_efficiency_reshape.loc[main_years[0],:].shape))/discharge_efficiency_reshape.loc[main_years[0],:].values))
+        cp.multiply(cp.cumsum(cp.multiply(flow_out[0 : len(time_steps), :], timeslice_fraction)), (np.ones((discharge_efficiency_reshape.loc[main_years[0],:].shape))/discharge_efficiency_reshape.loc[main_years[0],:].values))
         
     for indx, year in enumerate(main_years[1:]):
+        
 
-        state_of_charge_rest = cp.multiply(cp.cumsum(flow_in[(indx + 1) * len(time_steps) : (indx + 2) * len(time_steps), :]),
+        state_of_charge_rest = cp.multiply(cp.cumsum(cp.multiply(flow_in[(indx + 1) * len(time_steps) : (indx + 2) * len(time_steps), :], timeslice_fraction)),
                                       charge_efficiency_reshape.loc[year,:]) + initial_storage_concat.loc[year,:] -\
-            cp.multiply(cp.cumsum(flow_out[(indx + 1) * len(time_steps) : (indx + 2) * len(time_steps), :]), (np.ones((discharge_efficiency_reshape.loc[year,:].shape))/discharge_efficiency_reshape.loc[year,:].values))
+            cp.multiply(cp.cumsum(cp.multiply(flow_out[(indx + 1) * len(time_steps) : (indx + 2) * len(time_steps), :], timeslice_fraction)), (np.ones((discharge_efficiency_reshape.loc[year,:].shape))/discharge_efficiency_reshape.loc[year,:].values))
         state_of_charge = stack(state_of_charge, state_of_charge_rest)
                                 
 
@@ -562,7 +563,7 @@ def get_regions_with_storage(sets):
 
 
 def storage_max_flow(
-    storage_totalcapacity, time, storage_capacity_factor, timeslice_fraction
+    storage_totalcapacity, time, storage_capacity_factor
 ):
     """
     Calculates the maximum allowed inflow and ouflow of storage technologies 
@@ -573,7 +574,7 @@ def storage_max_flow(
         storage_totalcapacity, storage_capacity_factor
     )
 
-    max_flow = cp.multiply(storage_capacity_available, timeslice_fraction) * 8760 / time
+    max_flow = storage_capacity_available / time
 
     return max_flow
 

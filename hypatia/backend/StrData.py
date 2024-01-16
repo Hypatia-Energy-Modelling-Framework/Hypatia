@@ -35,6 +35,8 @@ from hypatia.utility.constants import (list_connection,
  take_regional_sheets, take_trade_ids, take_ids, take_global_ids)
 
 from hypatia.utility.utility import vicenty
+import copy
+
 MODES = ["Planning", "Operation"]
 
 
@@ -1190,7 +1192,58 @@ class ReadSets:
             data[reg] = reg_data
 
         self.data = data
-
+        
+    def _resample_data(self,downsample):
+        
+        """
+        In case of downsampled timeserie: Read the timeseries such az variable cost, resource capacity factor
+        and hourly production constrains and resample them to the time series specified in the global setting
+        """
+        
+        time_steps = np.arange(8760/downsample,dtype=int).tolist()
+        self.timeslice_fraction = self.timeslice_fraction * downsample
+        for reg in self.regions:
+            
+            self.data_new = copy.deepcopy(self.data)
+            
+            self.data[reg]["tech_var_cost"] = self.data_new[reg]["tech_var_cost"].groupby(
+                by=np.arange(len(self.data[reg]["tech_var_cost"].index.get_level_values(1)))//downsample,axis=0).mean()
+            
+            self.data[reg]["tech_var_cost"].index = pd.MultiIndex.from_product(
+                [self.main_years, time_steps],
+                names=["Years", "Timesteps"])
+            
+            self.data[reg]["res_capacity_factor"] = self.data_new[reg]["res_capacity_factor"].groupby(
+                by=np.arange(len(self.data[reg]["res_capacity_factor"].index.get_level_values(1)))//downsample,axis=0).mean()
+            
+            self.data[reg]["res_capacity_factor"].index = pd.MultiIndex.from_product(
+                [self.main_years, time_steps],
+                names=["Years", "Timesteps"])
+            
+            self.data[reg]["demand"] = self.data_new[reg]["demand"].groupby(
+                by=np.arange(len(self.data[reg]["demand"].index.get_level_values(1)))//downsample,axis=0).sum()
+            
+            self.data[reg]["demand"].index = pd.MultiIndex.from_product(
+                [self.main_years, time_steps],
+                names=["Years", "Timesteps"])
+            
+           #  self.data[reg]["tech_max_production_h"] = self.data[reg]["tech_max_production_h"].groupby(
+           #      by=np.arange(len(self.data[reg]["tech_max_production_h"].index.get_level_values(1)))//downsample,axis=0).sum()
+            
+           #  self.data[reg]["tech_max_production_h"].index = pd.MultiIndex.from_product(
+           #      [self.main_years, time_steps],
+           #      names=["Years", "Timesteps"])
+            
+           #  #self.data[reg]["tech_min_production_h"] = self.data[reg]["tech_min_production_h"].groupby(
+           #      by=np.arange(len(self.data[reg]["tech_min_production_h"].index.get_level_values(1)))//downsample,axis=0).sum()
+            
+           # # self.data[reg]["tech_min_production_h"].index = pd.MultiIndex.from_product(
+           #      [self.main_years, time_steps],
+           #      names=["Years", "Timesteps"])
+            
+       
+        
+        
     @property
     def multi_node(self):
         if len(self.regions) > 1:

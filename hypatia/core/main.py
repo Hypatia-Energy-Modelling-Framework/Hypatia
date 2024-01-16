@@ -57,9 +57,9 @@ class Model:
         """
 
         self._StrData = ReadSets(path=path, mode=mode, period_step=period_step)
+        
 
         self.name = name
-
     def create_data_excels(self, path, force_rewrite=False):
 
         """Writes the parameter excel files with the default values and
@@ -110,6 +110,23 @@ class Model:
 
         self._StrData._read_data(path)
 
+
+    def resample_input_data(self,downsample):
+        
+        """take the existing input data with hourly resolution an down sample them
+        to the specified resolution
+    
+
+        Parameters
+        -------
+        downsample : str
+            the fresquency in which the timeseris of the data such as capacity factors,
+            demand, variable cost would be downsampled e.g. 2h, 3h,6h,....
+
+        """
+        
+        self._StrData._resample_data(downsample)
+        
     def run(self, solver, verbosity=True, force_rewrite=False, **kwargs):
 
         """
