@@ -1527,6 +1527,7 @@ class BuildModel:
                     self.sets.data[reg]["tech_capacity_factor"]["Storage"].values[
                         indx : indx + 1, :
                     ],
+                    self.timeslice_fraction
                 )
 
                 max_storage_flow_out = storage_max_flow(
@@ -1535,6 +1536,7 @@ class BuildModel:
                     self.sets.data[reg]["tech_capacity_factor"]["Storage"].values[
                         indx : indx + 1, :
                     ],
+                    self.timeslice_fraction
                 )
 
                 self.constr.append(
