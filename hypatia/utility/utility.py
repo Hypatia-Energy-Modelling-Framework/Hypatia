@@ -513,7 +513,7 @@ def salvage_factor_line(
 
 #     return state_of_charge
 
-def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency,timeslice_fraction):
+def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency):
 
     """
     Calculates the state of charge of the storage 

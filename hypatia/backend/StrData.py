@@ -1201,6 +1201,7 @@ class ReadSets:
         """
         
         self.time_steps = np.arange(8760/downsample,dtype=int).tolist()
+        self.timeslice_fraction = self.timeslice_fraction[:int(8760/downsample)]
         self.timeslice_fraction = self.timeslice_fraction * downsample
         for reg in self.regions:
             
