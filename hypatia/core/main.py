@@ -34,7 +34,7 @@ class Model:
     A Hypatia Model
     """
 
-    def __init__(self, path, mode, name="unknown", period_step=1):
+    def __init__(self, path, mode, name="unknown", period_step=1,snapshot=False):
 
         """Initializes a Hypatia model by passing the optimization mode and
         the path of the structural input files

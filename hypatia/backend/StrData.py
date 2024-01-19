@@ -85,11 +85,12 @@ class ReadSets:
         A nested dictionary for storing the regional data
     """
 
-    def __init__(self, path, mode="Planning", period_step = 1):
+    def __init__(self, path, mode="Planning", period_step = 1, snapshot=False):
 
         self.mode = mode
         self.path = path
         self.period_step = period_step
+        self.snapshot = snapshot
 
         self._init_by_xlsx()
 
