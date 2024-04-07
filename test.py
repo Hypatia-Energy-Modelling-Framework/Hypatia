@@ -10,16 +10,16 @@ from hypatia import Model,Plotter, Sensitivity
 
 #%%
 test = Model(
-    path = 'test/Trilateral/tests/test_DS/central_offshore_offshore_final/sets', 
-    mode = 'Planning', period_step = 10)
+    path = 'test/Trilateral/tests/test_snapshot/dummy/sets', 
+    mode = 'Planning', period_step = 1, snapshot=True)
 #%%
-#test.create_data_excels(path = 'test/Trilateral/tests/test_DS/central_offshore_offshore_final/parameters')
+test.create_data_excels(path = 'test/Trilateral/tests/test_snapshot/dummy/parameters')
 #%%
 test.read_input_data(
-    path = 'test/Trilateral/tests/test_DS/central_offshore_offshore_final/parameters_new'
+    path = 'test/Trilateral/tests/test_snapshot/dummy/parameters'
 )
 #%%
-test.resample_input_data(downsample=2)
+#test.resample_input_data(downsample=2)
 #%%
 #import gurobipy
 

@@ -486,19 +486,6 @@ class BuildModel:
                     self.sets.data[reg]["inv_taxsub"]["Sub"][key],
                 )
 
-                salvage_inv_regional[key] = cp.multiply(
-                    salvage_factor(
-                        self.sets.main_years,
-                        self.sets.Technologies[reg][key],
-                        self.sets.data[reg]["tech_lifetime"].loc[:, key],
-                        self.sets.data[reg]["interest_rate"].loc[:, key],
-                        self.sets.data[reg]["discount_rate"],
-                        self.sets.data[reg]["economic_lifetime"].loc[:, key],
-                        self.sets.period_step
-                    ),
-                    cost_inv_regional[key],
-                )
-
                 accumulated_newcapacity_regional[key] = newcap_accumulated(
                     self.variables["newcapacity"][reg][key],
                     self.sets.Technologies[reg][key],
@@ -523,18 +510,7 @@ class BuildModel:
                     self.sets.data[reg]["fix_taxsub"]["Sub"][key],
                 )
 
-                decomcapacity_regional[key] = decomcap(
-                    self.variables["newcapacity"][reg][key],
-                    self.sets.Technologies[reg][key],
-                    self.sets.main_years,
-                    self.sets.data[reg]["tech_lifetime"].loc[:, key],
-                    self.sets.period_step,
-                )
 
-                cost_decom_regional[key] = cp.multiply(
-                    self.sets.data[reg]["tech_decom_cost"].loc[:, key].values,
-                    decomcapacity_regional[key],
-                )
 
                 production_annual_regional[key] = annual_activity(
                     self.variables["productionbyTechnology"][reg][key],
@@ -568,16 +544,45 @@ class BuildModel:
                         CO2_equivalent_regional[key],
                         self.sets.data[reg]["carbon_tax"].loc[:, key],
                     )
+                    
+                if not self.sets.snapshot:
 
-                cost_fvalue_regional[key] = invcosts_annuity(
-                    cost_inv_regional[key],
-                    self.sets.data[reg]["interest_rate"].loc[:, key],
-                    self.sets.data[reg]["economic_lifetime"].loc[:, key],
-                    self.sets.Technologies[reg][key],
-                    self.sets.main_years,
-                    self.sets.data[reg]["discount_rate"],
-                    self.sets.period_step
-                )
+                    salvage_inv_regional[key] = cp.multiply(
+                        salvage_factor(
+                            self.sets.main_years,
+                            self.sets.Technologies[reg][key],
+                            self.sets.data[reg]["tech_lifetime"].loc[:, key],
+                            self.sets.data[reg]["interest_rate"].loc[:, key],
+                            self.sets.data[reg]["discount_rate"],
+                            self.sets.data[reg]["economic_lifetime"].loc[:, key],
+                            self.sets.period_step
+                        ),
+                        cost_inv_regional[key],
+                    )
+                    
+                    decomcapacity_regional[key] = decomcap(
+                        self.variables["newcapacity"][reg][key],
+                        self.sets.Technologies[reg][key],
+                        self.sets.main_years,
+                        self.sets.data[reg]["tech_lifetime"].loc[:, key],
+                        self.sets.period_step,
+                    )
+    
+                    cost_decom_regional[key] = cp.multiply(
+                        self.sets.data[reg]["tech_decom_cost"].loc[:, key].values,
+                        decomcapacity_regional[key],
+                    )
+                    
+                    cost_fvalue_regional[key] = invcosts_annuity(
+                        cost_inv_regional[key],
+                        self.sets.data[reg]["interest_rate"].loc[:, key],
+                        self.sets.data[reg]["economic_lifetime"].loc[:, key],
+                        self.sets.Technologies[reg][key],
+                        self.sets.main_years,
+                        self.sets.data[reg]["discount_rate"],
+                        self.sets.period_step
+                    )
+
 
             self.cost_inv[reg] = cost_inv_regional
             self.cost_inv_tax[reg] = cost_inv_tax_regional
@@ -646,20 +651,7 @@ class BuildModel:
                 + self.sets.trade_data["line_residual_cap"].loc[:, line].values
             )
             
-            self.line_decommissioned_capacity[line] = line_decomcap(
-                self.line_newcapacity[line],
-                self.sets.trade_line[line],
-                self.sets.main_years,
-                self.sets.trade_data["line_lifetime"].loc[:, line],
-                self.sets.period_step,
-            )
 
-            self.cost_decom_line[line] = cp.multiply(cp.multiply(
-                self.sets.trade_data["line_decom_cost"].loc[:, line].values,
-                self.line_decommissioned_capacity[line],
-            ), self.sets.trade_data["line_length"].loc[:,line].values)
-                
-                
             
             self.cost_inv_line[line] = cp.multiply(cp.multiply(self.sets.trade_data["line_inv_{}".format(self.sets.sizes[0])].loc[:,line].values ,
                         self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line]),
@@ -681,19 +673,33 @@ class BuildModel:
                             self.variables["line_newcapacity_lump"][size][line]),
                             self.sets.trade_data["line_length"].loc[:,line].values)
                 
-            self.salvage_inv_line[line] = cp.multiply(
-                salvage_factor_line(
+            
+            if not self.sets.snapshot:
+                self.line_decommissioned_capacity[line] = line_decomcap(
+                    self.line_newcapacity[line],
+                    self.sets.trade_line[line],
                     self.sets.main_years,
-                    carr_list,
                     self.sets.trade_data["line_lifetime"].loc[:, line],
-                    self.sets.trade_data["interest_rate"].loc[:, line],
-                    self.sets.global_data["global_discount_rate"],
-                    self.sets.trade_data["line_economic_lifetime"].loc[:, line],
-                    self.sets.period_step
-                ),
-                self.cost_inv_line[line],
+                    self.sets.period_step,
                 )
-
+    
+                self.cost_decom_line[line] = cp.multiply(cp.multiply(
+                    self.sets.trade_data["line_decom_cost"].loc[:, line].values,
+                    self.line_decommissioned_capacity[line],
+                ), self.sets.trade_data["line_length"].loc[:,line].values)
+ 
+                self.salvage_inv_line[line] = cp.multiply(
+                    salvage_factor_line(
+                        self.sets.main_years,
+                        carr_list,
+                        self.sets.trade_data["line_lifetime"].loc[:, line],
+                        self.sets.trade_data["interest_rate"].loc[:, line],
+                        self.sets.global_data["global_discount_rate"],
+                        self.sets.trade_data["line_economic_lifetime"].loc[:, line],
+                        self.sets.period_step
+                    ),
+                    self.cost_inv_line[line],
+                    )                   
 
         self.cost_variable_line = line_varcost(
             self.sets.trade_data["line_var_cost"],
@@ -1605,24 +1611,38 @@ class BuildModel:
                     #     axis=1,
                     # )
                     
-                    totalcost_regional += cp.sum(
-                        self.cost_inv_tax[reg][ctgry]
-                        - self.cost_inv_sub[reg][ctgry]
-                        + self.cost_fix[reg][ctgry]
-                        + self.cost_fix_tax[reg][ctgry]
-                        - self.cost_fix_sub[reg][ctgry]
-                        + self.cost_variable_annual[reg][ctgry]
-                        + self.cost_decom[reg][ctgry]
-                        - self.salvage_inv[reg][ctgry],
-                        axis=1,
-                    )
-                    
+                    if not self.sets.snapshot:
+                        
+                        totalcost_regional += cp.sum(
+                            self.cost_inv_tax[reg][ctgry]
+                            - self.cost_inv_sub[reg][ctgry]
+                            + self.cost_fix[reg][ctgry]
+                            + self.cost_fix_tax[reg][ctgry]
+                            - self.cost_fix_sub[reg][ctgry]
+                            + self.cost_variable_annual[reg][ctgry]
+                            + self.cost_decom[reg][ctgry]
+                            - self.salvage_inv[reg][ctgry],
+                            axis=1,
+                        )
+                        
+                        
+                        self.inv_allregions += self.cost_inv_fvalue[reg][ctgry]
+                        
+                        
+                    else:
+                            
+                            totalcost_regional += cp.sum(
+                                self.cost_inv_tax[reg][ctgry]
+                                - self.cost_inv_sub[reg][ctgry]
+                                + self.cost_fix[reg][ctgry]
+                                + self.cost_fix_tax[reg][ctgry]
+                                - self.cost_fix_sub[reg][ctgry]
+                                + self.cost_variable_annual[reg][ctgry],
+
+                                axis=1,
+                            )
                     
                     #total_salvage_regional += cp.sum(self.salvage_inv[reg][ctgry], axis =1)
-                    
-                    
-
-                    self.inv_allregions += self.cost_inv_fvalue[reg][ctgry]
 
                     if ctgry != "Transmission" and ctgry != "Storage":
 
@@ -1688,16 +1708,25 @@ class BuildModel:
         #self.total_salvage_line = np.zeros((len(self.sets.main_years), 1))
 
         for line in self.sets.trade_line.keys():
+            
+            if not self.sets.snapshot:
 
-            self.totalcost_lines += cp.sum(
-                self.cost_inv_line[line]
-                + self.cost_fix_line[line]
-                + self.cost_decom_line[line]
-                - self.salvage_inv_line[line],
-                axis=1,
-            )
-            
-            
+                self.totalcost_lines += cp.sum(
+                    self.cost_inv_line[line]
+                    + self.cost_fix_line[line]
+                    + self.cost_decom_line[line]
+                    - self.salvage_inv_line[line],
+                    axis=1,
+                )
+                
+            else:
+                
+                self.totalcost_lines += cp.sum(
+                    self.cost_inv_line[line]
+                    + self.cost_fix_line[line],
+                    axis=1,
+                )
+
             #self.total_salvage_line += cp.sum(self.salvage_inv_line[line],axis=1)
 
         for reg_ in self.sets.trade_regions.keys():
