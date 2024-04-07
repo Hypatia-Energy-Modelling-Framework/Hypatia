@@ -34,7 +34,7 @@ class Model:
     A Hypatia Model
     """
 
-    def __init__(self, path, mode, name="unknown", period_step=1):
+    def __init__(self, path, mode, name="unknown", period_step=1,snapshot=False):
 
         """Initializes a Hypatia model by passing the optimization mode and
         the path of the structural input files
@@ -57,9 +57,9 @@ class Model:
         """
 
         self._StrData = ReadSets(path=path, mode=mode, period_step=period_step)
+        
 
         self.name = name
-
     def create_data_excels(self, path, force_rewrite=False):
 
         """Writes the parameter excel files with the default values and
@@ -110,6 +110,23 @@ class Model:
 
         self._StrData._read_data(path)
 
+
+    def resample_input_data(self,downsample):
+        
+        """take the existing input data with hourly resolution an down sample them
+        to the specified resolution
+    
+
+        Parameters
+        -------
+        downsample : str
+            the fresquency in which the timeseris of the data such as capacity factors,
+            demand, variable cost would be downsampled e.g. 2h, 3h,6h,....
+
+        """
+        
+        self._StrData._resample_data(downsample)
+        
     def run(self, solver, verbosity=True, force_rewrite=False, **kwargs):
 
         """
@@ -185,7 +202,7 @@ class Model:
 
             self.results = results
 
-    def to_csv(self, path, force_rewrite=False):
+    def to_csv(self, path, force_rewrite=False,sep=","):
         """Exports the results of the model to csv files with nested folders
 
         Parameters
@@ -210,7 +227,7 @@ class Model:
         else:
             os.mkdir(path)
 
-        dict_to_csv(self.results, path)
+        dict_to_csv(self.results, path,sep)
 
     def create_config_file(self, path):
         """Creates a config excel file for plots

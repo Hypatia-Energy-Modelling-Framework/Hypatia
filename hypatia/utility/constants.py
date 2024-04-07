@@ -290,16 +290,16 @@ def take_ids(regions, technologies, mode):
                 "index_col": 0,
                 "header": [0, 1],
             },
-            "tech_max_production_h": {
-                "sheet_name": "Max_production_h",
-                "index_col": [0, 1],
-                "header": [0, 1],
-            },
-            "tech_min_production_h": {
-                "sheet_name": "Min_production_h",
-                "index_col": [0, 1],
-                "header": [0, 1],
-            },
+            # "tech_max_production_h": {
+            #     "sheet_name": "Max_production_h",
+            #     "index_col": [0, 1],
+            #     "header": [0, 1],
+            # },
+            # "tech_min_production_h": {
+            #     "sheet_name": "Min_production_h",
+            #     "index_col": [0, 1],
+            #     "header": [0, 1],
+            # },
             "annualprod_per_unitcapacity": {
                 "sheet_name": "AnnualProd_perunit_capacity",
                 "index_col": 0,
