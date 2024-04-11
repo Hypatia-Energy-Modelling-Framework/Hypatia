@@ -87,7 +87,7 @@ class BuildModel:
         # calling the methods based on the defined mode by the user
         if self.sets.mode == "Planning":
             
-            self._constr_line_integer_size()
+            
             self._calc_variable_planning()
             self._balance_()
             # self._constr_totalcapacity_regional()
@@ -108,7 +108,12 @@ class BuildModel:
                 self._set_final_objective_singlenode()
 
             elif len(self.sets.regions) > 1:
-
+                
+                
+                                
+                if self.sets.MILP:
+                    self._constr_line_integer_size()
+                
                 self._calc_variable_planning_line()
                 # self._constr_totalcapacity_line()
                 self._constr_totalcapacity_overall()
@@ -118,6 +123,9 @@ class BuildModel:
                 # self._constr_prod_annual_overall()
                 self._set_lines_objective_planning()
                 self._set_final_objective_multinode()
+
+
+
 
         elif self.sets.mode == "Operation":
 
@@ -348,19 +356,37 @@ class BuildModel:
 
             if len(self.sets.regions) > 1:
                 
-                line_newcapacity_lump ={}
+                if self.sets.MILP: 
                 
-                for size in self.sets.sizes:
-                    line_newcapacity_lump[size] = {}
-                    for line,carr_list in self.sets.trade_line.items():
+                    line_newcapacity_lump ={}
+                     
+                    for size in self.sets.sizes:
+                        line_newcapacity_lump[size] = {}
+                        for line,carr_list in self.sets.trade_line.items():
+                        
+                            line_newcapacity_lump[size][line] = cp.Variable(
+                                shape=(
+                                    len(self.sets.main_years),
+                                    len(carr_list),
+                                ),
+                                boolean =True,
+                                )
+                    self.variables.update({"line_newcapacity_lump": line_newcapacity_lump})
+                            
+                            
+                elif self.sets.MILP == False: 
                     
-                        line_newcapacity_lump[size][line] = cp.Variable(
+                    for line,carr_list in self.sets.trade_line.items():
+    
+                        line_newcapacity[line] = cp.Variable(
                             shape=(
                                 len(self.sets.main_years),
                                 len(carr_list),
                             ),
-                            boolean =True,
-                            )
+                            nonneg=True,
+                        )
+    
+                    self.variables.update({"line_newcapacity": line_newcapacity})
                     # line_lumpy_investment[line] = cp.Variable(
                     #     shape=(
                     #         len(self.sets.main_years),
@@ -371,7 +397,7 @@ class BuildModel:
 
 
                 #self.variables.update({"line_lumpy_investment": line_lumpy_investment})
-                self.variables.update({"line_newcapacity_lump": line_newcapacity_lump})
+               
                 
    
     
@@ -617,33 +643,44 @@ class BuildModel:
         self.line_decommissioned_capacity = {}
         self.cost_decom_line = {}
         
-        
-        for size in self.sets.sizes:
-            line_accumulated_lump_newcapacity_size = {}
-            for line,carr_list in self.sets.trade_line.items():
+        if self.sets.MILP:
+            for size in self.sets.sizes:
+                line_accumulated_lump_newcapacity_size = {}
+                for line,carr_list in self.sets.trade_line.items():
+                    
+                    line_accumulated_lump_newcapacity_size[line] = line_newcap_lump_accumulated(
+                        self.variables["line_newcapacity_lump"][size][line],
+                        self.sets.trade_line[line],
+                        self.sets.main_years,
+                        self.sets.trade_data["line_lifetime"].loc[:, line],
+                        self.sets.period_step,)
+                    
                 
-                line_accumulated_lump_newcapacity_size[line] = line_newcap_lump_accumulated(
-                    self.variables["line_newcapacity_lump"][size][line],
-                    self.sets.trade_line[line],
-                    self.sets.main_years,
-                    self.sets.trade_data["line_lifetime"].loc[:, line],
-                    self.sets.period_step,)
-                
-            
-            self.line_accumulated_lump_newcapacity[size] = line_accumulated_lump_newcapacity_size
+                self.line_accumulated_lump_newcapacity[size] = line_accumulated_lump_newcapacity_size
             
             
 
         for line,carr_list in self.sets.trade_line.items():
-        
             
-            self.line_accumulated_newcapacity[line] = line_newcap_accumulated(
-                self.line_newcapacity[line],
-                self.sets.trade_line[line],
-                self.sets.main_years,
-                self.sets.trade_data["line_lifetime"].loc[:, line],
-                self.sets.period_step,
-            )
+            if self.sets.MILP:
+            
+                self.line_accumulated_newcapacity[line] = line_newcap_accumulated(
+                    self.line_newcapacity[line],
+                    self.sets.trade_line[line],
+                    self.sets.main_years,
+                    self.sets.trade_data["line_lifetime"].loc[:, line],
+                    self.sets.period_step,
+                )
+                
+            elif self.sets.MILP == False:
+                
+                self.line_accumulated_newcapacity[line] = line_newcap_accumulated(
+                    self.variables["line_newcapacity"][line],
+                    self.sets.trade_line[line],
+                    self.sets.main_years,
+                    self.sets.trade_data["line_lifetime"].loc[:, line],
+                    self.sets.period_step,
+                )                
             
             
             self.line_totalcapacity[line] = (
@@ -652,37 +689,63 @@ class BuildModel:
             )
             
 
-            
-            self.cost_inv_line[line] = cp.multiply(cp.multiply(self.sets.trade_data["line_inv_{}".format(self.sets.sizes[0])].loc[:,line].values ,
-                        self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line]),
-                        self.sets.trade_data["line_length"].loc[:,line].values)
-            
-
-            
-            self.cost_fix_line[line] = cp.multiply(cp.multiply(self.sets.trade_data["line_fixed_cost_{}".format(self.sets.sizes[0])].loc[:,line].values ,
-                        self.line_accumulated_lump_newcapacity[self.sets.sizes[0]][line]),
-                        self.sets.trade_data["line_length"].loc[:,line].values)
-            
-            for size in self.sets.sizes:
+            if self.sets.MILP: 
                 
-                self.cost_inv_line[line] += cp.multiply(cp.multiply(self.sets.trade_data["line_inv_{}".format(size)].loc[:,line].values ,
-                            self.variables["line_newcapacity_lump"][size][line]),
+                self.cost_inv_line[line] = cp.multiply(cp.multiply(self.sets.trade_data["line_inv_{}".format(self.sets.sizes[0])].loc[:,line].values ,
+                            self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line]),
                             self.sets.trade_data["line_length"].loc[:,line].values)
                 
-                self.cost_fix_line[line] += cp.multiply(cp.multiply(self.sets.trade_data["line_fixed_cost_{}".format(size)].loc[:,line].values ,
-                            self.variables["line_newcapacity_lump"][size][line]),
-                            self.sets.trade_data["line_length"].loc[:,line].values)
-                
-            
-            if not self.sets.snapshot:
-                self.line_decommissioned_capacity[line] = line_decomcap(
-                    self.line_newcapacity[line],
-                    self.sets.trade_line[line],
-                    self.sets.main_years,
-                    self.sets.trade_data["line_lifetime"].loc[:, line],
-                    self.sets.period_step,
-                )
     
+                
+                self.cost_fix_line[line] = cp.multiply(cp.multiply(self.sets.trade_data["line_fixed_cost_{}".format(self.sets.sizes[0])].loc[:,line].values ,
+                            self.line_accumulated_lump_newcapacity[self.sets.sizes[0]][line]),
+                            self.sets.trade_data["line_length"].loc[:,line].values)
+                
+                for size in self.sets.sizes:
+                    
+                    self.cost_inv_line[line] += cp.multiply(cp.multiply(self.sets.trade_data["line_inv_{}".format(size)].loc[:,line].values ,
+                                self.variables["line_newcapacity_lump"][size][line]),
+                                self.sets.trade_data["line_length"].loc[:,line].values)
+                    
+                    self.cost_fix_line[line] += cp.multiply(cp.multiply(self.sets.trade_data["line_fixed_cost_{}".format(size)].loc[:,line].values ,
+                                self.variables["line_newcapacity_lump"][size][line]),
+                                self.sets.trade_data["line_length"].loc[:,line].values)
+                    
+            elif self.sets.MILP == False:
+
+                self.cost_inv_line[line] = cp.multiply(cp.multiply(
+                    self.sets.trade_data["line_inv"].loc[:, line].values,
+                    self.variables["line_newcapacity"][line],
+                ), self.sets.trade_data["line_length"].loc[:,line].values)
+                
+                self.cost_fix_line[line] = cp.multiply(cp.multiply(
+                    self.sets.trade_data["line_fixed_cost"].loc[:, line].values,
+                    self.line_totalcapacity[line],
+                ), self.sets.trade_data["line_length"].loc[:,line].values)
+                
+                
+                    
+                
+            if not self.sets.snapshot:
+                
+                if self.sets.MILP:
+                    self.line_decommissioned_capacity[line] = line_decomcap(
+                        self.line_newcapacity[line],
+                        self.sets.trade_line[line],
+                        self.sets.main_years,
+                        self.sets.trade_data["line_lifetime"].loc[:, line],
+                        self.sets.period_step,
+                    )
+                    
+                elif self.sets.MILP == False:
+                    self.line_decommissioned_capacity[line] = line_decomcap(
+                        self.variables["line_newcapacity"][line],
+                        self.sets.trade_line[line],
+                        self.sets.main_years,
+                        self.sets.trade_data["line_lifetime"].loc[:, line],
+                        self.sets.period_step,
+                    )                   
+        
                 self.cost_decom_line[line] = cp.multiply(cp.multiply(
                     self.sets.trade_data["line_decom_cost"].loc[:, line].values,
                     self.line_decommissioned_capacity[line],
@@ -1614,7 +1677,7 @@ class BuildModel:
                     if not self.sets.snapshot:
                         
                         totalcost_regional += cp.sum(
-                            self.cost_inv_tax[reg][ctgry]
+                             self.cost_inv_tax[reg][ctgry]
                             - self.cost_inv_sub[reg][ctgry]
                             + self.cost_fix[reg][ctgry]
                             + self.cost_fix_tax[reg][ctgry]
@@ -1632,7 +1695,8 @@ class BuildModel:
                     else:
                             
                             totalcost_regional += cp.sum(
-                                self.cost_inv_tax[reg][ctgry]
+                                self.cost_inv[reg][ctgry]
+                                +self.cost_inv_tax[reg][ctgry]
                                 - self.cost_inv_sub[reg][ctgry]
                                 + self.cost_fix[reg][ctgry]
                                 + self.cost_fix_tax[reg][ctgry]

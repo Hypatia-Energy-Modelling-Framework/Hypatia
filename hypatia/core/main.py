@@ -34,7 +34,7 @@ class Model:
     A Hypatia Model
     """
 
-    def __init__(self, path, mode, name="unknown", period_step=1,snapshot=False):
+    def __init__(self, path, mode, name="unknown", period_step=1,snapshot=False,MILP=False):
 
         """Initializes a Hypatia model by passing the optimization mode and
         the path of the structural input files
@@ -56,8 +56,7 @@ class Model:
             Defines the name of the model.
         """
 
-        self._StrData = ReadSets(path=path, mode=mode, period_step=period_step)
-        
+        self._StrData = ReadSets(path=path, mode=mode, period_step=period_step,snapshot=snapshot,MILP=MILP)
 
         self.name = name
     def create_data_excels(self, path, force_rewrite=False):

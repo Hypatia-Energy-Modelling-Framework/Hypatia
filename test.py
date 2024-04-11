@@ -10,13 +10,13 @@ from hypatia import Model,Plotter, Sensitivity
 
 #%%
 test = Model(
-    path = 'test/Trilateral/tests/test_snapshot/dummy/sets', 
-    mode = 'Planning', period_step = 1, snapshot=True)
+    path = 'test/Belgian_case/paper/yeees_final_v2/scenarios/blue_hydrogen/sets', 
+    mode = 'Planning', period_step = 15, snapshot=False, MILP=True)
 #%%
-test.create_data_excels(path = 'test/Trilateral/tests/test_snapshot/dummy/parameters')
+#test.create_data_excels(path = 'test/Trilateral/tests/test_LP/blue_hydrogen_final_LP/parameters_test',force_rewrite=True)
 #%%
 test.read_input_data(
-    path = 'test/Trilateral/tests/test_snapshot/dummy/parameters'
+    path = 'test/Belgian_case/paper/yeees_final_v2/scenarios/blue_hydrogen/parameters'
 )
 #%%
 #test.resample_input_data(downsample=2)

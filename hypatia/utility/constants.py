@@ -6,34 +6,42 @@ parameter filese
 
 # Sorted connection parameter sheets
 
-def list_connection(mode,sizes):
-    
-    if mode == "Operation":
-        
-        list_connection = ["V_OM", "Line_efficiency",
-                           "AnnualProd_perunit_capacity", "Residual_capacity", "Capacity_factor_line", "Line_length"]
-        
-        for size in sizes:
-            
-            list_connection.append("F_OM_{}".format(size)
-                )
-            
-    
-    if mode == "Planning":
-        
-        list_connection = ["V_OM","Decom_cost",
-        "Line_Economic_life","Interest_rate","Line_lifetime","Line_efficiency",
-        "AnnualProd_perunit_capacity","Residual_capacity","Capacity_factor_line",
-        "Line_length","Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
-            
-        
-        for size in sizes:
-            
-            list_connection.append("F_OM_{}".format(size))
-            list_connection.append("INV_{}".format(size))
-            list_connection.append("Min_integer_cap_{}".format(size))
-                             
-            
+def list_connection(mode, MILP, sizes=None):
+    # Define list_connection within the outer scope
+    list_connection = []
+
+    if MILP:
+        if mode == "Operation":
+            list_connection = ["V_OM", "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
+                               "Capacity_factor_line", "Line_length"]
+
+            if sizes:
+                for size in sizes:
+                    list_connection.append("F_OM_{}".format(size))
+
+        elif mode == "Planning":
+            list_connection = ["V_OM", "Decom_cost", "Line_Economic_life", "Interest_rate", "Line_lifetime",
+                               "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
+                               "Capacity_factor_line", "Line_length", "Min_newcap", "Max_newcap",
+                               "Min_totalcap", "Max_totalcap"]
+
+            if sizes:
+                for size in sizes:
+                    list_connection.append("F_OM_{}".format(size))
+                    list_connection.append("INV_{}".format(size))
+                    list_connection.append("Min_integer_cap_{}".format(size))
+
+    else:
+        if mode == "Operation":
+            list_connection = ["V_OM", "F_OM", "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
+                               "Capacity_factor_line", "Line_length"]
+
+        elif mode == "Planning":
+            list_connection = ["V_OM", "F_OM", "INV", "Decom_cost", "Line_Economic_life", "Interest_rate",
+                               "Line_lifetime", "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
+                               "Capacity_factor_line", "Line_length", "Min_integer_cap", "Min_newcap",
+                               "Max_newcap", "Min_totalcap", "Max_totalcap"]
+
     return list_connection
             
 # list_connection_operation = ["V_OM","F_OM","Line_efficiency",
@@ -107,96 +115,50 @@ def take_regional_sheets(mode,technologies,regions):
 
 # Constants of connections data
 
-def take_trade_ids(mode,sizes):
-    """
-    Creates a dictionary for storing the information of the parameter sheets of 
-    inter-regional link data based on the given mode
-    """
-
+def take_trade_ids(mode, MILP, sizes=None):
     trade_data_ids = {
         "line_var_cost": {"sheet_name": "V_OM", "index_col": 0, "header": [0, 1]},
-        "line_residual_cap": {
-            "sheet_name": "Residual_capacity",
-            "index_col": 0,
-            "header": [0, 1],
-        },
+        "line_residual_cap": {"sheet_name": "Residual_capacity", "index_col": 0, "header": [0, 1]},
         "line_eff": {"sheet_name": "Line_efficiency", "index_col": 0, "header": [0, 1]},
-        "line_capacity_factor": {
-            "sheet_name": "Capacity_factor_line",
-            "index_col": 0,
-            "header": [0, 1],
-        },
-        "annualprod_per_unitcapacity": {
-            "sheet_name": "AnnualProd_perunit_capacity",
-            "index_col": 0,
-            "header": [0, 1],
-        },
-        
-        "line_length": {
-            "sheet_name": "Line_length",
-            "index_col": 0,
-            "header": [0, 1],
-        },
+        "line_capacity_factor": {"sheet_name": "Capacity_factor_line", "index_col": 0, "header": [0, 1]},
+        "annualprod_per_unitcapacity": {"sheet_name": "AnnualProd_perunit_capacity", "index_col": 0, "header": [0, 1]},
+        "line_length": {"sheet_name": "Line_length", "index_col": 0, "header": [0, 1]},
     }
-    
-    for size in sizes:
-        
+
+    if MILP:
+        if sizes:
+            for size in sizes:
+                trade_data_ids.update(
+                    {"line_fixed_cost_{}".format(size): {"sheet_name": "F_OM_{}".format(size), "index_col": 0, "header": [0, 1]}}
+                )
+    elif not MILP:
         trade_data_ids.update(
-            {"line_fixed_cost_{}".format(size): {"sheet_name": "F_OM_{}".format(size), "index_col": 0, "header": [0, 1]}
-                })
+            {"line_fixed_cost": {"sheet_name": "F_OM", "index_col": 0, "header": [0, 1]}}
+        )
 
     if mode == "Planning":
+        trade_data_ids.update({
+            "line_decom_cost": {"sheet_name": "Decom_cost", "index_col": 0, "header": [0, 1]},
+            "line_mintotcap": {"sheet_name": "Min_totalcap", "index_col": 0, "header": [0, 1]},
+            "line_maxtotcap": {"sheet_name": "Max_totalcap", "index_col": 0, "header": [0, 1]},
+            "line_min_newcap": {"sheet_name": "Min_newcap", "index_col": 0, "header": [0, 1]},
+            "line_max_newcap": {"sheet_name": "Max_newcap", "index_col": 0, "header": [0, 1]},
+            "line_lifetime": {"sheet_name": "Line_lifetime", "index_col": 0, "header": [0, 1]},
+            "line_economic_lifetime": {"sheet_name": "Line_Economic_life", "index_col": 0, "header": [0, 1]},
+            "interest_rate": {"sheet_name": "Interest_rate", "index_col": 0, "header": [0, 1]}
+        })
 
-        trade_data_ids.update(
-            {"line_decom_cost": {
-                    "sheet_name": "Decom_cost",
-                    "index_col": 0,
-                    "header": [0, 1],
-                },
-                "line_mintotcap": {
-                    "sheet_name": "Min_totalcap",
-                    "index_col": 0,
-                    "header": [0, 1],
-                },
-                "line_maxtotcap": {
-                    "sheet_name": "Max_totalcap",
-                    "index_col": 0,
-                    "header": [0, 1],
-                },
-                "line_min_newcap": {
-                    "sheet_name": "Min_newcap",
-                    "index_col": 0,
-                    "header": [0, 1],
-                },
-                "line_max_newcap": {
-                    "sheet_name": "Max_newcap",
-                    "index_col": 0,
-                    "header": [0, 1],
-                },
-                "line_lifetime": {
-                    "sheet_name": "Line_lifetime",
-                    "index_col": 0,
-                    "header": [0, 1],
-                },
-                "line_economic_lifetime": {
-                    "sheet_name": "Line_Economic_life",
-                    "index_col": 0,
-                    "header": [0, 1],
-                },
-                "interest_rate": {
-                    "sheet_name": "Interest_rate",
-                    "index_col": 0,
-                    "header": [0, 1],
-                },
-            }
-        )
-        
-        for size in sizes:
-            
-            trade_data_ids.update({"line_inv_{}".format(size): {"sheet_name": "INV_{}".format(size), "index_col": 0, "header": [0, 1]},
-                        
-                            "line_integer_cap_{}".format(size) : {"sheet_name": "Min_integer_cap_{}".format(size), "index_col": 0, "header": [0,1]},
-                })
+        if MILP:
+            if sizes:
+                for size in sizes:
+                    trade_data_ids.update({
+                        "line_inv_{}".format(size): {"sheet_name": "INV_{}".format(size), "index_col": 0, "header": [0, 1]},
+                        "line_integer_cap_{}".format(size): {"sheet_name": "Min_integer_cap_{}".format(size), "index_col": 0, "header": [0, 1]}
+                    })
+        elif not MILP:
+            trade_data_ids.update(
+                {"line_inv": {"sheet_name": "INV", "index_col": 0, "header": [0, 1]}}
+            )
 
     return trade_data_ids
 
@@ -513,17 +475,25 @@ sheets_to_ids = {
 
 # Constants of input set tables
 
-global_set_ids = {
-    "Regions": ["Region", "Region_name", "Lat", "Long"],
-    "Years": ["Year", "Year_name"],
-    "Timesteps": ["Timeslice", "Timeslice_name", "Timeslice_fraction"],
-    "Time_horizon": ["Start", "End"],
-    "Carriers_glob": ["Carrier", "Carr_name", "Carr_type", "Carr_unit"],
-    "Technologies_glob": ["Technology", "Tech_name", "Tech_category",
-    "Tech_cap_unit", "Tech_act_unit"],
-    "Emissions": ["Emission", "Emission_name", "Emission_unit"],
-    "Connection_sizes": ["Size_number", "Size_name"]
-}
+def _global_set_ids(MILP):
+    global_set_ids = {
+        "Regions": ["Region", "Region_name", "Lat", "Long"],
+        "Years": ["Year", "Year_name"],
+        "Timesteps": ["Timeslice", "Timeslice_name", "Timeslice_fraction"],
+        "Time_horizon": ["Start", "End"],
+        "Carriers_glob": ["Carrier", "Carr_name", "Carr_type", "Carr_unit"],
+        "Technologies_glob": ["Technology", "Tech_name", "Tech_category",
+        "Tech_cap_unit", "Tech_act_unit"],
+        "Emissions": ["Emission", "Emission_name", "Emission_unit"],
+        # "Connection_sizes": ["Size_number", "Size_name"]
+    }
+
+    if MILP:
+        
+        global_set_ids.update({"Connection_sizes": ["Size_number", "Size_name"]})
+        
+        
+    return global_set_ids
 
 
 regional_set_ids = {

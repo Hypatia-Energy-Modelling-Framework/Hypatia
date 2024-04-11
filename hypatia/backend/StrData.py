@@ -26,7 +26,7 @@ from hypatia.error_log.Checks import (
 from hypatia.error_log.Exceptions import WrongInputMode
 import numpy as np
 from hypatia.utility.constants import (
-    global_set_ids,
+    _global_set_ids,
     regional_set_ids,
     technology_categories,
     carrier_types,
@@ -85,12 +85,13 @@ class ReadSets:
         A nested dictionary for storing the regional data
     """
 
-    def __init__(self, path, mode="Planning", period_step = 1, snapshot=False):
+    def __init__(self, path, mode="Planning", period_step = 1, snapshot=False,MILP=False):
 
         self.mode = mode
         self.path = path
         self.period_step = period_step
         self.snapshot = snapshot
+        self.MILP = MILP
 
         self._init_by_xlsx()
 
@@ -118,7 +119,8 @@ class ReadSets:
         check_years_mode_consistency(
             mode=self.mode, main_years=list(self.glob_mapping["Years"]["Year"])
         )
-
+        
+        global_set_ids = _global_set_ids(self.MILP)
         for key, value in self.glob_mapping.items():
             check_table_name(
                 file_name="global",
@@ -156,8 +158,9 @@ class ReadSets:
             
         # read the possible connections
         
-        if len(self.regions) > 1: 
-            self.sizes = list(self.glob_mapping["Connection_sizes"]["Size_name"])
+        if len(self.regions) > 1:
+            
+
             self.trade_line = {}
             
             for carr in glob_mapping["Carriers_glob"]["Carrier"]:
@@ -181,6 +184,11 @@ class ReadSets:
                             else:
                                 self.trade_line["{}-{}".format(reg,reg_)] = [carr]
                                 
+            if self.MILP: 
+                self.sizes = list(self.glob_mapping["Connection_sizes"]["Size_name"])
+            else: 
+                self.sizes = None
+                               
                                 
         # calculating the distance among two node (the default length of the connections)
             self.distance = {}
@@ -426,15 +434,29 @@ class ReadSets:
                 },
             }
             
-            
-            for size in self.sizes:
+            if self.MILP:
+                for size in self.sizes:
+                    
+                    self.connection_sheet_ids.update(
+                        {"F_OM_{}".format(size): {
+                            "value": 0,
+                            "index": pd.Index(self.main_years, name="Years"),
+                            "columns": indexer,
+                        }})
+                    
+            else:
                 
                 self.connection_sheet_ids.update(
-                    {"F_OM_{}".format(size): {
-                        "value": 0,
-                        "index": pd.Index(self.main_years, name="Years"),
-                        "columns": indexer,
-                    }})
+                    {"F_OM": {
+                    "value": 0,
+                    "index": pd.Index(self.main_years, name="Years"),
+                    "columns": indexer,}}
+                    
+                    )
+                
+                
+                        
+                        
 
             self.global_sheet_ids = {
                 "Max_production_global": {
@@ -472,7 +494,7 @@ class ReadSets:
                 },
             }
             
-            list_connection_operation = list_connection(mode = "Operation", sizes = self.sizes)
+            list_connection_operation = list_connection(mode = "Operation", MILP=self.MILP, sizes=self.sizes)
             connections_operation_sorted = sorted(self.connection_sheet_ids.items(), key=lambda pair: list_connection_operation.index(pair[0]))
             self.connection_sheet_ids_sorted = dict(connections_operation_sorted)
 
@@ -529,27 +551,41 @@ class ReadSets:
                     }
                 )
                 
-                for size in self.sizes:
-                    
-                    self.connection_sheet_ids.update(
-                        {
-                            "F_OM_{}".format(size): {
+                
+                if self.MILP:
+                    for size in self.sizes:
+                        
+                        self.connection_sheet_ids.update(
+                            {
+                                "F_OM_{}".format(size): {
+                                    "value": 0,
+                                    "index": pd.Index(self.main_years, name="Years"),
+                                    "columns": indexer,
+                                    },
+                                "INV_{}".format(size): {
                                 "value": 0,
                                 "index": pd.Index(self.main_years, name="Years"),
                                 "columns": indexer,
-                                },
-                            "INV_{}".format(size): {
-                            "value": 0,
-                            "index": pd.Index(self.main_years, name="Years"),
-                            "columns": indexer,
-                        },
-                        "Min_integer_cap_{}".format(size): {
-                            "value": 0,
-                            "index": pd.Index(self.main_years, name="Years"),
-                            "columns": indexer,
-                        }})
+                            },
+                            "Min_integer_cap_{}".format(size): {
+                                "value": 0,
+                                "index": pd.Index(self.main_years, name="Years"),
+                                "columns": indexer,
+                            }})
+                        
+                else:
                     
-                list_connection_planning = list_connection(mode = "Planning", sizes = self.sizes)   
+                    self.connection_sheet_ids.update({
+                        "INV": {
+                            "value": 0,
+                            "index": pd.Index(self.main_years, name="Years"),
+                            "columns": indexer,
+                        },}
+                        )
+                    
+                    
+        
+                list_connection_planning = list_connection(mode = "Planning", MILP=self.MILP, sizes=self.sizes)   
                 connections_planning_sorted = sorted(self.connection_sheet_ids.items(), key=lambda pair: list_connection_planning.index(pair[0]))
                 self.connection_sheet_ids_sorted = dict(connections_planning_sorted)
 
@@ -1096,7 +1132,7 @@ class ReadSets:
 
         if len(self.regions) > 1:
 
-            trade_data_ids = take_trade_ids(mode=self.mode,sizes=self.sizes)
+            trade_data_ids = take_trade_ids(mode=self.mode,MILP=self.MILP, sizes=self.sizes)
             global_data_ids = take_global_ids(mode=self.mode)
             check_sheet_name(path, "parameters_connections", trade_data_ids)
             check_sheet_name(path, "parameters_global", global_data_ids)
