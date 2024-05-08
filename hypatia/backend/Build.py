@@ -908,6 +908,7 @@ class BuildModel:
                 self.sets.time_steps,
                 self.sets.data[reg]["storage_charge_efficiency"],
                 self.sets.data[reg]["storage_discharge_efficiency"],
+                self.totalcapacity[reg]["Storage"]
             )
 
     def _balance_(self):

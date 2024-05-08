@@ -513,7 +513,7 @@ def salvage_factor_line(
 
 #     return state_of_charge
 
-def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency):
+def storage_state_of_charge(initial_storage_fraction, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency,storage_total_capacity):
 
     """
     Calculates the state of charge of the storage 
@@ -528,20 +528,22 @@ def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time
     [discharge_efficiency]
     * len(time_steps)
     ).sort_index()
-
-    initial_storage_concat = pd.concat(
-        [initial_storage] * len(time_steps)
+    
+    initial_storage_fraction_concat = pd.concat(
+        [initial_storage_fraction] * len(time_steps)
     ).sort_index()
-
+    
     state_of_charge = cp.multiply(cp.cumsum(flow_in[0 : len(time_steps), :]),
-                                  charge_efficiency_reshape.loc[main_years[0],:]) + initial_storage_concat.loc[main_years[0],:] -\
+                                  charge_efficiency_reshape.loc[main_years[0],:]) + cp.multiply(initial_storage_fraction_concat.loc[main_years[0],:],
+                                                                                                storage_total_capacity[0:1,:]) -\
         cp.multiply(cp.cumsum(flow_out[0 : len(time_steps), :]), (np.ones((discharge_efficiency_reshape.loc[main_years[0],:].shape))/discharge_efficiency_reshape.loc[main_years[0],:].values))
         
     for indx, year in enumerate(main_years[1:]):
         
 
         state_of_charge_rest = cp.multiply(cp.cumsum(flow_in[(indx + 1) * len(time_steps) : (indx + 2) * len(time_steps), :]),
-                                      charge_efficiency_reshape.loc[year,:]) + initial_storage_concat.loc[year,:] -\
+                                      charge_efficiency_reshape.loc[year,:]) + cp.multiply(initial_storage_fraction_concat.loc[year,:],
+                                                                                           storage_total_capacity[(indx+1):(indx+2),:]) -\
             cp.multiply(cp.cumsum(flow_out[(indx + 1) * len(time_steps) : (indx + 2) * len(time_steps), :]), (np.ones((discharge_efficiency_reshape.loc[year,:].shape))/discharge_efficiency_reshape.loc[year,:].values))
         state_of_charge = stack(state_of_charge, state_of_charge_rest)
                                 

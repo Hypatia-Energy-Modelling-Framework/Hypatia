@@ -21,6 +21,7 @@ RESULT_MAP = {
         "var": "results.decommissioned_capacity",
     },
     "total_capacity": {"index": "years", "var": "results.totalcapacity",},
+    "state_of_charge": {"index": "year_slice", "var": "results.storage_SOC",},
     "fix_cost": {"index": "years", "var": "results.cost_fix",},
     "imports": {"index": "year_slice", "var": 'results.variables["line_import"]',},
     "exports": {"index": "year_slice", "var": 'results.variables["line_export"]',},
