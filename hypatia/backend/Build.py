@@ -45,6 +45,7 @@ RESULTS = [
     "emission_cost",
     "CO2_equivalent",
     "demand",
+    "storage_SOC"
 ]
 
 PLANNING_RESULTS = [

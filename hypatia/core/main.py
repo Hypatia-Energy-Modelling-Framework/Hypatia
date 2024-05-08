@@ -196,7 +196,8 @@ class Model:
                 glob_mapping=self._StrData.glob_mapping,
                 technologies=self._StrData.Technologies,
                 mode=self._StrData.mode,
-                trade_regions = self._StrData.trade_regions if self._StrData.multi_node else None
+                trade_regions = self._StrData.trade_regions if self._StrData.multi_node else None,
+                sets=self._StrData
             )
 
             self.results = results

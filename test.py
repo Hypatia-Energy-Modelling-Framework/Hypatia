@@ -19,7 +19,7 @@ test.read_input_data(
     path = 'test/Trilateral/tests/test_storage/central_offshore_offshore_final/parameters'
 )
 #%%
-test.resample_input_data(downsample=4)
+test.resample_input_data(downsample=10)
 #%%
 #import gurobipy
 
@@ -27,7 +27,7 @@ test.resample_input_data(downsample=4)
 #env.setParam("LogFile","log.log")
 test.run(solver = "gurobi", verbosity= True)
 #%%
-test.to_csv(path="test/yeees_final_v2/blue_hydrogen_final_mod/results",sep=";")
+test.to_csv(path="test/Trilateral/tests/test_storage/central_offshore_offshore_final/results",sep=";", force_rewrite= True)
 #%%
 #import pandas as pd
 #%%
