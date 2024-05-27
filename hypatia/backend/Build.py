@@ -45,6 +45,7 @@ RESULTS = [
     "emission_cost",
     "CO2_equivalent",
     "demand",
+    "storage_SOC"
 ]
 
 PLANNING_RESULTS = [
@@ -101,7 +102,7 @@ class BuildModel:
             self._calc_variable_storage_SOC()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
-            #self._constr_storage_cyclic_boundary()
+            self._constr_storage_cyclic_boundary()
             self._set_regional_objective_planning()
 
             if len(self.sets.regions) == 1:
@@ -908,6 +909,7 @@ class BuildModel:
                 self.sets.time_steps,
                 self.sets.data[reg]["storage_charge_efficiency"],
                 self.sets.data[reg]["storage_discharge_efficiency"],
+                self.totalcapacity[reg]["Storage"]
             )
 
     def _balance_(self):
@@ -1534,9 +1536,10 @@ class BuildModel:
         
         for reg in get_regions_with_storage(self.sets):
             for indx, year in enumerate(self.sets.main_years):
-                
-                self.constr.append(self.storage_SOC[reg][indx*len(self.sets.time_steps),:] -\
-                    self.storage_SOC[reg][(indx+1)* len(self.sets.time_steps)-1,:] == 0)
+
+                self.constr.append(self.storage_SOC[reg][(indx+1)* len(self.sets.time_steps)-1,:]-\
+                                   cp.multiply(self.sets.data[reg]["storage_initial_SOC"].loc[year,:],
+                                               self.totalcapacity[reg]["Storage"][(indx):(indx+1),:]) == 0)
 
 
     def _constr_storage_max_min_charge(self):

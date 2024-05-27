@@ -10,16 +10,16 @@ from hypatia import Model,Plotter, Sensitivity
 
 #%%
 test = Model(
-    path = 'test/Belgian_case/paper/yeees_final_v2/scenarios/blue_hydrogen/sets', 
-    mode = 'Planning', period_step = 15, snapshot=False, MILP=True)
+    path = 'test/Trilateral/tests/test_storage/central_offshore_offshore_final_v3/sets', 
+    mode = 'Planning', period_step = 10, snapshot=False, MILP=True)
 #%%
 #test.create_data_excels(path = 'test/Trilateral/tests/test_LP/blue_hydrogen_final_LP/parameters_test',force_rewrite=True)
 #%%
 test.read_input_data(
-    path = 'test/Belgian_case/paper/yeees_final_v2/scenarios/blue_hydrogen/parameters'
+    path = 'test/Trilateral/tests/test_storage/central_offshore_offshore_final_v3/parameters_new'
 )
 #%%
-#test.resample_input_data(downsample=2)
+test.resample_input_data(downsample=20)
 #%%
 #import gurobipy
 
@@ -27,7 +27,7 @@ test.read_input_data(
 #env.setParam("LogFile","log.log")
 test.run(solver = "gurobi", verbosity= True)
 #%%
-test.to_csv(path="test/yeees_final_v2/blue_hydrogen_final_mod/results",sep=";")
+test.to_csv(path="test/Trilateral/tests/test_storage/central_offshore_offshore_final_v3/results",sep=";", force_rewrite= True)
 #%%
 #import pandas as pd
 #%%

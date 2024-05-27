@@ -21,6 +21,7 @@ RESULT_MAP = {
         "var": "results.decommissioned_capacity",
     },
     "total_capacity": {"index": "years", "var": "results.totalcapacity",},
+    "state_of_charge": {"index": "year_slice", "var": "results.storage_SOC",},
     "fix_cost": {"index": "years", "var": "results.cost_fix",},
     "imports": {"index": "year_slice", "var": 'results.variables["line_import"]',},
     "exports": {"index": "year_slice", "var": 'results.variables["line_export"]',},
@@ -44,6 +45,7 @@ RESULT_MAP = {
 import pandas as pd
 import numpy as np
 import os
+from hypatia.utility.utility import get_regions_with_storage
 
 
 def dict_to_csv(Dict, path,sep):
@@ -69,7 +71,7 @@ def year_slice_index(
 
 
 def set_DataFrame(
-    results, regions, years, time_fraction, glob_mapping, technologies, mode,trade_regions
+    results, regions, years, time_fraction, glob_mapping, technologies, mode,trade_regions,sets
 ):
     """Creates pd.DataFrame from results"""
 
@@ -103,7 +105,15 @@ def set_DataFrame(
                 vars_frames[item][pair_reg] = pd.DataFrame(
                     data=values, index=eval(info["index"]), columns=columns,
                 )
-
+        
+        elif item == "state_of_charge":
+            
+            for region_st in get_regions_with_storage(sets):
+                
+                vars_frames[item][region_st] = pd.DataFrame(
+                    data = var[region_st].value, index=eval(info["index"]), columns = technologies[region_st]["Storage"])
+        
+            
         else:
             for region in regions:
                 vars_frames[item][region] = {}
