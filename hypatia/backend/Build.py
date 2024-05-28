@@ -702,7 +702,7 @@ class BuildModel:
                             self.line_accumulated_lump_newcapacity[self.sets.sizes[0]][line]),
                             self.sets.trade_data["line_length"].loc[:,line].values)
                 
-                for size in self.sets.sizes:
+                for size in self.sets.sizes[1:]:
                     
                     self.cost_inv_line[line] += cp.multiply(cp.multiply(self.sets.trade_data["line_inv_{}".format(size)].loc[:,line].values ,
                                 self.variables["line_newcapacity_lump"][size][line]),
