@@ -27,6 +27,8 @@ from hypatia.utility.utility import (
     storage_state_of_charge,
     get_regions_with_storage,
     storage_max_flow,
+    linepack,
+    linepack_max_flow
 )
 
 import logging
@@ -100,6 +102,7 @@ class BuildModel:
             #self._constr_prod()
             #self._constr_emission_cap()
             self._calc_variable_storage_SOC()
+            self._constr_max_storable_mass()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
             self._constr_storage_cyclic_boundary()
@@ -117,13 +120,17 @@ class BuildModel:
                 
                 self._calc_variable_planning_line()
                 # self._constr_totalcapacity_line()
-                self._constr_totalcapacity_overall()
-                # self._constr_newcapacity_overall()
+                #self._constr_totalcapacity_overall()
+                self._constr_newcapacity_overall()
+                self._calc_variable_linepack_level()
                 self._constr_line_availability()
-                self._constr_trade_balance()
+                #self._constr_trade_balance()
                 # self._constr_prod_annual_overall()
                 self._set_lines_objective_planning()
                 self._set_final_objective_multinode()
+                self._constr_linepack_capacity_max()
+                self._constr_linepack_cyclic_boundary()
+                self._constr_linepack_max_flow_in_out()
 
 
 
@@ -150,11 +157,14 @@ class BuildModel:
             elif len(self.sets.regions) > 1:
 
                 self._calc_variable_operation_line()
+                self._calc_variable_linepack_level()
                 self._constr_line_availability()
-                self._constr_trade_balance()
+                #self._constr_trade_balance()
                 self._constr_prod_annual_overall()
                 self._set_lines_objective_operation()
                 self._set_final_objective_multinode()
+                self._constr_linepack_cyclic_boundary()
+                self._constr_linepack_max_flow_in_out()
 
     def _solve(self, verbosity, solver, **kwargs):
 
@@ -220,6 +230,7 @@ class BuildModel:
         technology_use = {}
         new_capacity = {}
         line_newcapacity = {}
+        linepack_capacity = {}
         #line_lumpy_investment = {}
         line_import = {}
         line_export = {}
@@ -300,7 +311,6 @@ class BuildModel:
                 
                 line_export[reg_] = export_
                 line_import[reg_] = import_
-    
             # export_ = {}
             # import_ = {}
             # for reg_ in self.sets.regions:
@@ -386,8 +396,18 @@ class BuildModel:
                             ),
                             nonneg=True,
                         )
+                        
+                        linepack_capacity[line] = cp.Variable(
+                            shape=(
+                                len(self.sets.main_years),
+                                len(carr_list),
+                                ),
+                            nonneg=True,
+                            )
     
                     self.variables.update({"line_newcapacity": line_newcapacity})
+                    self.variables.update({"linepack_capacity": linepack_capacity})
+                    
                     # line_lumpy_investment[line] = cp.Variable(
                     #     shape=(
                     #         len(self.sets.main_years),
@@ -911,6 +931,41 @@ class BuildModel:
                 self.sets.data[reg]["storage_discharge_efficiency"],
                 self.totalcapacity[reg]["Storage"]
             )
+            
+            
+    def _calc_variable_linepack_level(self):
+
+        """
+        Calculates the linepack level of pipe connections in eahc timestep
+        """
+
+        self.linepack_level = {}
+
+        for reg, value in self.variables["line_export"].items():
+            
+            linepack_level_reg = {}
+            
+            for reg_,value_ in value.items():
+                
+                flow_in = value_ 
+                flow_out =  self.variables["line_import"][reg_][reg]
+                
+                if "{}-{}".format(reg,reg_) in self.sets.trade_line.keys():
+                    line = "{}-{}".format(reg,reg_)
+                    
+                else:
+                    line = "{}-{}".format(reg_,reg)
+                        
+                linepack_level_reg[reg_] = linepack(
+                    self.sets.trade_data["initial_linepack_level"].loc[:, (line, slice(None))],
+                    flow_in,
+                    flow_out,
+                    self.sets.main_years,
+                    self.sets.time_steps,
+                    self.variables["linepack_capacity"][line]
+                )
+                
+            self.linepack_level[reg] = linepack_level_reg
 
     def _balance_(self):
 
@@ -1136,6 +1191,9 @@ class BuildModel:
                     - self.variables["line_export"][key][reg]
                     == 0
                 )
+                
+                
+    
 
     def _constr_resource_tech_availability(self):
 
@@ -1221,6 +1279,10 @@ class BuildModel:
                         capacity = self.line_totalcapacity["{}-{}".format(reg_, key)][
                             indx : indx + 1, :
                         ]
+                            
+                        linepack_cap = self.variables["linepack_capacity"]["{}-{}".format(reg_, key)][
+                            indx : indx + 1, :
+                        ]
 
                     elif "{}-{}".format(key, reg_) in self.sets.trade_line.keys():
 
@@ -1237,6 +1299,10 @@ class BuildModel:
                         capacity = self.line_totalcapacity["{}-{}".format(key, reg_)][
                             indx : indx + 1, :
                         ]
+                            
+                        linepack_cap = self.variables["linepack_capacity"]["{}-{}".format(key, reg_)][
+                            indx : indx + 1, :
+                        ]
 
                     line_import = cp.sum(
                         value[
@@ -1248,6 +1314,17 @@ class BuildModel:
                         axis=0,
                     )
                     line_import = cp.reshape(line_import, capacity_to_production.shape)
+                    
+                    line_export = cp.sum(self.variables["line_import"][reg_][key]
+                        [
+                            indx
+                            * len(self.sets.time_steps) : (indx + 1)
+                            * len(self.sets.time_steps),
+                            :,
+                        ],
+                        axis=0,
+                    )
+                    line_export = cp.reshape(line_export, capacity_to_production.shape)
                     capacity_factor.shape = capacity_to_production.shape
 
                     self.constr.append(
@@ -1263,6 +1340,32 @@ class BuildModel:
                         ]
                         >= 0
                     )
+                    
+                    self.constr.append(
+                        cp.multiply(
+                            cp.multiply(capacity, capacity_to_production),
+                            self.timeslice_fraction,
+                        )
+                        - self.variables["line_import"][reg_][key][
+                            indx
+                            * len(self.sets.time_steps) : (indx + 1)
+                            * len(self.sets.time_steps),
+                            :,
+                        ]
+                        >= 0
+                    )
+                    
+                    
+                    self.constr.append(
+                        linepack_cap
+                        - self.linepack_level[reg_][key][
+                            indx
+                            * len(self.sets.time_steps) : (indx + 1)
+                            * len(self.sets.time_steps),
+                            :,
+                        ]
+                        >= 0
+                    )
                     self.constr.append(
                         cp.multiply(
                             cp.multiply(capacity, capacity_factor),
@@ -1271,6 +1374,43 @@ class BuildModel:
                         - line_import
                         >= 0
                     )
+                    
+                    self.constr.append(
+                        cp.multiply(
+                            cp.multiply(capacity, capacity_factor),
+                            capacity_to_production,
+                        )
+                        - line_export
+                        >= 0
+                    )
+                    
+    def _constr_linepack_capacity_max(self):
+
+        """
+        Guarantees that the linepack capacity of a pipe is below its flow capacity
+        """
+        
+        for line,carr_list in self.sets.trade_line.items():
+            
+            self.constr.append(self.line_totalcapacity[line] - self.variables["linepack_capacity"][line] >= 0)
+            
+    def _constr_max_storable_mass(self):
+
+        """
+        Guarantees that the linepack capacity is below the max storable
+        mass based on the max pressure difference, pipeline length, and diameter
+        """
+        # p_avg = 43 #bar
+        # delta_p = 46 #bar
+        # row = 3.5 #kg/m^3
+        # pi = 3.14
+        # D = 0.9 #m
+        # LHV = 33.3 #kWh/kg
+        
+        # storable_mass = row * pi * D**2 / 4 * delta_p * p_avg * LHV * self.sets.trade_data["line_length"] / 1000
+        for line,carr_list in self.sets.trade_line.items():
+            
+            self.constr.append(self.sets.trade_data["Linepack_max"].loc[:,(line, slice(None))].values-self.variables["linepack_capacity"][line] >= 0)
 
     def _constr_totalcapacity_regional(self):
 
@@ -1540,7 +1680,23 @@ class BuildModel:
                 self.constr.append(self.storage_SOC[reg][(indx+1)* len(self.sets.time_steps)-1:(indx+1)* len(self.sets.time_steps),:]-\
                                    cp.multiply(self.sets.data[reg]["storage_initial_SOC"].values[(indx):(indx+1),:],
                                                self.totalcapacity[reg]["Storage"][(indx):(indx+1),:]) == 0)
+    
+    def _constr_linepack_cyclic_boundary(self):
+        
+        for reg, value in self.linepack_level.items():
+            for reg_, value_ in value.items():
+                
+                if "{}-{}".format(reg,reg_) in self.sets.trade_line.keys():
+                    line = "{}-{}".format(reg,reg_)
+                    
+                else:
+                    line = "{}-{}".format(reg_,reg)
+                
+                for indx, year in enumerate(self.sets.main_years):
 
+                    self.constr.append(value_[(indx+1)* len(self.sets.time_steps)-1:(indx+1)* len(self.sets.time_steps),:]-\
+                                   cp.multiply(self.sets.trade_data["initial_linepack_level"].loc[:, (line, slice(None))].values[(indx):(indx+1),:],
+                                               self.variables["linepack_capacity"][line][(indx):(indx+1),:]) == 0)
 
     def _constr_storage_max_min_charge(self):
 
@@ -1644,7 +1800,71 @@ class BuildModel:
                 #     - self.variables["usebyTechnology"][reg]["Storage"]
                 #     >= 0
                 # )
+    def _constr_linepack_max_flow_in_out(self):
+
+        """
+        Defines the maximum and minimum allowed virtual linepack storage inflow and outflow in each
+        hour of the year based on the linepack capacity and charge/discharge time
+        """
+
+        for reg, value in self.variables["line_export"].items():
+            
+            for reg_, value_ in value.items():
                 
+                if "{}-{}".format(reg,reg_) in self.sets.trade_line.keys():
+                    line = "{}-{}".format(reg,reg_)
+                    
+                else:
+                    line = "{}-{}".format(reg_,reg)
+
+                for indx, year in enumerate(self.sets.main_years):
+
+                    max_linepack_flow_in = linepack_max_flow(
+                        self.variables["linepack_capacity"][line][indx : indx + 1, :],
+                        self.sets.trade_data["linepack_charge_time"].loc[:, (line, slice(None))].values,
+                        self.timeslice_fraction
+                    )
+    
+
+                    max_linepack_flow_out = linepack_max_flow(
+                        self.variables["linepack_capacity"][line][indx : indx + 1, :],
+                        self.sets.trade_data["linepack_discharge_time"].loc[:, (line, slice(None))].values,
+                        self.timeslice_fraction
+                    )
+    
+                    self.constr.append(
+                        max_linepack_flow_in
+                        - value_[
+                            indx
+                            * len(self.sets.time_steps) : (indx + 1)
+                            * len(self.sets.time_steps),
+                            :,
+                        ]
+                        >= 0
+                    )
+    
+                    self.constr.append(
+                        max_linepack_flow_out
+                        - self.variables["line_import"][reg_][reg][
+                            indx
+                            * len(self.sets.time_steps) : (indx + 1)
+                            * len(self.sets.time_steps),
+                            :,
+                        ]
+                        >= 0
+                )
+
+                # self.constr.append(
+                #     self.sets.data[reg]["storage_max_discharge"].values
+                #     - self.variables["productionbyTechnology"][reg]["Storage"]
+                #     >= 0
+                # )
+                
+                # self.constr.append(
+                #     self.sets.data[reg]["storage_max_charge"].values
+                #     - self.variables["usebyTechnology"][reg]["Storage"]
+                #     >= 0
+                # )
     def _set_regional_objective_planning(self):
 
         """

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-This module returns the constants of the code inclduing the info of sets and
-parameter filese
+This module returns the constants of the code including the info of sets and
+parameter files
 """
 
 # Sorted connection parameter sheets
@@ -13,7 +13,8 @@ def list_connection(mode, MILP, sizes=None):
     if MILP:
         if mode == "Operation":
             list_connection = ["V_OM", "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
-                               "Capacity_factor_line", "Line_length"]
+                               "Capacity_factor_line", "Line_length", "Linepack_initial_level", "Linepack_charge_time",
+                               "Linepack_discharge_time", "Linepack_max"]
 
             if sizes:
                 for size in sizes:
@@ -23,7 +24,8 @@ def list_connection(mode, MILP, sizes=None):
             list_connection = ["V_OM", "Decom_cost", "Line_Economic_life", "Interest_rate", "Line_lifetime",
                                "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
                                "Capacity_factor_line", "Line_length", "Min_newcap", "Max_newcap",
-                               "Min_totalcap", "Max_totalcap"]
+                               "Min_totalcap", "Max_totalcap", "Linepack_initial_level", "Linepack_charge_time",
+                               "Linepack_discharge_time"]
 
             if sizes:
                 for size in sizes:
@@ -34,13 +36,15 @@ def list_connection(mode, MILP, sizes=None):
     else:
         if mode == "Operation":
             list_connection = ["V_OM", "F_OM", "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
-                               "Capacity_factor_line", "Line_length"]
+                               "Capacity_factor_line", "Line_length", "Linepack_initial_level", "Linepack_charge_time",
+                               "Linepack_discharge_time"]
 
         elif mode == "Planning":
             list_connection = ["V_OM", "F_OM", "INV", "Decom_cost", "Line_Economic_life", "Interest_rate",
                                "Line_lifetime", "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
                                "Capacity_factor_line", "Line_length", "Min_integer_cap", "Min_newcap",
-                               "Max_newcap", "Min_totalcap", "Max_totalcap"]
+                               "Max_newcap", "Min_totalcap", "Max_totalcap", "Linepack_initial_level", "Linepack_charge_time",
+                               "Linepack_discharge_time"]
 
     return list_connection
             
@@ -123,6 +127,10 @@ def take_trade_ids(mode, MILP, sizes=None):
         "line_capacity_factor": {"sheet_name": "Capacity_factor_line", "index_col": 0, "header": [0, 1]},
         "annualprod_per_unitcapacity": {"sheet_name": "AnnualProd_perunit_capacity", "index_col": 0, "header": [0, 1]},
         "line_length": {"sheet_name": "Line_length", "index_col": 0, "header": [0, 1]},
+        "initial_linepack_level": {"sheet_name": "Linepack_initial_level", "index_col": 0, "header": [0,1]},
+        "linepack_charge_time": {"sheet_name": "Linepack_charge_time", "index_col": 0, "header": [0,1]},
+        "linepack_discharge_time": {"sheet_name": "Linepack_discharge_time", "index_col": 0, "header": [0,1]},
+        "linepack_max": {"sheet_name": "Linepack_max", "index_col": 0, "header": [0,1]}
     }
 
     if MILP:

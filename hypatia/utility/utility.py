@@ -551,6 +551,31 @@ def storage_state_of_charge(initial_storage_fraction, flow_in, flow_out, main_ye
     return state_of_charge
 
 
+
+def linepack(initial_linepack_fraction, flow_in, flow_out, main_years, time_steps,linepack_capacity):
+
+    """
+    Calculates linepack level of a pipe
+    """
+    
+    initial_linepack_fraction_concat = pd.concat(
+        [initial_linepack_fraction] * len(time_steps)
+    ).sort_index()
+    
+    linepack_level = cp.cumsum(flow_in[0 : len(time_steps), :])+ cp.multiply(initial_linepack_fraction_concat.loc[main_years[0],:],
+                                                                 linepack_capacity[0:1,:]) - cp.cumsum(flow_out[0 : len(time_steps), :])
+        
+    for indx, year in enumerate(main_years[1:]):
+        
+
+        linepack_level_rest = cp.cumsum(flow_in[(indx + 1) * len(time_steps) : (indx + 2) * len(time_steps), :]) + cp.multiply(initial_linepack_fraction_concat.loc[year,:],
+                                                            linepack_capacity[(indx+1):(indx+2),:]) - cp.cumsum(flow_out[(indx + 1) * len(time_steps) : (indx + 2) * len(time_steps), :])
+        
+        linepack_level = stack(linepack_level, linepack_level_rest)
+                                
+
+    return linepack_level
+
 def get_regions_with_storage(sets):
 
     """
@@ -579,6 +604,19 @@ def storage_max_flow(
     max_flow = cp.multiply(storage_capacity_available, timeslice_fraction) * 8760 / time
 
     return max_flow
+
+def linepack_max_flow(
+    linepack_capacity, time,timeslice_fraction
+):
+    """
+    Calculates the maximum allowed inflow and ouflow of virtual linepack storage on pipes
+    """
+
+
+
+    max_flow_linepack = cp.multiply(linepack_capacity, timeslice_fraction) * 8760 / time
+
+    return max_flow_linepack
 
 
 def vicenty(coord1,coord2):

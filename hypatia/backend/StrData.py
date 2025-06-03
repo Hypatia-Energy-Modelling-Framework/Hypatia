@@ -432,6 +432,30 @@ class ReadSets:
                     ),
                     "columns": indexer,
                 },
+                
+                "Linepack_initial_level": {
+                    "value": 0,
+                    "index": pd.Index(self.main_years, name="Years"),
+                    "columns": indexer,
+                },
+                
+                "Linepack_charge_time": {
+                    "value": 1,
+                    "index": ["Charging Time of Linepack in Hours"],
+                    "columns": indexer,
+                },
+                
+                "Linepack_discharge_time": {
+                    "value": 1,
+                    "index": ["Discharging Time of Linepack in Hours"],
+                    "columns": indexer,
+                },
+                "Linepack_max": {
+                    "value": 0,
+                    "index": pd.Index(self.main_years, name="Years"),
+                    "columns": indexer,
+                },
+            
             }
             
             if self.MILP:
@@ -1240,6 +1264,7 @@ class ReadSets:
         self.time_steps = np.arange(8760/downsample,dtype=int).tolist()
         self.timeslice_fraction = self.timeslice_fraction[:int(8760/downsample)]
         self.timeslice_fraction = self.timeslice_fraction * downsample
+        print(self.timeslice_fraction)
         for reg in self.regions:
             
             self.data_new = copy.deepcopy(self.data)
