@@ -25,7 +25,7 @@ def list_connection(mode, MILP, sizes=None):
                                "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
                                "Capacity_factor_line", "Line_length", "Min_newcap", "Max_newcap",
                                "Min_totalcap", "Max_totalcap", "Linepack_initial_level", "Linepack_charge_time",
-                               "Linepack_discharge_time"]
+                               "Linepack_discharge_time", "Linepack_max"]
 
             if sizes:
                 for size in sizes:
@@ -37,14 +37,14 @@ def list_connection(mode, MILP, sizes=None):
         if mode == "Operation":
             list_connection = ["V_OM", "F_OM", "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
                                "Capacity_factor_line", "Line_length", "Linepack_initial_level", "Linepack_charge_time",
-                               "Linepack_discharge_time"]
+                               "Linepack_discharge_time", "Linepack_max"]
 
         elif mode == "Planning":
             list_connection = ["V_OM", "F_OM", "INV", "Decom_cost", "Line_Economic_life", "Interest_rate",
                                "Line_lifetime", "Line_efficiency", "AnnualProd_perunit_capacity", "Residual_capacity",
                                "Capacity_factor_line", "Line_length", "Min_integer_cap", "Min_newcap",
                                "Max_newcap", "Min_totalcap", "Max_totalcap", "Linepack_initial_level", "Linepack_charge_time",
-                               "Linepack_discharge_time"]
+                               "Linepack_discharge_time", "Linepack_max"]
 
     return list_connection
             

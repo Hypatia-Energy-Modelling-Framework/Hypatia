@@ -13,10 +13,10 @@ test = Model(
     path = r'test\Trilateral\tests\test_linepack\sets', 
     mode = 'Planning', period_step = 20, snapshot=False, MILP=False)
 #%%
-test.create_data_excels(path = r'test\Trilateral\tests\test_linepack\parameters', force_rewrite=True)
+#test.create_data_excels(path = r'test\Trilateral\tests\test_linepack\parameters', force_rewrite=True)
 #%%
 test.read_input_data(
-    path = r'test\Trilateral\tests\test_linepack\parameters_new'
+    path = r'test\Trilateral\tests\test_linepack\parameters'
 )
 #%%
 test.resample_input_data(downsample=3)
