@@ -128,7 +128,7 @@ class BuildModel:
                 self._set_lines_objective_planning()
                 self._set_final_objective_multinode()
                 self._constr_linepack_capacity_max()
-                #self._constr_max_storable_mass()
+                self._constr_max_storable_mass()
                 #self._constr_linepack_cyclic_boundary()
                 self._constr_linepack_max_flow_in_out()
 
