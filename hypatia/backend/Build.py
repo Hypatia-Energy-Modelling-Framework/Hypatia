@@ -102,7 +102,6 @@ class BuildModel:
             #self._constr_prod()
             #self._constr_emission_cap()
             self._calc_variable_storage_SOC()
-            self._constr_max_storable_mass()
             self._constr_storage_max_min_charge()
             self._constr_storage_max_flow_in_out()
             self._constr_storage_cyclic_boundary()
@@ -129,7 +128,8 @@ class BuildModel:
                 self._set_lines_objective_planning()
                 self._set_final_objective_multinode()
                 self._constr_linepack_capacity_max()
-                self._constr_linepack_cyclic_boundary()
+                #self._constr_max_storable_mass()
+                #self._constr_linepack_cyclic_boundary()
                 self._constr_linepack_max_flow_in_out()
 
 
@@ -1315,7 +1315,7 @@ class BuildModel:
                     )
                     line_import = cp.reshape(line_import, capacity_to_production.shape)
                     
-                    line_export = cp.sum(self.variables["line_import"][reg_][key]
+                    line_export = cp.sum(self.variables["line_export"][reg_][key]
                         [
                             indx
                             * len(self.sets.time_steps) : (indx + 1)
@@ -1346,7 +1346,7 @@ class BuildModel:
                             cp.multiply(capacity, capacity_to_production),
                             self.timeslice_fraction,
                         )
-                        - self.variables["line_import"][reg_][key][
+                        - self.variables["line_export"][reg_][key][
                             indx
                             * len(self.sets.time_steps) : (indx + 1)
                             * len(self.sets.time_steps),
