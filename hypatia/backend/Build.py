@@ -1410,7 +1410,7 @@ class BuildModel:
         # storable_mass = row * pi * D**2 / 4 * delta_p * p_avg * LHV * self.sets.trade_data["line_length"] / 1000
         for line,carr_list in self.sets.trade_line.items():
             
-            self.constr.append(self.sets.trade_data["Linepack_max"].loc[:,(line, slice(None))].values-self.variables["linepack_capacity"][line] >= 0)
+            self.constr.append(self.sets.trade_data["linepack_max"].loc[:,(line, slice(None))].values-self.variables["linepack_capacity"][line] >= 0)
 
     def _constr_totalcapacity_regional(self):
 
