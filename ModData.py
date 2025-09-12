@@ -5,22 +5,22 @@ Created on Wed Aug  9 16:23:48 2023
 @author: NAMAZIFN
 """
 
-
+#%%
 from hypatia import Model,Plotter, Sensitivity
 
 test = Model(
-    path = 'test/yeees_modified/ammonia_import/sets', 
-    mode = 'Planning', period_step = 5)
+    path = r"C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\central\min totex & red III/sets", 
+    mode = 'Planning', period_step = 20, snapshot=False, MILP=False)
 
 #%%
 import pandas as pd
-path = "test/yeees_modified/ammonia_import/parameters"
-path2 = "test/yeees_modified/ammonia_import_snapshot_AD/parameters"
+path = r"C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\central\min totex & red III/parameters"
+path2 = r"C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\central_snapshot\min totex & red III/parameters"
 
 #%%
 
 ## Constants
-years_to_drop = ["Y1","Y2"]
+years_to_drop = ["Y0"]
 
 regional_sheets = ["V_OM","F_OM","INV","Decom_cost",
 "Residual_capacity","Capacity_factor_tech","capacity_factor_resource","Specific_emission",
@@ -36,20 +36,22 @@ storage_sheets = ["Storage_min_SOC",
 global_sheets = ["Max_production_global","Min_production_global","Glob_emission_cap_annual",
                  "Min_totalcap_global","Max_totalcal_global","Min_newcap_global","Max_newcap_global"]
 
-connection_sheets = ["V_OM","Decom_cost",
+connection_sheets = ["V_OM","F_OM","INV","Decom_cost",
 "Line_efficiency","Residual_capacity","Capacity_factor_line",
 "Min_newcap","Max_newcap","Min_totalcap","Max_totalcap"]
 
-sizes = ["Cap_1", "Cap_2"]
+# sizes = ["Cap_1"]
 
-for size in sizes:
+# for size in sizes:
     
-    connection_sheets.append("F_OM_{}".format(size))
-    connection_sheets.append("INV_{}".format(size))
-    connection_sheets.append("Min_integer_cap_{}".format(size))
+#     connection_sheets.append("F_OM_{}".format(size))
+#     connection_sheets.append("INV_{}".format(size))
+#     connection_sheets.append("Min_integer_cap_{}".format(size))
     
 trade_data_ids = {
     "line_var_cost": {"sheet_name": "V_OM", "index_col": 0, "header": [0, 1]},
+    "line_fixed_cost": {"sheet_name": "F_OM", "index_col": 0, "header": [0, 1]},
+    "line_inv": {"sheet_name": "INV", "index_col": 0, "header": [0, 1]},
     "line_residual_cap": {
         "sheet_name": "Residual_capacity",
         "index_col": 0,
@@ -116,6 +118,8 @@ trade_data_ids = {
 
 trade_data_ids_to_change = {
     "line_var_cost": {"sheet_name": "V_OM", "index_col": 0, "header": [0, 1]},
+    "line_fixed_cost": {"sheet_name": "F_OM", "index_col": 0, "header": [0, 1]},
+    "line_inv": {"sheet_name": "INV", "index_col": 0, "header": [0, 1]},
     "line_residual_cap": {
         "sheet_name": "Residual_capacity",
         "index_col": 0,
@@ -198,19 +202,19 @@ global_data_ids = {
 }
 
 
-for size in sizes:
+# for size in sizes:
     
-    trade_data_ids.update(
-        {"line_fixed_cost_{}".format(size): {"sheet_name": "F_OM_{}".format(size), "index_col": 0, "header": [0, 1]},
-         "line_inv_{}".format(size): {"sheet_name": "INV_{}".format(size), "index_col": 0, "header": [0, 1]},
-                     "line_integer_cap_{}".format(size) : {"sheet_name": "Min_integer_cap_{}".format(size), "index_col": 0, "header": [0,1]
-            }})
+#     trade_data_ids.update(
+#         {"line_fixed_cost_{}".format(size): {"sheet_name": "F_OM_{}".format(size), "index_col": 0, "header": [0, 1]},
+#          "line_inv_{}".format(size): {"sheet_name": "INV_{}".format(size), "index_col": 0, "header": [0, 1]},
+#                      "line_integer_cap_{}".format(size) : {"sheet_name": "Min_integer_cap_{}".format(size), "index_col": 0, "header": [0,1]
+#             }})
     
-    trade_data_ids_to_change.update(
-        {"line_fixed_cost_{}".format(size): {"sheet_name": "F_OM_{}".format(size), "index_col": 0, "header": [0, 1]},
-         "line_inv_{}".format(size): {"sheet_name": "INV_{}".format(size), "index_col": 0, "header": [0, 1]},
-                     "line_integer_cap_{}".format(size) : {"sheet_name": "Min_integer_cap_{}".format(size), "index_col": 0, "header": [0,1]
-            }})
+#     trade_data_ids_to_change.update(
+#         {"line_fixed_cost_{}".format(size): {"sheet_name": "F_OM_{}".format(size), "index_col": 0, "header": [0, 1]},
+#          "line_inv_{}".format(size): {"sheet_name": "INV_{}".format(size), "index_col": 0, "header": [0, 1]},
+#                      "line_integer_cap_{}".format(size) : {"sheet_name": "Min_integer_cap_{}".format(size), "index_col": 0, "header": [0,1]
+#             }})
     
 
 regional_data_ids = {}
@@ -529,7 +533,7 @@ for key, value in trade_data_ids.items():
     
     if key in trade_data_ids_to_change.keys():
         connection_data_new[key] = connection_data[key].drop(years_to_drop)
-        connection_data_new[key].rename(index={"Y3":"Y1"}, inplace=True)
+        connection_data_new[key].rename(index={"Y1":"Y0"}, inplace=True)
         
     else:
         
@@ -562,7 +566,7 @@ for key, value in global_data_ids.items():
         header=value["header"],)
     
     global_data_new[key] = global_data[key].drop(years_to_drop)
-    global_data_new[key].rename(index={"Y3":"Y1"}, inplace=True)
+    global_data_new[key].rename(index={"Y1":"Y0"}, inplace=True)
 
 #%%
 
@@ -597,7 +601,7 @@ for reg in test._StrData.regions:
         
         if key in regional_data_ids_to_change[reg]:
             regional_data_new_[key] = regional_data_[key].drop(years_to_drop)
-            regional_data_new_[key].rename(index={"Y3":"Y1"}, inplace=True)
+            regional_data_new_[key].rename(index={"Y1":"Y0"}, inplace=True)
         
         else:
             

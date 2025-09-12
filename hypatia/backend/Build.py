@@ -419,14 +419,14 @@ class BuildModel:
         
         for line, carr_list in self.sets.trade_line.items():
             self.line_newcapacity[line] = cp.multiply(self.sets.trade_data["line_integer_cap_{}".format(self.sets.sizes[0])].loc[:,line].values ,
-            self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line])
-            line_integer_size[line] = self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line]
-            for indx in range(1,len(self.sets.sizes)):     
-                line_integer_size[line] += self.variables["line_newcapacity_lump"][self.sets.sizes[indx]][line]
-                self.line_newcapacity[line] += cp.multiply(self.sets.trade_data["line_integer_cap_{}".format(self.sets.sizes[indx])].loc[:,line].values ,
-                self.variables["line_newcapacity_lump"][self.sets.sizes[indx]][line])
+             self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line])
+            # line_integer_size[line] = self.variables["line_newcapacity_lump"][self.sets.sizes[0]][line]
+            # for indx in range(1,len(self.sets.sizes)):     
+            #     line_integer_size[line] += self.variables["line_newcapacity_lump"][self.sets.sizes[indx]][line]
+            #     self.line_newcapacity[line] += cp.multiply(self.sets.trade_data["line_integer_cap_{}".format(self.sets.sizes[indx])].loc[:,line].values ,
+            #     self.variables["line_newcapacity_lump"][self.sets.sizes[indx]][line])
                 
-            self.constr.append(line_integer_size[line] <= 1)
+            # self.constr.append(line_integer_size[line] <= 1)
 
         
         # self.line_newcapacity = {}
@@ -767,6 +767,7 @@ class BuildModel:
 
         self.cost_variable_line = line_varcost(
             self.sets.trade_data["line_var_cost"],
+            self.sets.trade_data["line_length"].loc[:,line].values,
             self.variables["line_import"],
             self.sets.main_years,
             self.sets.time_steps,
@@ -1247,7 +1248,18 @@ class BuildModel:
                         ],
                         axis=0,
                     )
+
+                    line_export = cp.sum(
+                        self.variables["line_export"][reg_][key][
+                            indx
+                            * len(self.sets.time_steps) : (indx + 1)
+                            * len(self.sets.time_steps),
+                            :,
+                        ],
+                        axis=0,
+                    )
                     line_import = cp.reshape(line_import, capacity_to_production.shape)
+                    line_export = cp.reshape(line_export, capacity_to_production.shape)
                     capacity_factor.shape = capacity_to_production.shape
 
                     self.constr.append(
@@ -1255,20 +1267,26 @@ class BuildModel:
                             cp.multiply(capacity, capacity_to_production),
                             self.timeslice_fraction,
                         )
-                        - value[
+                        - (value[
                             indx
                             * len(self.sets.time_steps) : (indx + 1)
                             * len(self.sets.time_steps),
                             :,
-                        ]
+                        ] +self.variables["line_export"][reg_][key][
+                            indx
+                            * len(self.sets.time_steps) : (indx + 1)
+                            * len(self.sets.time_steps),
+                            :,
+                        ])
                         >= 0
                     )
+
                     self.constr.append(
                         cp.multiply(
                             cp.multiply(capacity, capacity_factor),
                             capacity_to_production,
                         )
-                        - line_import
+                        - (line_import + line_export)
                         >= 0
                     )
 
