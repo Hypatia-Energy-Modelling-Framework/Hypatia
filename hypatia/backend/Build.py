@@ -220,9 +220,16 @@ class BuildModel:
         technology_use = {}
         new_capacity = {}
         line_newcapacity = {}
+        #line_newcapacity_bi = {}
         #line_lumpy_investment = {}
         line_import = {}
         line_export = {}
+        initial_soc = {}
+
+        for reg in get_regions_with_storage(self.sets):
+            
+            initial_soc[reg] = cp.Variable(shape = (len(self.sets.main_years),
+                                                    len(self.sets.Technologies[reg]["Storage"])), nonneg=True)
 
         for reg in self.sets.regions:
             regional_prod = {}
@@ -327,6 +334,7 @@ class BuildModel:
         self.variables = {
             "productionbyTechnology": technology_prod,
             "usebyTechnology": technology_use,
+            "initialSOC": initial_soc,
         }
 
         if len(self.sets.regions) > 1:
@@ -386,8 +394,18 @@ class BuildModel:
                             ),
                             nonneg=True,
                         )
+                        
+                        # # backward direction (reversed line key)
+                        # reg_i, reg_j = line.split("-")
+                        # rev_line = f"{reg_j}-{reg_i}"
+                        
+                        # line_newcapacity_bi[rev_line] = cp.Variable(
+                        #     shape=(len(self.sets.main_years), len(carr_list)),
+                        #     nonneg=True,
+                        # )
     
-                    self.variables.update({"line_newcapacity": line_newcapacity})
+                    self.variables.update({"line_newcapacity": line_newcapacity,
+                                          }) # "line_newcapacity_bi": line_newcapacity_bi
                     # line_lumpy_investment[line] = cp.Variable(
                     #     shape=(
                     #         len(self.sets.main_years),
@@ -663,6 +681,9 @@ class BuildModel:
 
         for line,carr_list in self.sets.trade_line.items():
             
+            reg_i, reg_j = line.split("-")
+            rev_line = f"{reg_j}-{reg_i}"
+            
             if self.sets.MILP:
             
                 self.line_accumulated_newcapacity[line] = line_newcap_accumulated(
@@ -681,13 +702,27 @@ class BuildModel:
                     self.sets.main_years,
                     self.sets.trade_data["line_lifetime"].loc[:, line],
                     self.sets.period_step,
-                )                
+                )        
+                
+                
+                # self.line_accumulated_newcapacity_bi[rev_line] = line_newcap_accumulated(
+                #     self.variables["line_newcapacity_bi"][line],
+                #     self.sets.trade_line[line],
+                #     self.sets.main_years,
+                #     self.sets.trade_data["line_lifetime"].loc[:, line],
+                #     self.sets.period_step,
+                # )  
             
             
             self.line_totalcapacity[line] = (
                 self.line_accumulated_newcapacity[line]
                 + self.sets.trade_data["line_residual_cap"].loc[:, line].values
             )
+            
+            # self.line_totalcapacity_bi[line] = (
+            #     self.line_accumulated_newcapacity_bi[line]
+            #     + self.sets.trade_data["line_residual_cap"].loc[:, line].values
+            # )
             
 
             if self.sets.MILP: 
@@ -767,7 +802,7 @@ class BuildModel:
 
         self.cost_variable_line = line_varcost(
             self.sets.trade_data["line_var_cost"],
-            self.sets.trade_data["line_length"].loc[:,line].values,
+            #self.sets.trade_data["line_length"].loc[:,line].values,
             self.variables["line_import"],
             self.sets.main_years,
             self.sets.time_steps,
@@ -902,8 +937,21 @@ class BuildModel:
 
         for reg in get_regions_with_storage(self.sets):
 
+            # self.storage_SOC[reg] = storage_state_of_charge(
+            #     self.sets.data[reg]["storage_initial_SOC"],
+            #     self.variables["usebyTechnology"][reg]["Storage"],
+            #     self.variables["productionbyTechnology"][reg]["Storage"],
+            #     self.sets.main_years,
+            #     self.sets.time_steps,
+            #     self.sets.data[reg]["storage_charge_efficiency"],
+            #     self.sets.data[reg]["storage_discharge_efficiency"],
+            #     self.totalcapacity[reg]["Storage"]
+            # )
+
+
+
             self.storage_SOC[reg] = storage_state_of_charge(
-                self.sets.data[reg]["storage_initial_SOC"],
+                self.variables["initialSOC"][reg],
                 self.variables["usebyTechnology"][reg]["Storage"],
                 self.variables["productionbyTechnology"][reg]["Storage"],
                 self.sets.main_years,
@@ -1555,9 +1603,14 @@ class BuildModel:
         for reg in get_regions_with_storage(self.sets):
             for indx, year in enumerate(self.sets.main_years):
 
+                # self.constr.append(self.storage_SOC[reg][(indx+1)* len(self.sets.time_steps)-1:(indx+1)* len(self.sets.time_steps),:]-\
+                #                    cp.multiply(self.sets.data[reg]["storage_initial_SOC"].values[(indx):(indx+1),:],
+                #                                self.totalcapacity[reg]["Storage"][(indx):(indx+1),:]) == 0)
+
+
                 self.constr.append(self.storage_SOC[reg][(indx+1)* len(self.sets.time_steps)-1:(indx+1)* len(self.sets.time_steps),:]-\
-                                   cp.multiply(self.sets.data[reg]["storage_initial_SOC"].values[(indx):(indx+1),:],
-                                               self.totalcapacity[reg]["Storage"][(indx):(indx+1),:]) == 0)
+                                   self.variables["initialSOC"][reg][(indx):(indx+1),:]== 0)
+
 
 
     def _constr_storage_max_min_charge(self):
@@ -1589,6 +1642,23 @@ class BuildModel:
                         * len(self.sets.time_steps),
                         :,
                     ]
+                    - cp.multiply(
+                        self.totalcapacity[reg]["Storage"][indx : indx + 1, :],
+                        self.sets.data[reg]["storage_min_SOC"].values[
+                            indx : indx + 1, :
+                        ],
+                    )
+                    >= 0
+                )
+
+                self.constr.append(
+                    self.totalcapacity[reg]["Storage"][indx : indx + 1, :]
+                    - self.variables["initialSOC"][reg][indx: indx+1, :]
+                    >= 0
+                )
+
+                self.constr.append(
+                    self.variables["initialSOC"][reg][indx: indx+1, :]
                     - cp.multiply(
                         self.totalcapacity[reg]["Storage"][indx : indx + 1, :],
                         self.sets.data[reg]["storage_min_SOC"].values[

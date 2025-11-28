@@ -4,22 +4,22 @@ Created on Mon Mar  6 11:37:41 2023
 
 @author: NAMAZIFN
 """
-#%%
 
+#%%
 from hypatia import Model,Plotter, Sensitivity
 
 #%%
 test = Model(
-    path = r'C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\decentral\min totex & red III\sets', 
-    mode = 'Planning', period_step = 20, snapshot=False, MILP=False)
+    path = r'C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\LCOH\2050_3cvacs\Realistic\BE\sets', 
+    mode = 'Planning', period_step = 1, snapshot=True, MILP=False)
 #%%
-#test.create_data_excels(path = r'C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\decentral_onshore_linear/parameters_mod')
+#test.create_data_excels(path = r'C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\LCOH\2030_3cvacs\BE\parameters')
 #%%
 test.read_input_data(
-    path = r'C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\decentral\min totex & red III/parameters'
+    path = r'C:\Users\NAMAZIFN\OneDrive - VITO\Documents\GitHub\Hypatia-Trilater-H2\V0.1.0\LCOH\2050_3cvacs\Realistic\BE\parameters'
 )
 #%%
-test.resample_input_data(downsample=3)
+#test.resample_input_data(downsample=3)
 #%%
 #import gurobipy
 
