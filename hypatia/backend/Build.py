@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 This module contains the core of the optimization model, containing
@@ -767,7 +768,6 @@ class BuildModel:
 
         self.cost_variable_line = line_varcost(
             self.sets.trade_data["line_var_cost"],
-            self.sets.trade_data["line_length"].loc[:,line].values,
             self.variables["line_import"],
             self.sets.main_years,
             self.sets.time_steps,
@@ -1882,3 +1882,4 @@ class BuildModel:
         elif self.sets.mode == "Operation":
 
             self.global_objective = self.totalcost_allregions + self.totalcost_lines
+>>>>>>> Stashed changes
