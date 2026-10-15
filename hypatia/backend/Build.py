@@ -13,7 +13,6 @@ from hypatia.utility.constants import ModelMode, OptimizationMode
 from hypatia.utility.utility import (
     get_emission_types
 )
-from hypatia.backend.constraints.ConstraintList import CONSTRAINTS
 import logging
 
 logger = logging.getLogger(__name__)
@@ -89,7 +88,7 @@ class BuildModel:
 
         # create all constraints
         self.constr = []
-        for constraint in CONSTRAINTS:
+        for constraint in self.model_data.settings.constraints:
             self.constr += constraint(self.model_data, self.vars).get()
             
         

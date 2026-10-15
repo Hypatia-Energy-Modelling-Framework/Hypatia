@@ -32,7 +32,10 @@ from hypatia.error_log.Checks import (
 from hypatia.utility.utility import get_emission_types
 from hypatia.backend.StrData import create_technology_columns
 
-from hypatia.backend.constraints.ConstraintList import CONSTRAINTS
+from hypatia.backend.constraints.ConstraintList import (
+    active_constraints,
+    resolve_optional_constraints,
+)
 
 class ModelSettings:
     """
@@ -50,6 +53,10 @@ class ModelSettings:
     regional_settings : dict
         A dictionary of the regional set tables given by the user in the regional
         set files
+
+    optional_constraints : tuple of str
+        Names of the optional constraints enabled for this model, validated
+        and in canonical order (see ConstraintList.OPTIONAL_CONSTRAINTS)
     """
 
     def __init__(
@@ -59,15 +66,27 @@ class ModelSettings:
         ensure_feasibility: EnsureFeasibility,
         global_settings: Dict[str, pd.DataFrame],
         regional_settings: Dict[str, Dict[str, pd.DataFrame]],
+        optional_constraints=(),
     ):
         self.mode = mode
         self.optimization = optimization
         self.ensure_feasibility = ensure_feasibility
         self.global_settings = global_settings
         self.regional_settings = regional_settings
+        # Validated first: a typo should fail before any set file is checked.
+        self.optional_constraints = resolve_optional_constraints(optional_constraints)
         self._validate_global_settings()
         self._validate_regional_settings()
-        
+
+    @property
+    def constraints(self) -> List:
+        """Constraint classes active in this model: core + enabled optional ones.
+
+        Used both to build the optimisation problem and to decide which
+        parameter sheets are written and read, so the two always agree.
+        """
+        return active_constraints(self.optional_constraints)
+
     def _validate_global_settings(self):
         for table_name, table in self.global_settings.items():
             check_table_name(
@@ -284,7 +303,7 @@ class ModelSettings:
             )
 
         # collect global parameters from constraints
-        for costr in CONSTRAINTS:
+        for costr in self.constraints:
             global_parameters_template.update(
                 costr.required_global_parameters(costr, self)
             )
@@ -385,7 +404,7 @@ class ModelSettings:
             )
 
         # collect trade parameters from constraints
-        for costr in CONSTRAINTS:
+        for costr in self.constraints:
             connection_parameters_template.update(
                 costr.required_trade_parameters(costr, self)
             )
@@ -801,7 +820,7 @@ class ModelSettings:
                 
 
         # collect regional parameters from constraints
-        for costr in CONSTRAINTS:
+        for costr in self.constraints:
             for region, parameters in costr.required_regional_parameters(costr, self).items():
                 regional_parameters_template[region].update(parameters)
 

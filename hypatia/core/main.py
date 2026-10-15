@@ -34,7 +34,7 @@ class Model:
     A Hypatia Model
     """
 
-    def __init__(self, path, mode, optimization, ensure_feasibility, name="unknown"):
+    def __init__(self, path, mode, optimization, ensure_feasibility, name="unknown", optional_constraints=None):
 
         """Initializes a Hypatia model by passing the optimization mode and
         the path of the structural input files
@@ -60,6 +60,21 @@ class Model:
                 
         name : str (Optional)
             Defines the name of the model.
+
+        optional_constraints : list of str (Optional)
+            Optional constraints to add to the model, by name. By default none
+            is active. Accepted names (case-insensitive):
+
+                * 'chp_operating_range'
+                * 'production_ramp'
+                * 'min_tech_power_output'
+                * 'electrolysis_consumption'
+                * 'boolean_for_storage'
+
+            Enabling a constraint also adds the parameter sheets it needs to
+            the files written by create_data_excels and read by
+            read_input_data, so set it before creating the parameter files.
+            Example: Model(..., optional_constraints=["chp_operating_range"])
         """
 
         assert mode in ["Planning", "Operation"], "Invalid Operation"
@@ -70,9 +85,24 @@ class Model:
         ensurefeasibility = EnsureFeasibility.Yes if ensure_feasibility == "Yes" else EnsureFeasibility.No
         self.results = None
         self.backup_results = None
-        self.__settings = read_settings(path=path, mode=model_mode, optimization=optimization_mode, ensure_feasibility=ensurefeasibility)
+        self.__settings = read_settings(
+            path=path,
+            mode=model_mode,
+            optimization=optimization_mode,
+            ensure_feasibility=ensurefeasibility,
+            optional_constraints=optional_constraints,
+        )
         self.__model_data = None
         self.name = name
+
+    @property
+    def settings(self):
+        """Model settings read from the sets folder (read-only).
+
+        Includes ``optional_constraints``, the optional constraints active in
+        this model.
+        """
+        return self.__settings
 
     def create_data_excels(self, path, force_rewrite=False):
 
@@ -356,13 +386,15 @@ class Model:
             "regions= {}\n"
             "techs= {}\n"
             "horizon= {}\n"
-            "resolution= {}\n".format(
+            "resolution= {}\n"
+            "optional constraints= {}\n".format(
                 self.name,
                 self.settings.mode,
                 self.settings.regions,
                 self.settings.technologies,
                 self.settings.years,
                 len(self.settings.time_steps),
+                list(self.settings.optional_constraints) or "none",
             )
         )
 
