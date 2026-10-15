@@ -1,29 +1,48 @@
 """
-This module contains the functions for handling the example load
-and example download.
-"""
+Load or copy the example models shipped with Hypatia.
 
-from hypatia.core.main import Model
-from hypatia.analysis.plots import Plotter
+Every sub-folder of hypatia/examples with a "sets" folder is an example. Its
+name decides how it is built: names starting with "Operation" are operation
+models, the others planning models; names containing "UnMetDemand" allow unmet
+demand (ensure_feasibility="Yes").
+"""
 import os
 import shutil
 
+from hypatia.core.main import Model
+from hypatia.analysis.plots import Plotter
 
-path = os.path.abspath(os.path.join(os.path.dirname(__file__),))
+path = os.path.abspath(os.path.dirname(__file__))
 
-DESCRIPTION = {
-    "Planning": "Utopia Single Node Planning Model with Weekend/Weekdays and Day/Night resolution",
-    "Operation": "Utopia Two Node Operation Model with hourly resolution",
+# Optional constraints an example is designed to show.
+EXAMPLE_OPTIONS = {
+    "Operation_1Region_CHP-Variable-range": ["chp_operating_range"],
 }
 
 
-def load_example(example):
-    """Loads an example of mario.Database
+def available_examples():
+    """Names of the example models shipped with Hypatia."""
+    return sorted(
+        name for name in os.listdir(path)
+        if os.path.isdir(os.path.join(path, name, "sets"))
+    )
+
+
+def _check_name(example):
+    examples = available_examples()
+    if example not in examples:
+        raise ValueError(f"Unknown example '{example}'. Available examples: {examples}")
+
+
+def load_example(example, optimization="Single"):
+    """Build one of the example models, with its input data already read.
 
     Parameters
     -----------
-    example: str
-        hypatia examples: ['Planning','Operation']
+    example : str
+        One of available_examples(), e.g. "Planning_1Region" or "Atlantis".
+    optimization : str
+        "Single", "MinEm" or "Multi", as in hypatia.Model.
 
     Returns
     -------
@@ -33,51 +52,43 @@ def load_example(example):
     --------
     .. code-block:: python
 
-        from hypatia import load_examples
+        from hypatia import available_examples, load_example
 
-        model = load_examples('Planning')
-
-        # check the configuration of the example model
+        print(available_examples())
+        model = load_example("Planning_1Region")
         print(model)
-
-        # There is a short descriotion about the example
-        print(model.description)
-
-        # you can run the model and see the results
-        model.run(solver='gurobi',verbose=True)
-
-        # To load the plots object
-        plots = model.load_plots()
+        model.run(solver="highs")
     """
-    example = example.title()
-    examples = ["Planning", "Operation"]
-    if example not in examples:
-        raise ValueError(f"Acceptable examples are {examples}")
+    _check_name(example)
+    folder = os.path.join(path, example)
+    mode = "Operation" if example.startswith("Operation") else "Planning"
 
-    model = Model(path=f"{path}/{example}/sets", mode=example)
-    model.read_input_data(path=f"{path}/{example}/parameters")
-    model.description = DESCRIPTION[example]
+    model = Model(
+        path=os.path.join(folder, "sets"),
+        mode=mode,
+        optimization=optimization,
+        ensure_feasibility="Yes" if "UnMetDemand" in example else "No",
+        name=example,
+        optional_constraints=EXAMPLE_OPTIONS.get(example),
+    )
+    model.read_input_data(os.path.join(folder, "parameters"))
 
-    config_path = f"{path}/{example}/config.xlsx"
-    hourly = True if example == "Operation" else False
-    model.load_plots = lambda: Plotter(model, config_path, hourly)
+    config_path = os.path.join(folder, "config.xlsx")
+    if os.path.exists(config_path):
+        model.load_plots = lambda: Plotter(model, config_path, mode == "Operation")
 
     return model
 
 
 def download_example(example, destination_path):
-    """ Copies the model files from the site-packages to a given path
+    """Copy the files of an example model to destination_path, to edit them.
 
     Parameters
     -----------
     example : str
-        Defines the embedded example to copy. Options are ['Planning','Operation']
+        One of available_examples().
     destination_path : str
-        The path to copy the model files.
+        Folder to create; it must not exist yet.
     """
-    example = example.title()
-    examples = ["Planning", "Operation"]
-    if example not in examples:
-        raise ValueError(f"Acceptable examples are {examples}")
-
-    shutil.copytree(src=f"{path}/{example}", dst=destination_path)
+    _check_name(example)
+    shutil.copytree(src=os.path.join(path, example), dst=destination_path)
