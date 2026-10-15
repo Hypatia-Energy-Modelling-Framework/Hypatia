@@ -28,6 +28,8 @@ from hypatia.backend.constraints.StorageCyclicBoundary import StorageCyclicBound
 from hypatia.backend.constraints.LineTotalCapacity import LineTotalCapacity
 from hypatia.backend.constraints.TotalCapacityGlobal import TotalCapacityGlobal
 from hypatia.backend.constraints.NewCapacityGlobal import NewCapacityGlobal
+from hypatia.backend.constraints.TotalCapacityGroup import TotalCapacityGroup
+from hypatia.backend.constraints.NewCapacityGroup import NewCapacityGroup
 from hypatia.backend.constraints.AnnualProductionGlobal import AnnualProductionGlobal
 from hypatia.backend.constraints.LineAvailability import LineAvailability
 from hypatia.backend.constraints.LineNewCapacity import LineNewCapacity
@@ -61,6 +63,8 @@ CORE_CONSTRAINTS = [
     LineTotalCapacity,
     TotalCapacityGlobal,
     NewCapacityGlobal,
+    TotalCapacityGroup,  # inactive unless capacity group sheets are filled
+    NewCapacityGroup,    # inactive unless capacity group sheets are filled
     AnnualProductionGlobal,
     RenewableProductionGlobal,
     LineAvailability,

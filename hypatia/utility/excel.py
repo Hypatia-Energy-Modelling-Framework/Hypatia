@@ -3,6 +3,7 @@ from hypatia.backend.ModelData import ModelData
 from hypatia.utility.constants import ModelMode
 from hypatia.utility.constants import OptimizationMode
 from hypatia.utility.constants import EnsureFeasibility
+from hypatia.utility.utility import CAPACITY_GROUP_SHEETS
 from openpyxl import load_workbook
 import pandas as pd
 import cvxpy as cp
@@ -14,6 +15,21 @@ from hypatia.error_log.Exceptions import (
     ResultOverWrite,
     SolverNotFound,
 )
+
+
+def _read_optional_group_sheet(file_path: str, sheet_name: str) -> pd.DataFrame:
+    sheet = pd.read_excel(file_path, sheet_name=sheet_name)
+    return sheet.loc[:, ~sheet.columns.astype(str).str.startswith("Unnamed:")]
+
+
+def _write_empty_capacity_group_sheets(writer):
+    for value in CAPACITY_GROUP_SHEETS.values():
+        pd.DataFrame(columns=value["columns"]).to_excel(
+            writer,
+            sheet_name=value["sheet_name"],
+            index=False,
+        )
+
 
 def read_settings(path: str, mode: ModelMode, optimization: OptimizationMode, ensure_feasibility: EnsureFeasibility, optional_constraints=()) -> ModelSettings:
     wb_glob = load_workbook(r"{}/global.xlsx".format(path))
@@ -75,6 +91,7 @@ def write_parameters_files(settings: ModelSettings, path: str, force_rewrite: bo
                     value["value"], index=value["index"], columns=value["columns"]
                 )
                 global_data.to_excel(writer, sheet_name=value["sheet_name"])
+            _write_empty_capacity_group_sheets(writer)
 
     for reg in settings.regions:
         with pd.ExcelWriter(r"{}/parameters_{}.xlsx".format(path, reg)) as writer:
@@ -83,18 +100,29 @@ def write_parameters_files(settings: ModelSettings, path: str, force_rewrite: bo
                     value["value"], index=value["index"], columns=value["columns"]
                 )
                 regional_data.to_excel(writer, sheet_name=value["sheet_name"])
+            if not settings.multi_node:
+                _write_empty_capacity_group_sheets(writer)
 
 def read_parameters(settings: ModelSettings, path: str) -> ModelData:
     global_parameters = None
     if settings.global_parameters_template != None:
         global_parameters = {}
+        global_file = r"{}/parameters_global.xlsx".format(path)
+        global_excel = pd.ExcelFile(global_file)
         for key, value in settings.global_parameters_template.items():
             global_parameters[key] = pd.read_excel(
-                r"{}/parameters_global.xlsx".format(path),
+                global_file,
                 sheet_name=value["sheet_name"],
                 index_col=list(range(0, value["index"].nlevels)),
                 header=list(range(0, value["columns"].nlevels)),
             )
+
+        for key, value in CAPACITY_GROUP_SHEETS.items():
+            if value["sheet_name"] in global_excel.sheet_names:
+                global_parameters[key] = _read_optional_group_sheet(
+                    global_file,
+                    value["sheet_name"],
+                )
 
     trade_parameters = None
     if settings.trade_parameters_template != None:
@@ -110,13 +138,22 @@ def read_parameters(settings: ModelSettings, path: str) -> ModelData:
     regional_parameters = {}
     for region in settings.regions:
         parameters = {}
+        regional_file = r"{}/parameters_{}.xlsx".format(path, region)
+        regional_excel = pd.ExcelFile(regional_file)
         for key, value in settings.regional_parameters_template[region].items():
             parameters[key] = pd.read_excel(
-                r"{}/parameters_{}.xlsx".format(path, region),
+                regional_file,
                 sheet_name=value["sheet_name"],
                 index_col=list(range(0, value["index"].nlevels)),
                 header=list(range(0, value["columns"].nlevels)),
             )
+
+        for key, value in CAPACITY_GROUP_SHEETS.items():
+            if value["sheet_name"] in regional_excel.sheet_names:
+                parameters[key] = _read_optional_group_sheet(
+                    regional_file,
+                    value["sheet_name"],
+                )
         regional_parameters[region] = parameters
 
     return ModelData(

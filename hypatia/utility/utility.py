@@ -8,6 +8,21 @@ import cvxpy as cp
 import numpy as np
 import pandas as pd
 
+CAPACITY_GROUP_SHEETS = {
+    "capacity_group_membership": {
+        "sheet_name": "Capacity_group_membership",
+        "columns": ["Group", "Technology"],
+    },
+    "group_max_newcap": {
+        "sheet_name": "Max_newcap_group",
+        "columns": ["Group", "Year", "Max_newcap"],
+    },
+    "group_maxtotcap": {
+        "sheet_name": "Max_totalcap_group",
+        "columns": ["Group", "Year", "Max_totalcap"],
+    },
+}
+
 
 def stack(a, b, axis=0):
 
@@ -70,6 +85,47 @@ def _calc_variable_overall(glob_technologies, regions, main_years, technologies,
                     variable_overall[tech] += variable[reg][key][:, value.index(tech)]
 
     return variable_overall
+
+
+def capacity_group_membership_to_dict(capacity_group_membership):
+
+    """
+    Converts the long-form capacity group membership table into a mapping
+    from group name to the ordered list of member technologies.
+    """
+
+    if capacity_group_membership is None or capacity_group_membership.empty:
+        return {}
+
+    membership = capacity_group_membership.drop_duplicates(
+        subset=["Group", "Technology"]
+    )
+
+    return (
+        membership.groupby("Group", sort=False)["Technology"]
+        .apply(list)
+        .to_dict()
+    )
+
+
+def capacity_group_limits_to_wide(capacity_group_limits, years, value_column):
+
+    """
+    Pivots a long-form group limit table to a year x group wide table.
+    """
+
+    if capacity_group_limits is None or capacity_group_limits.empty:
+        return pd.DataFrame(index=pd.Index(years, name="Years"))
+
+    wide_limits = capacity_group_limits.pivot(
+        index="Year",
+        columns="Group",
+        values=value_column,
+    )
+
+    return wide_limits.reindex(index=years)
+
+
 
 def _calc_production_overall(
     glob_technologies, regions, main_years, technologies, variable
@@ -499,6 +555,27 @@ def get_parameters_from_global_or_regional_file(sets, data, gloal_sheet_name, re
             input_DataFrame = data.regional_parameters[reg][regional_sheet_name]
 
     return input_DataFrame
+
+
+def get_optional_parameter_from_global_or_regional_file(
+    sets,
+    data,
+    global_sheet_name,
+    regional_sheet_name,
+):
+    """
+    Returns an optional parameter table from the global or regional inputs.
+    """
+
+    if sets.multi_node:
+        if data.global_parameters is None:
+            return None
+        return data.global_parameters.get(global_sheet_name)
+
+    for reg in sets.regions:
+        return data.regional_parameters[reg].get(regional_sheet_name)
+
+    return None
 
 def storage_max_flow(
     storage_totalcapacity, time, storage_capacity_factor, timeslice_fraction
