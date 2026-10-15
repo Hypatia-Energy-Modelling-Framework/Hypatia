@@ -9,6 +9,14 @@ Unreleased
   of uncommenting lines in ``ConstraintList.py``. The default (none enabled) builds
   the same problem as before. The JRP Nucleare runs correspond to
   ``optional_constraints=["chp_operating_range"]`` (tag ``jrp-nucleare-v1``).
+* **Bug**: EmissionCapRegional/Global, LandUsageGlobal and RenewableProductionRegional/Global
+  built an invalid constraint (numpy array instead of cvxpy) when no matching term existed,
+  and recognised the electricity carrier only if named exactly ``Electricity``. Fixes from
+  May 2026 (old main, ``6b53b2c`` and ``fee908b``) brought over; carrier names are now
+  matched ignoring case and surrounding spaces (``Electricity``, ``Power``).
+  ``Final_electricity`` is still not treated as electricity.
+* **Refactoring**: shared helpers in ``constraints/_terms.py`` replace five local copies;
+  terms are summed with ``a + b`` instead of ``a += b``, which recent cvxpy rejects.
 * **Bug**: ``print(model)`` failed because ``Model`` had no ``settings`` attribute;
   ``Model.settings`` is now a read-only property.
 
