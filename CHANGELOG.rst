@@ -9,6 +9,12 @@ Unreleased
   of uncommenting lines in ``ConstraintList.py``. The default (none enabled) builds
   the same problem as before. The JRP Nucleare runs correspond to
   ``optional_constraints=["chp_operating_range"]`` (tag ``jrp-nucleare-v1``).
+* **CHPOperatingRange**: the number of CHP groups is the number of rows in the
+  ``CHP_variable_techs_selection`` sheet (it was fixed to 5 in the code). Multi-region models now
+  work: the global template used a key the constraint did not read. Missing or invalid
+  efficiencies raise an error instead of silently producing NaN coefficients. Debug prints removed.
+* **Parameter templates** can declare ``"variable_index": True``: the rows are user-defined and
+  only the columns are validated.
 * **Bug**: models without storage technologies failed with ``KeyError: 'storage_cyclic_boundary'``
   (the storage cycle parameter was read even when no region has storage). All examples were affected.
 * **Bug**: multi-region models with transmission lines could not be solved by LP solvers: line

@@ -76,12 +76,15 @@ class ModelData:
             assert key in self.global_parameters.keys(), r"{} should be presents in global parameters.".format(key)
             check_nan(value["sheet_name"], self.global_parameters[key], "parameters_global")
             # print(self.global_parameters[key].index)
-            check_index_data(
-                self.global_parameters[key].index,
-                value["sheet_name"],
-                "parameters_global",
-                pd.Index(value["index"]),
-            )
+            # Templates with "variable_index": True have user-defined rows
+            # (e.g. one row per CHP group): only their columns are checked.
+            if not value.get("variable_index", False):
+                check_index_data(
+                    self.global_parameters[key].index,
+                    value["sheet_name"],
+                    "parameters_global",
+                    pd.Index(value["index"]),
+                )
             check_index_data(
                 self.global_parameters[key].columns,
                 value["sheet_name"],
@@ -98,12 +101,15 @@ class ModelData:
         for key, value in trade_parameters_templete.items():
             assert key in self.trade_parameters.keys(), r"{} should be presents in trade parameters.".format(key)
             check_nan(value["sheet_name"], self.trade_parameters[key], "parameters_connections")
-            check_index_data(
-                self.trade_parameters[key].index,
-                value["sheet_name"],
-                "parameters_connections",
-                pd.Index(value["index"]),
-            )
+            # Templates with "variable_index": True have user-defined rows
+            # (e.g. one row per CHP group): only their columns are checked.
+            if not value.get("variable_index", False):
+                check_index_data(
+                    self.trade_parameters[key].index,
+                    value["sheet_name"],
+                    "parameters_connections",
+                    pd.Index(value["index"]),
+                )
             check_index_data(
                 self.trade_parameters[key].columns,
                 value["sheet_name"],
@@ -117,12 +123,15 @@ class ModelData:
             for key, value in self.settings.regional_parameters_template[region].items():
                 assert key in self.regional_parameters[region].keys(), r'{} should be presents in regional parameters for {}.'.format(key, region)
                 check_nan(value["sheet_name"], self.regional_parameters[region][key], "parameters_regional")
-                check_index_data(
-                    self.regional_parameters[region][key].index,
-                    value["sheet_name"],
-                    "parameters_{region}",
-                    pd.Index(value["index"]),
-                )
+                # Templates with "variable_index": True have user-defined rows
+                # (e.g. one row per CHP group): only their columns are checked.
+                if not value.get("variable_index", False):
+                    check_index_data(
+                        self.regional_parameters[region][key].index,
+                        value["sheet_name"],
+                        "parameters_{region}",
+                        pd.Index(value["index"]),
+                    )
                 check_index_data(
                     self.regional_parameters[region][key].columns,
                     value["sheet_name"],

@@ -1,8 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Feb 18 10:34:38 2025
+Variable operating range for CHP plants (feasible operating region).
 
-@author: Tommaso
+Original implementation: Tommaso Zacconi, 2025.
+
+Each CHP plant is modelled with three conversion technologies: the CHP unit,
+its power branch and its heat branch. For every CHP group listed in the sheet
+"CHP_variable_techs_selection" and every region where the three technologies
+exist, two constraints are added at every time step:
+
+    heat <= gamma * chp                                  (max heat/power coefficient)
+    heat * (eta_e / gamma - eta_e / eta_th) <= power     (power-to-heat ratio)
+
+where eta_e and eta_th are the efficiencies of the power and heat branches,
+averaged over the model years.
+
+The number of CHP groups is the number of rows in the sheet. Rows whose names
+do not match the conversion technologies of a region (e.g. rows of zeros) are
+skipped for that region.
 """
 
 from hypatia.backend.constraints.Constraint import Constraint
@@ -16,150 +31,98 @@ import cvxpy as cp
 
 
 class CHPOperatingRange(Constraint):
-    
-    # Define class attributes to be used in all methods
-    CHP_list = [1,2,3,4,5]  # YOU CAN CHANGE THE NUMBER OF CHP TECHNOLOGY ENTRIES
-    CHP_header_list = ["CHP Tech Name", 
-                       "Power-branch Tech Name", 
+
+    # Columns of the input sheet, in this order.
+    CHP_header_list = ["CHP Tech Name",
+                       "Power-branch Tech Name",
                        "Heat-branch Tech Name",
-                       "Max Heat Power Coefficient"] # YOU CAN CHANGE THE HEADINGS, BUT DO NOT CHANGE THE NUMBER OF COLUMNS MUST BE FILLED (4), AND THEIR ORDER
-    
+                       "Max Heat Power Coefficient"]
+
+    # Rows written in a new (empty) parameter file. Users can add or remove
+    # rows: the constraint uses the rows found in the data.
+    DEFAULT_CHP_GROUPS = [1, 2, 3, 4, 5]
+
     def _check(self):
         assert hasattr(self.variables, 'technology_prod'), "technology_prod must be defined"
-        
-    
+
     def rules(self):
-        
-        CHP_list = self.CHP_list
-        CHP_header_list = self.CHP_header_list
-        
         rules = []
-        
-        # Read Input Parameters: choose between global/regional files
+
+        # Global file for multi-region models, regional file otherwise.
         CHP_address = get_parameters_from_global_or_regional_file(
             self.model_data.settings,
             self.model_data,
             "glob_variable_CHP_tech_selection",
             "variable_CHP_tech_selection"
         )
-        # if self.model_data.settings.multi_node:
-        #     CHP_address = self.model_data.global_parameters["glob_variable_CHP_tech_selection"]
-        # else:
-        #     for reg in self.model_data.settings.regions:
-        #         CHP_address = self.model_data.regional_parameters[reg]["variable_CHP_tech_selection"]
-                
-        # print(CHP_address)
-        # for row in CHP_list:
-        #     for col in CHP_header_list[:3]:
-        #         print("Row:", row, "-Col:", col, "-Value:", CHP_address.loc[row, col], "-Type:", type(CHP_address.loc[row, col]))
 
         for reg in self.model_data.settings.regions:
-            reg_conv_techs = list(self.model_data.settings.technologies[reg]["Conversion"])
-            
-            # Create and manage a matrix of indexes reporting the tech index corresponding to the CHP tech name
-            CHP_matrix_indx = np.full((len(CHP_list), 3), None, dtype=object)  # Initialize matrix of tech indexes with Nones
-            
-            for row_indx, row in enumerate(CHP_list):
-                for col_indx, col in enumerate(CHP_header_list[:3]):
-            
-                    for tech_indx, tech in enumerate(reg_conv_techs):
-                        
-                        if tech == CHP_address.loc[row, col]: 
-                            CHP_matrix_indx[row_indx, col_indx] = tech_indx
-                            
-                if CHP_matrix_indx[row_indx, 0] != None and CHP_matrix_indx[row_indx, 1] != None and CHP_matrix_indx[row_indx, 2] != None:
-                    
-                    # print(f"Added CHP constraint for row {row}")
-                    
-                    # Compute the power-to-heat ratio
-                    # get tech names from conversion tech list using the found indices
-                    tech_name_power = reg_conv_techs[CHP_matrix_indx[row_indx, 1]]
-                    tech_name_heat = reg_conv_techs[CHP_matrix_indx[row_indx, 2]]
+            # A region without conversion technologies has no CHP to constrain.
+            reg_conv_techs = list(self.model_data.settings.technologies[reg].get("Conversion", []))
+            if not reg_conv_techs:
+                continue
+            prod = self.variables.technology_prod[reg]["Conversion"]
 
-                    # tech_efficiency is provided per technology as column vectors (indexed by years)
-                    try:
-                        tech_eff_conversion = self.model_data.regional_parameters[reg]["tech_efficiency"]["Conversion"]
-                        # extract per-year vectors and compute average across years
-                        eta_th = float(np.mean(tech_eff_conversion[tech_name_heat].values))
-                        eta_e = float(np.mean(tech_eff_conversion[tech_name_power].values))
-                    except Exception:
-                        # if retrieval fails, set to NaN to avoid breaking the model build (caller can handle/use them)
-                        eta_th = float("nan")
-                        eta_e = float("nan")
-                        
-                    powerLoss_ratio = eta_e / eta_th
-                    power2heat_ratio = eta_e / CHP_address.iloc[row_indx, 3] - powerLoss_ratio
-                    # Debug prints
-                    # print(f"EE Eff: {eta_e}")
-                    # print(f"TH Eff: {eta_th}")
-                    # print(f"gamma: {CHP_address.iloc[row_indx, 3]}")
-                    # print(f"Power Loss Ratio: {powerLoss_ratio}")
-                    # print(f"Power to Heat Ratio: {power2heat_ratio}") 
-                    
-                    # tech_prod_Heat <= gamma*tech_prod_CHP
-                    rules.append(
-                        self.variables.technology_prod[reg]["Conversion"][
-                                      :,
-                                      CHP_matrix_indx[row_indx, 2]
-                                      ]
-                        - cp.multiply(
-                            self.variables.technology_prod[reg]["Conversion"][
-                                          :,
-                                          CHP_matrix_indx[row_indx, 0]
-                                          ],
-                            CHP_address.iloc[row_indx, 3]
-                            )
-                         <= 0
-                    ) 
-                    
-                    # tech_prod_Heat * power2heat_ratio <= tech_prod_Power
-                    rules.append(
-                        cp.multiply(
-                            self.variables.technology_prod[reg]["Conversion"][
-                                        :,
-                                        CHP_matrix_indx[row_indx, 2]
-                                        ],
-                            power2heat_ratio
-                        )
-                        - self.variables.technology_prod[reg]["Conversion"][
-                                          :,
-                                          CHP_matrix_indx[row_indx, 1]
-                                          ]
-                         <= 0
-                    )
-                    
-            # print("CHP_matrix_indx:\n", CHP_matrix_indx)
+            for row in CHP_address.index:
+                name_chp, name_power, name_heat, gamma = CHP_address.loc[row].iloc[:4]
+
+                if not all(name in reg_conv_techs for name in (name_chp, name_power, name_heat)):
+                    continue
+                i_chp = reg_conv_techs.index(name_chp)
+                i_power = reg_conv_techs.index(name_power)
+                i_heat = reg_conv_techs.index(name_heat)
+
+                eta_e, eta_th = self._mean_efficiencies(reg, name_power, name_heat, row)
+                powerLoss_ratio = eta_e / eta_th
+                power2heat_ratio = eta_e / gamma - powerLoss_ratio
+
+                # tech_prod_Heat <= gamma * tech_prod_CHP
+                rules.append(prod[:, i_heat] - cp.multiply(prod[:, i_chp], gamma) <= 0)
+
+                # tech_prod_Heat * power2heat_ratio <= tech_prod_Power
+                rules.append(cp.multiply(prod[:, i_heat], power2heat_ratio) - prod[:, i_power] <= 0)
 
         return rules
-    
+
+    def _mean_efficiencies(self, reg, name_power, name_heat, row):
+        """Efficiencies of the power and heat branches, averaged over the model years.
+
+        Fails with a clear message instead of returning NaN: NaN coefficients
+        would only surface later as a solver error, or not at all.
+        """
+        try:
+            tech_eff_conversion = self.model_data.regional_parameters[reg]["tech_efficiency"]["Conversion"]
+            eta_e = float(np.mean(tech_eff_conversion[name_power].values))
+            eta_th = float(np.mean(tech_eff_conversion[name_heat].values))
+        except KeyError as err:
+            raise ValueError(
+                f"CHP group {row} in region {reg}: efficiency of '{name_power}' or "
+                f"'{name_heat}' not found in the Tech_efficiency sheet ({err})."
+            ) from err
+        if not (np.isfinite(eta_e) and np.isfinite(eta_th)) or eta_th == 0:
+            raise ValueError(
+                f"CHP group {row} in region {reg}: invalid efficiencies "
+                f"(power branch {eta_e}, heat branch {eta_th})."
+            )
+        return eta_e, eta_th
+
+    @staticmethod
+    def _template():
+        return {
+            "sheet_name": "CHP_variable_techs_selection",
+            "value": 0,
+            "index": pd.Index(CHPOperatingRange.DEFAULT_CHP_GROUPS, name="CHP group"),
+            "columns": pd.Index(CHPOperatingRange.CHP_header_list),
+            # Rows are user-defined: ModelData checks only the columns.
+            "variable_index": True,
+        }
 
     def _required_regional_parameters(settings):
-        print("\nreading regional CHP parameters\n")
-        required_parameters = {}
-        for reg in settings.regions:
-    
-            required_parameters[reg] = {
-                "variable_CHP_tech_selection": {
-                    "sheet_name": "CHP_variable_techs_selection",
-                    "value": 0,
-                    "index": pd.Index(CHPOperatingRange.CHP_list, name = "CHP group"),
-                    "columns": pd.Index(CHPOperatingRange.CHP_header_list),
-                },
-            }
-        
         if settings.multi_node:
-            required_parameters = {}
-            
-        return required_parameters
-    
+            return {}
+        return {reg: {"variable_CHP_tech_selection": CHPOperatingRange._template()}
+                for reg in settings.regions}
+
     def _required_global_parameters(settings):
-        print("\nreading global CHP parameters\n")
-        return {
-            "variable_CHP_tech_selection": {
-                "sheet_name": "CHP_variable_techs_selection",
-                "value": 0,
-                "index": pd.Index(CHPOperatingRange.CHP_list, name = "CHP group"),
-                "columns": pd.Index(CHPOperatingRange.CHP_header_list),
-            },
-        }
-    
+        # Same key that rules() reads for multi-region models.
+        return {"glob_variable_CHP_tech_selection": CHPOperatingRange._template()}
