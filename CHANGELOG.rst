@@ -9,6 +9,12 @@ Unreleased
   of uncommenting lines in ``ConstraintList.py``. The default (none enabled) builds
   the same problem as before. The JRP Nucleare runs correspond to
   ``optional_constraints=["chp_operating_range"]`` (tag ``jrp-nucleare-v1``).
+* **Feature**: upper limits on the total and new capacity of user-defined groups of
+  technologies, summed over regions (``TotalCapacityGroup``, ``NewCapacityGroup``).
+  Groups go in the sheet ``Capacity_group_membership`` (Group, Technology) and limits in
+  ``Max_totalcap_group`` / ``Max_newcap_group`` (Group, Year, value), in the regional
+  parameter file for single-region models and in the global file for multi-region ones.
+  Years use the model year codes (e.g. ``Y0``). Without these sheets nothing changes.
 * **Bug**: EmissionCapRegional/Global, LandUsageGlobal and RenewableProductionRegional/Global
   built an invalid constraint (numpy array instead of cvxpy) when no matching term existed,
   and recognised the electricity carrier only if named exactly ``Electricity``. Fixes from
