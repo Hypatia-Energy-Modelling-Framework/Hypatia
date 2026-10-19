@@ -1,10 +1,11 @@
+from hypatia.utility.constants import OptimizationMode, EnsureFeasibility
 import pandas as pd
 import numpy as np
 import unittest
 import copy
 from hypatia.backend.ModelSettings import ModelSettings
 from hypatia.utility.constants import ModelMode
-from hypatia.backend.tests.TestSettings import (
+from tests.legacy.fixtures import (
     Utopia2PlanningSingleNodeDN,
     Utopia2OperationMultiNode
 )
@@ -29,6 +30,8 @@ class TestModelSettings(unittest.TestCase):
         # single node
         ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -36,6 +39,8 @@ class TestModelSettings(unittest.TestCase):
         # multi node
         ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.multi_node.global_settings,
             self.multi_node.regional_settings,
         )
@@ -64,6 +69,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongTableName,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.single_node.regional_settings,
             )
@@ -79,6 +86,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongTableName,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.multi_node.regional_settings,
             )
@@ -93,6 +102,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongIndex,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.single_node.regional_settings,
             )
@@ -105,6 +116,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongIndex,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.multi_node.regional_settings,
             )
@@ -122,6 +135,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.NanValues,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.single_node.regional_settings,
             )
@@ -137,6 +152,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.NanValues,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.multi_node.regional_settings,
             )
@@ -160,6 +177,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongTechCategory,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.single_node.regional_settings,
             )
@@ -181,6 +200,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongTechCategory,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.multi_node.regional_settings,
             )
@@ -202,6 +223,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongCarrierType,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.single_node.regional_settings,
             )
@@ -222,6 +245,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongCarrierType,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 global_settings,
                 self.multi_node.regional_settings,
             )
@@ -251,6 +276,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongTableName,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.single_node.global_settings,
                 regional_settings,
             )
@@ -266,6 +293,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongTableName,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.multi_node.global_settings,
                 regional_settings,
             )
@@ -280,6 +309,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongIndex,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.single_node.global_settings,
                 regional_settings,
             )
@@ -292,6 +323,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongIndex,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.multi_node.global_settings,
                 regional_settings,
             )
@@ -309,6 +342,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.NanValues,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.single_node.global_settings,
                 regional_settings,
             )
@@ -324,6 +359,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.NanValues,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.multi_node.global_settings,
                 regional_settings,
             )
@@ -344,6 +381,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongTechCategory,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.single_node.global_settings,
                 regional_settings,
             )
@@ -363,6 +402,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongTechCategory,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.multi_node.global_settings,
                 regional_settings,
             )
@@ -383,6 +424,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongMappingData,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.single_node.global_settings,
                 regional_settings,
             )
@@ -400,6 +443,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongMappingData,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.single_node.global_settings,
                 regional_settings,
             )
@@ -418,6 +463,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongMappingData,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.multi_node.global_settings,
                 regional_settings,
             )
@@ -435,6 +482,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongMappingData,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.multi_node.global_settings,
                 regional_settings,
             )
@@ -455,6 +504,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongMappingTech,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.single_node.global_settings,
                 regional_settings,
             )
@@ -472,6 +523,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongMappingTech,
             lambda: ModelSettings(
                 ModelMode.Planning,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.single_node.global_settings,
                 regional_settings,
             )
@@ -490,6 +543,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongMappingTech,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.multi_node.global_settings,
                 regional_settings,
             )
@@ -507,6 +562,8 @@ class TestModelSettings(unittest.TestCase):
             hypatiaException.WrongMappingTech,
             lambda: ModelSettings(
                 ModelMode.Operation,
+                OptimizationMode.Single,
+                EnsureFeasibility.No,
                 self.multi_node.global_settings,
                 regional_settings,
             )
@@ -521,6 +578,8 @@ class TestModelSettings(unittest.TestCase):
         #single node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -532,6 +591,8 @@ class TestModelSettings(unittest.TestCase):
         #multi node
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.multi_node.global_settings,
             self.multi_node.regional_settings,
         )
@@ -544,6 +605,8 @@ class TestModelSettings(unittest.TestCase):
         #single node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -576,6 +639,8 @@ class TestModelSettings(unittest.TestCase):
         #multi node
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.multi_node.global_settings,
             self.multi_node.regional_settings,
         )
@@ -623,6 +688,8 @@ class TestModelSettings(unittest.TestCase):
         #single node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -634,6 +701,8 @@ class TestModelSettings(unittest.TestCase):
         #multi node
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.multi_node.global_settings,
             self.multi_node.regional_settings,
         )
@@ -646,6 +715,8 @@ class TestModelSettings(unittest.TestCase):
         #single node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -657,6 +728,8 @@ class TestModelSettings(unittest.TestCase):
         #multi node
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.multi_node.global_settings,
             self.multi_node.regional_settings,
         )
@@ -670,6 +743,8 @@ class TestModelSettings(unittest.TestCase):
         global_settings.pop('Timesteps', None)
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             global_settings,
             self.multi_node.regional_settings,
         )
@@ -682,6 +757,8 @@ class TestModelSettings(unittest.TestCase):
         #single node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -691,6 +768,8 @@ class TestModelSettings(unittest.TestCase):
         #multi node
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.multi_node.global_settings,
             self.multi_node.regional_settings,
         )
@@ -702,6 +781,8 @@ class TestModelSettings(unittest.TestCase):
         global_settings.pop('Timesteps', None)
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             global_settings,
             self.multi_node.regional_settings,
         )
@@ -714,6 +795,8 @@ class TestModelSettings(unittest.TestCase):
         #sigle_node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -722,6 +805,8 @@ class TestModelSettings(unittest.TestCase):
         #multi node
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.multi_node.global_settings,
             self.multi_node.regional_settings,
         )
@@ -731,6 +816,8 @@ class TestModelSettings(unittest.TestCase):
         #sigle_node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -739,6 +826,8 @@ class TestModelSettings(unittest.TestCase):
         #multi node
         model_settings = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.multi_node.global_settings,
             self.multi_node.regional_settings,
         )
@@ -748,6 +837,8 @@ class TestModelSettings(unittest.TestCase):
         #sigle_node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )
@@ -760,6 +851,8 @@ class TestModelSettings(unittest.TestCase):
         #sigle_node
         model_settings = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             self.single_node.global_settings,
             self.single_node.regional_settings,
         )

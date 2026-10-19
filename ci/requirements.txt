@@ -1,0 +1,15 @@
+# Exact environment the test suite is checked against (current model stack).
+# Change these pins on purpose, in their own PR (e.g. the cvxpy upgrade), so that
+# any change in results can be traced to the dependency update.
+cvxpy==1.1.18
+ecos==2.0.14
+osqp==1.1.3
+scs==3.3.1
+numpy==1.22.4
+scipy==1.7.3
+pandas==1.5.3
+openpyxl==3.1.5
+xlsxwriter==1.3.7
+plotly==7.1.0
+ipython==8.39.0
+pytest==9.1.1

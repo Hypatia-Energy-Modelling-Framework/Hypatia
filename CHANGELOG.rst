@@ -3,6 +3,12 @@ Release History
 
 Unreleased
 ----------
+* **Tests**: test suite moved to a top-level ``tests/`` folder and run with pytest
+  (``pytest``; slow examples with ``pytest -m slow``). Regression tests check the objective of
+  every example against reference values (Gurobi, 19 October 2026). GitHub Actions runs the fast
+  tests on every pull request with the pinned environment in ``ci/requirements.txt``.
+  Old tests updated to the current ``ModelSettings`` signature; 18 tests and 3 files that compared
+  cvxpy internals or used removed parameters were deleted (see git history).
 * **Enhancement**: optional constraints (``chp_operating_range``, ``production_ramp``,
   ``min_tech_power_output``, ``electrolysis_consumption``, ``boolean_for_storage``)
   are now enabled per model with ``Model(..., optional_constraints=[...])`` instead

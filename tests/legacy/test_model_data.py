@@ -1,3 +1,4 @@
+from hypatia.utility.constants import OptimizationMode, EnsureFeasibility
 import pandas as pd
 import numpy as np
 import unittest
@@ -5,7 +6,7 @@ import copy
 from hypatia.backend.ModelSettings import ModelSettings
 from hypatia.backend.ModelData import ModelData
 from hypatia.utility.constants import ModelMode
-from hypatia.backend.tests.TestSettings import (
+from tests.legacy.fixtures import (
     Utopia2PlanningSingleNodeDN,
     Utopia2OperationMultiNode
 )
@@ -21,6 +22,8 @@ class TestModelData(unittest.TestCase):
         single_node_settings = Utopia2PlanningSingleNodeDN()
         self.single_node = ModelSettings(
             ModelMode.Planning,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             single_node_settings.global_settings,
             single_node_settings.regional_settings,
         )
@@ -28,6 +31,8 @@ class TestModelData(unittest.TestCase):
         multi_node_settings = Utopia2OperationMultiNode()
         self.multi_node = ModelSettings(
             ModelMode.Operation,
+            OptimizationMode.Single,
+            EnsureFeasibility.No,
             multi_node_settings.global_settings,
             multi_node_settings.regional_settings,
         )
