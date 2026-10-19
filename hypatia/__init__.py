@@ -52,3 +52,8 @@ from hypatia.error_log import Exceptions
 from hypatia.analysis.plots import Plotter
 from hypatia.postprocessing.AggregatedPostProcessing import Merge_results
 from hypatia.version import __version__
+from hypatia.examples.load_examples import (
+    available_examples,
+    load_example,
+    download_example,
+)

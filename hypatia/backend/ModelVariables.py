@@ -915,6 +915,12 @@ class ModelVariables():
 
         self.storage_SOC = {}
 
+        # The cycle-duration parameter is required (and read) only when some
+        # region has storage: without storage there is nothing to compute, and
+        # reading it would fail with a KeyError.
+        if not list(get_regions_with_storage(self.model_data.settings)):
+            return
+
         timesteps_per_cycle = get_parameters_from_global_or_regional_file(
                 self.model_data.settings, 
                 self.model_data, 
@@ -1092,8 +1098,14 @@ class ModelVariables():
                                 .values
                             )
                             
-                        length_ratio = cp.multiply(line_length, 0.01)
-                        line_efficiency = (cp.exp(cp.multiply(np.log(line_eff), length_ratio)))
+                        # efficiency per 100 length units, compounded over the line
+                        # length: eff ** (length / 100). Both are input data, so this
+                        # is computed with numpy: written with cp.exp it became an
+                        # exponential cone that LP solvers (HiGHS, Gurobi LP) reject.
+                        line_efficiency = np.power(
+                            np.asarray(line_eff, dtype=float),
+                            np.asarray(line_length, dtype=float) * 0.01,
+                        )
 
                         totalimportbycarrier_regional[carr] += cp.multiply(
                             self.line_import[reg][key][
